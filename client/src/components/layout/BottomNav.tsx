@@ -1,13 +1,14 @@
-import { Home, ShoppingBag, Activity, User, Settings } from 'lucide-react'
+import { Home, ShoppingBag, Activity, Users, Settings } from 'lucide-react'
 import { useLocation, Link } from 'wouter'
 import { useAuth } from '../../hooks/useAuth'
+import { useFriendRequests } from '../../hooks/useFriends'
 import { cn } from '../../lib/utils'
 
 const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/shop', label: 'Shop', icon: ShoppingBag },
   { href: '/feed', label: 'Feed', icon: Activity },
-  { href: '/profile', label: 'Profil', icon: User },
+  { href: '/people', label: 'Personen', icon: Users },
 ]
 
 export function BottomNav() {

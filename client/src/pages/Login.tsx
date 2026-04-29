@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'wouter'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth, useAuthConfig } from '../hooks/useAuth'
 import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '../lib/utils'
 
 export function Login() {
   const { user, isLoading } = useAuth()
+  const { data: config, isLoading: configLoading } = useAuthConfig()
   const [, navigate] = useLocation()
   const qc = useQueryClient()
 
@@ -14,10 +15,23 @@ export function Login() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  if (!isLoading && user) {
+  // Auto-redirect to IDP when OIDC is the only option and OIDC_AUTO_REDIRECT is set
+  useEffect(() => {
+    if (!config || isLoading || user) return
+    if (config.oidcEnabled && !config.localEnabled && config.autoRedirect) {
+      window.location.href = '/api/auth/login'
+    }
+  }, [config, isLoading, user])
+
+  if (isLoading || configLoading) return null
+
+  if (user) {
     navigate('/')
     return null
   }
+
+  const showOIDC = config?.oidcEnabled ?? true
+  const showLocal = config?.localEnabled ?? true
 
   const handleSSOLogin = () => {
     window.location.href = '/api/auth/login'
@@ -75,66 +89,72 @@ export function Login() {
           </div>
         )}
 
-        <button
-          onClick={handleSSOLogin}
-          className="w-full py-2.5 px-4 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors text-sm"
-        >
-          Mit SSO anmelden (Authentik)
-        </button>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-background px-2 text-muted-foreground">oder lokal anmelden</span>
-          </div>
-        </div>
-
-        <form onSubmit={handleLocalLogin} className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              E-Mail oder Benutzername
-            </label>
-            <input
-              type="text"
-              value={login}
-              onChange={(e) => setLogin(e.target.value)}
-              className={cn(
-                'w-full px-3 py-2 rounded-md border bg-background text-sm',
-                'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
-                'border-input',
-              )}
-              placeholder="name@verein.de"
-              autoComplete="username"
-              autoCorrect="off"
-              autoCapitalize="off"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Passwort</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={cn(
-                'w-full px-3 py-2 rounded-md border bg-background text-sm',
-                'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
-                'border-input',
-              )}
-              autoComplete="current-password"
-            />
-          </div>
-
+        {showOIDC && (
           <button
-            type="submit"
-            disabled={submitting || !login || !password}
-            className="w-full py-2.5 px-4 rounded-md bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 text-sm"
+            onClick={handleSSOLogin}
+            className="w-full py-2.5 px-4 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors text-sm"
           >
-            {submitting ? 'Anmelden…' : 'Anmelden'}
+            Mit SSO anmelden
           </button>
-        </form>
+        )}
+
+        {showOIDC && showLocal && (
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-background px-2 text-muted-foreground">oder lokal anmelden</span>
+            </div>
+          </div>
+        )}
+
+        {showLocal && (
+          <form onSubmit={handleLocalLogin} className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                E-Mail oder Benutzername
+              </label>
+              <input
+                type="text"
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
+                className={cn(
+                  'w-full px-3 py-2 rounded-md border bg-background text-sm',
+                  'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
+                  'border-input',
+                )}
+                placeholder="name@verein.de"
+                autoComplete="username"
+                autoCorrect="off"
+                autoCapitalize="off"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Passwort</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={cn(
+                  'w-full px-3 py-2 rounded-md border bg-background text-sm',
+                  'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
+                  'border-input',
+                )}
+                autoComplete="current-password"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting || !login || !password}
+              className="w-full py-2.5 px-4 rounded-md bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 text-sm"
+            >
+              {submitting ? 'Anmelden…' : 'Anmelden'}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   )

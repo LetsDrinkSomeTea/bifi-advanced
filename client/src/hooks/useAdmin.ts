@@ -46,6 +46,15 @@ export function useSettlement() {
   })
 }
 
+export function useResetPassword() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, password }: { id: string; password: string }) =>
+      api.put(`/api/auth/local/users/${id}/password`, { password }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
 export function useAllBuyables() {
   return useQuery<BuyableWithVariants[]>({
     queryKey: ['buyables', { all: true }],

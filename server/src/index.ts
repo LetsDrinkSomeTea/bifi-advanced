@@ -16,6 +16,10 @@ import buyablesRoutes from './routes/buyables.ts'
 import transactionsRoutes from './routes/transactions.ts'
 import favoritesRoutes from './routes/favorites.ts'
 import adminRoutes from './routes/admin.ts'
+import usersRoutes from './routes/users.ts'
+import friendsRoutes from './routes/friends.ts'
+import notificationsRoutes from './routes/notifications.ts'
+import feedRoutes from './routes/feed.ts'
 
 const app = new Hono()
 
@@ -46,6 +50,10 @@ app.route('/api/buyables', buyablesRoutes)
 app.route('/api/transactions', transactionsRoutes)
 app.route('/api/favorites', favoritesRoutes)
 app.route('/api/admin', adminRoutes)
+app.route('/api/users', usersRoutes)
+app.route('/api/friends', friendsRoutes)
+app.route('/api/notifications', notificationsRoutes)
+app.route('/api/feed', feedRoutes)
 
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }))
 

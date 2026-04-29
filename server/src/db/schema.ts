@@ -31,8 +31,11 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'deposit',
   'goal_reached',
   'balance_warning',
+  'friend_request',
   'system',
 ])
+
+export const friendshipStatusEnum = pgEnum('friendship_status', ['pending', 'accepted'])
 export const groupRoleEnum = pgEnum('group_role', ['owner', 'member'])
 export const feedTypeEnum = pgEnum('feed_type', [
   'purchase',
@@ -249,6 +252,23 @@ export const activityFeed = pgTable('activity_feed', {
   metadata: jsonb('metadata'),
   createdAt: createdAt(),
 })
+
+export const userFriendships = pgTable(
+  'user_friendships',
+  {
+    id: id(),
+    requesterId: uuid('requester_id')
+      .notNull()
+      .references(() => users.id),
+    addresseeId: uuid('addressee_id')
+      .notNull()
+      .references(() => users.id),
+    status: friendshipStatusEnum('status').notNull().default('pending'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [unique().on(t.requesterId, t.addresseeId)],
+)
 
 export const userFavorites = pgTable(
   'user_favorites',

@@ -92,6 +92,23 @@ export interface TransactionWithItems {
   }>
 }
 
+export interface PublicProfile {
+  id: string
+  displayName: string
+  avatarUrl: string | null
+  role: 'admin' | 'moderator' | 'member'
+  createdAt: string
+  hasSso: boolean
+  hasPassword: boolean
+  friendshipStatus: FriendshipStatus | null
+  stats: {
+    purchaseCount: number
+    leaderboardRank: number | null
+    favoriteProduct: { name: string; count: number } | null
+  }
+  achievements: string[]
+}
+
 export interface FeedEvent {
   id: string
   userId: string
@@ -109,6 +126,22 @@ export interface FeedEvent {
   createdAt: string
   user: { id: string; displayName: string; avatarUrl: string | null }
   targetUser?: { id: string; displayName: string; avatarUrl: string | null }
+}
+
+export type FriendshipStatus = 'none' | 'pending_sent' | 'pending_received' | 'friends'
+
+export interface Friend {
+  id: string
+  displayName: string
+  avatarUrl: string | null
+  since: string
+}
+
+export interface FriendRequest {
+  id: string
+  displayName: string
+  avatarUrl: string | null
+  requestedAt: string
 }
 
 export interface LeaderboardEntry {

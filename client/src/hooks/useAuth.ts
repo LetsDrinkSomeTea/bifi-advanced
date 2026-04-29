@@ -1,5 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { User } from '@shared/types'
+import { api } from '../lib/api'
+
+export interface AuthConfig {
+  oidcEnabled: boolean
+  localEnabled: boolean
+  autoRedirect: boolean
+  roleSync: 'always' | 'on_creation' | 'never'
+}
 
 export function useAuth() {
   const { data: user, isLoading } = useQuery<User | null>({
@@ -21,6 +29,14 @@ export function useAuth() {
     isAdmin: user?.role === 'admin',
     isModerator: user?.role === 'admin' || user?.role === 'moderator',
   }
+}
+
+export function useAuthConfig() {
+  return useQuery<AuthConfig>({
+    queryKey: ['auth', 'config'],
+    queryFn: () => api.get<AuthConfig>('/api/auth/config'),
+    staleTime: Infinity,
+  })
 }
 
 export function useLogout() {

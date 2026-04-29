@@ -1,17 +1,51 @@
 import { useState } from 'react'
-import { Star } from 'lucide-react'
+import { Star, ChevronRight } from 'lucide-react'
+import { Link } from 'wouter'
 import { Layout } from '../components/layout/Layout'
+import { TransactionList } from '../components/TransactionList'
+import { FeedItem } from '../components/FeedItem'
 import { useFavorites } from '../hooks/useFavorites'
-import { usePurchase } from '../hooks/useTransactions'
+import { useFeed } from '../hooks/useFeed'
+import { usePurchase, useTransactionHistory } from '../hooks/useTransactions'
 import type { Favorite } from '@shared/types'
 import { formatCents, cn } from '../lib/utils'
 
 type CardState = { variantId: string; status: 'buying' | 'done' | 'error' } | null
 
+function HomeFeedPreview() {
+  const { data, isLoading } = useFeed()
+  const entries = (data?.pages[0]?.data ?? []).slice(0, 3)
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />)}
+      </div>
+    )
+  }
+
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+        Noch keine Aktivitäten
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      {entries.map((e) => <FeedItem key={e.id} entry={e} />)}
+    </div>
+  )
+}
+
 export function Home() {
   const { data: favorites, isLoading } = useFavorites()
+  const { data: txnData, isLoading: txnLoading } = useTransactionHistory()
   const { mutate: purchase } = usePurchase()
   const [cardState, setCardState] = useState<CardState>(null)
+
+  const recentTxns = (txnData?.pages[0]?.data ?? []).slice(0, 3)
 
   const handleBuy = (fav: Favorite) => {
     if (cardState || !fav.isAvailable) return
@@ -105,14 +139,38 @@ export function Home() {
           )}
         </section>
 
-        {/* Feed preview — Phase 4 */}
+        {/* Recent purchases */}
         <section>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            Aktivität
-          </h2>
-          <div className="rounded-2xl border border-dashed border-border p-6 text-center text-muted-foreground text-sm">
-            Feed kommt in Phase 4
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Letzte Käufe
+            </h2>
+            <Link href="/history" className="flex items-center gap-0.5 text-xs text-primary hover:underline">
+              Alle <ChevronRight size={13} />
+            </Link>
           </div>
+
+          <TransactionList transactions={recentTxns} isLoading={txnLoading} skeletonCount={3} />
+
+          {!txnLoading && recentTxns.length > 0 && (
+            <Link
+              href="/history"
+              className="block text-center text-xs text-muted-foreground hover:text-foreground py-2 transition-colors"
+            >
+              Alle Käufe anzeigen →
+            </Link>
+          )}
+        </section>
+
+        {/* Feed preview */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Aktivität</h2>
+            <Link href="/feed" className="flex items-center gap-0.5 text-xs text-primary hover:underline">
+              Alle <ChevronRight size={13} />
+            </Link>
+          </div>
+          <HomeFeedPreview />
         </section>
       </div>
     </Layout>

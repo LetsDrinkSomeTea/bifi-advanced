@@ -14,7 +14,25 @@ import {
 import { linkSessionToUser } from '../middleware/session.ts'
 import { requireAuth } from '../middleware/auth.ts'
 
+type RoleSyncMode = 'always' | 'on_creation' | 'never'
+
+function getRoleSyncMode(): RoleSyncMode {
+  const v = process.env.ROLE_SYNC ?? process.env.ROLE_SYNC_ENABLED
+  if (v === 'on_creation') return 'on_creation'
+  if (v === 'never' || v === 'false') return 'never'
+  return 'always'
+}
+
 const auth = new Hono()
+
+auth.get('/config', (c) => {
+  return c.json({
+    oidcEnabled: !!(process.env.OIDC_ISSUER && process.env.OIDC_CLIENT_ID && getOIDCConfig()),
+    localEnabled: process.env.LOCAL_AUTH_ENABLED !== 'false',
+    autoRedirect: process.env.OIDC_AUTO_REDIRECT === 'true',
+    roleSync: getRoleSyncMode(),
+  })
+})
 
 auth.get('/login', async (c) => {
   const config = getOIDCConfig()
@@ -109,7 +127,7 @@ auth.get('/callback', async (c) => {
   if (adminGroup && groups.includes(adminGroup)) role = 'admin'
   else if (moderatorGroup && groups.includes(moderatorGroup)) role = 'moderator'
 
-  const roleSyncEnabled = process.env.ROLE_SYNC_ENABLED !== 'false'
+  const roleSyncMode = getRoleSyncMode()
 
   const [existing] = await db.select().from(users).where(eq(users.ssoClaim, sub))
 
@@ -127,16 +145,17 @@ auth.get('/callback', async (c) => {
         displayName,
         avatarUrl,
         updatedAt: new Date(),
-        ...(roleSyncEnabled ? { role } : {}),
+        ...(roleSyncMode === 'always' ? { role } : {}),
       })
       .where(eq(users.id, existing.id))
       .returning()
 
     userId = updated!.id
   } else {
+    const initialRole = roleSyncMode !== 'never' ? role : 'member'
     const [created] = await db
       .insert(users)
-      .values({ ssoClaim: sub, email, displayName, avatarUrl, role })
+      .values({ ssoClaim: sub, email, displayName, avatarUrl, role: initialRole })
       .returning()
 
     userId = created!.id

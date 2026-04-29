@@ -112,6 +112,8 @@ router.post('/purchase', requireAuth, purchaseRateLimit, zValidator('json', Purc
   const user = c.get('user')
   const body = c.req.valid('json')
 
+  const feedItems: Array<{ name: string; variantName: string; count: number }> = []
+
   const txn = await db.transaction(async (tx) => {
     let cost = 0
     const itemsToInsert: Array<{
@@ -142,7 +144,7 @@ router.post('/purchase', requireAuth, purchaseRateLimit, zValidator('json', Purc
         throw Object.assign(new Error('Variant not found'), { status: 400, code: 'VARIANT_NOT_FOUND' })
       }
 
-      const unitPrice: number = variant.price
+      let unitPrice: number = variant.price
       const variantId: string = variant.id
 
       const discount = await getActiveDiscount(buyable.id, buyable.category)
@@ -153,6 +155,7 @@ router.post('/purchase', requireAuth, purchaseRateLimit, zValidator('json', Purc
       const totalPrice = unitPrice * item.quantity
       cost += totalPrice
       itemsToInsert.push({ buyableId: buyable.id, variantId, quantity: item.quantity, unitPrice, totalPrice })
+      feedItems.push({ name: buyable.name, variantName: variant.name, count: item.quantity })
     }
 
     const [created] = await tx
@@ -184,7 +187,7 @@ router.post('/purchase', requireAuth, purchaseRateLimit, zValidator('json', Purc
     .values({
       userId: user.id,
       type: 'purchase',
-      metadata: { itemCount: body.items.length, totalAmount: txn.totalAmount },
+      metadata: { items: feedItems, totalAmount: txn.totalAmount },
     })
     .catch(console.error)
 
@@ -214,12 +217,10 @@ router.delete('/:id', requireAuth, async (c) => {
     return c.json({ error: 'Jackpot transactions cannot be self-cancelled', code: 'FORBIDDEN' }, 403)
   }
 
-  // Time window check (5 min for self-cancel)
-  if (!isMod) {
-    const ageMs = Date.now() - txn.createdAt.getTime()
-    if (ageMs > 5 * 60 * 1000) {
-      return c.json({ error: 'Cancel window expired (5 minutes)', code: 'CANCEL_WINDOW_EXPIRED' }, 403)
-    }
+  // 5-minute cancel window applies to everyone
+  const ageMs = Date.now() - txn.createdAt.getTime()
+  if (ageMs > 5 * 60 * 1000) {
+    return c.json({ error: 'Cancel window expired (5 minutes)', code: 'CANCEL_WINDOW_EXPIRED' }, 403)
   }
 
   await db.transaction(async (tx) => {

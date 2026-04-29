@@ -39,7 +39,7 @@ services:
       APP_URL: http://localhost:3000
       SESSION_SECRET: dev-secret-not-for-production
       JACKPOT_ENABLED: "false"
-      ROLE_SYNC_ENABLED: "true"
+      ROLE_SYNC: "always"
       BALANCE_WARN_THRESHOLD: "-2000"
       # Uncomment and fill in for OIDC:
       OIDC_ISSUER: https://auth.faigle.dev/application/o/bifi/

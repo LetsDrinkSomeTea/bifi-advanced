@@ -6,6 +6,10 @@ import { Home } from './pages/Home'
 import { Login } from './pages/Login'
 import { Shop } from './pages/Shop'
 import { History } from './pages/History'
+import { Feed } from './pages/Feed'
+import { Profile } from './pages/Profile'
+import { ProfileDetail } from './pages/ProfileDetail'
+import { People } from './pages/People'
 import { AdminUsers } from './pages/admin/Users'
 import { AdminProducts } from './pages/admin/Products'
 import { AdminSettlement } from './pages/admin/Settlement'
@@ -34,12 +38,18 @@ export function App() {
           <ProtectedRoute><History /></ProtectedRoute>
         </Route>
 
-        {/* Stubs for phases 4–7 */}
-        <Route path="/feed">
-          <ProtectedRoute><Placeholder title="Feed" /></ProtectedRoute>
-        </Route>
         <Route path="/profile">
-          <ProtectedRoute><Placeholder title="Profil" /></ProtectedRoute>
+          <ProtectedRoute><Profile /></ProtectedRoute>
+        </Route>
+        <Route path="/profile/:userId">
+          {(params) => <ProtectedRoute><ProfileDetail /></ProtectedRoute>}
+        </Route>
+
+        <Route path="/feed">
+          <ProtectedRoute><Feed /></ProtectedRoute>
+        </Route>
+        <Route path="/people">
+          <ProtectedRoute><People /></ProtectedRoute>
         </Route>
 
         {/* Admin */}

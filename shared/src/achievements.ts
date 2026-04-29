@@ -3,6 +3,7 @@ export interface AchievementDef {
   name: string
   description: string
   icon: string
+  hidden?: boolean  // true = show as ??? until unlocked
 }
 
 export const ACHIEVEMENTS = {
@@ -47,6 +48,7 @@ export const ACHIEVEMENTS = {
     name: 'Glückspilz',
     description: 'Jackpot mit 0× Multiplikator gewonnen',
     icon: '🎰',
+    hidden: true,
   },
   early_bird: {
     key: 'early_bird',
@@ -65,6 +67,7 @@ export const ACHIEVEMENTS = {
     name: 'Spendenritter',
     description: '3× zum Donation Goal beigetragen',
     icon: '🦸',
+    hidden: true,
   },
 } as const satisfies Record<string, AchievementDef>
 

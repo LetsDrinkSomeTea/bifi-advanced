@@ -38,7 +38,7 @@ services:
       APP_URL: http://localhost:3000
       SESSION_SECRET: change-me-in-production
       JACKPOT_ENABLED: "false"
-      ROLE_SYNC_ENABLED: "true"
+      ROLE_SYNC: "always"
       BALANCE_WARN_THRESHOLD: "-2000"
       # OIDC — fill in for SSO login
       # OIDC_ISSUER: https://auth.example.com/application/o/bifi/

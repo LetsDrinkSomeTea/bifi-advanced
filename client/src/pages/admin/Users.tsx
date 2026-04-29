@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { KeyRound, Link2, Plus, UserCog } from 'lucide-react'
+import { KeyRound, Link2, Plus, UserCog, Dices } from 'lucide-react'
 import { AdminLayout } from './AdminLayout'
 import { Modal } from '../../components/Modal'
-import { useAdminUsers, useCreateUser, useDeposit, useUpdateUser } from '../../hooks/useAdmin'
+import { useAdminUsers, useCreateUser, useDeposit, useResetPassword, useUpdateUser } from '../../hooks/useAdmin'
+import { useAuth, useAuthConfig } from '../../hooks/useAuth'
 import type { AdminUser } from '@shared/types'
 import { cn, formatCents } from '../../lib/utils'
 
@@ -65,7 +66,7 @@ function DepositModal({ user, onClose }: { user: AdminUser | null; onClose: () =
 
 // ─── Edit User Modal ──────────────────────────────────────────────────────────
 
-function EditUserModal({ user, onClose }: { user: AdminUser | null; onClose: () => void }) {
+function EditUserModal({ user, onClose, canChangeRole }: { user: AdminUser | null; onClose: () => void; canChangeRole: boolean }) {
   const [role, setRole] = useState(user?.role ?? 'member')
   const [isActive, setIsActive] = useState(user?.isActive ?? true)
   const [jackpotAllowed, setJackpotAllowed] = useState(user?.jackpotAllowed ?? false)
@@ -83,18 +84,20 @@ function EditUserModal({ user, onClose }: { user: AdminUser | null; onClose: () 
   return (
     <Modal open={!!user} onClose={onClose} title={`Bearbeiten – ${user?.displayName}`}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Rolle</label>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="member">Member</option>
-            <option value="moderator">Moderator</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
+        {canChangeRole && (
+          <div>
+            <label className="block text-sm font-medium mb-1">Rolle</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="member">Member</option>
+              <option value="moderator">Moderator</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        )}
         <label className="flex items-center gap-3 cursor-pointer">
           <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4 rounded" />
           <span className="text-sm">Account aktiv</span>
@@ -182,6 +185,66 @@ function CreateUserModal({ open, onClose }: { open: boolean; onClose: () => void
   )
 }
 
+// ─── Reset Password Modal ─────────────────────────────────────────────────────
+
+function ResetPasswordModal({ user, onClose }: { user: AdminUser | null; onClose: () => void }) {
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [error, setError] = useState('')
+  const { mutate: reset, isPending } = useResetPassword()
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (password.length < 8) { setError('Mindestens 8 Zeichen'); return }
+    if (password !== confirm) { setError('Passwörter stimmen nicht überein'); return }
+    reset(
+      { id: user!.id, password },
+      {
+        onSuccess: () => { setPassword(''); setConfirm(''); onClose() },
+        onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
+      },
+    )
+  }
+
+  return (
+    <Modal open={!!user} onClose={onClose} title={`Passwort setzen – ${user?.displayName}`}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Neues Passwort</label>
+          <input
+            type="password"
+            minLength={8}
+            required
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); setError('') }}
+            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Wiederholen</label>
+          <input
+            type="password"
+            minLength={8}
+            required
+            value={confirm}
+            onChange={(e) => { setConfirm(e.target.value); setError('') }}
+            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <button
+          type="submit"
+          disabled={isPending}
+          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
+        >
+          {isPending ? 'Speichern…' : 'Passwort setzen'}
+        </button>
+      </form>
+    </Modal>
+  )
+}
+
 // ─── Role Badge ───────────────────────────────────────────────────────────────
 
 const ROLE_STYLE: Record<string, string> = {
@@ -194,10 +257,17 @@ const ROLE_STYLE: Record<string, string> = {
 
 export function AdminUsers() {
   const { data: users, isLoading } = useAdminUsers()
+  const { isAdmin, isModerator } = useAuth()
+  const { data: config } = useAuthConfig()
   const [depositTarget, setDepositTarget] = useState<AdminUser | null>(null)
   const [editTarget, setEditTarget] = useState<AdminUser | null>(null)
+  const [resetTarget, setResetTarget] = useState<AdminUser | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [search, setSearch] = useState('')
+
+  // Role can be changed if the user has no SSO (local-only) or role sync is not 'always'
+  const canChangeRole = (u: AdminUser) =>
+    !u.hasSso || (config?.roleSync ?? 'always') !== 'always'
 
   const filtered = (users ?? []).filter(
     (u) => !search || u.displayName.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()),
@@ -260,24 +330,39 @@ export function AdminUsers() {
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   {u.hasSso && <Link2 size={11} />}
                   {u.hasPassword && <KeyRound size={11} />}
+                  {u.jackpotAllowed && <Dices size={11} className="text-yellow-500" />}
                 </span>
               </div>
             </div>
 
             {/* Actions */}
             <div className="flex gap-1 flex-shrink-0">
-              <button
-                onClick={() => setDepositTarget(u)}
-                className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent transition-colors"
-              >
-                + €
-              </button>
-              <button
-                onClick={() => setEditTarget(u)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                <UserCog size={15} />
-              </button>
+              {isModerator && (
+                <button
+                  onClick={() => setDepositTarget(u)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent transition-colors"
+                >
+                  + €
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  onClick={() => setResetTarget(u)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  title="Passwort setzen"
+                >
+                  <KeyRound size={15} />
+                </button>
+              )}
+              {isModerator && (
+                <button
+                  onClick={() => setEditTarget(u)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  title="Bearbeiten"
+                >
+                  <UserCog size={15} />
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -288,7 +373,8 @@ export function AdminUsers() {
       </div>
 
       <DepositModal user={depositTarget} onClose={() => setDepositTarget(null)} />
-      <EditUserModal user={editTarget} onClose={() => setEditTarget(null)} />
+      <ResetPasswordModal user={resetTarget} onClose={() => setResetTarget(null)} />
+      <EditUserModal user={editTarget} onClose={() => setEditTarget(null)} canChangeRole={editTarget ? canChangeRole(editTarget) : false} />
       <CreateUserModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </AdminLayout>
   )
