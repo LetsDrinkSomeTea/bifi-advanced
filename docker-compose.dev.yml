@@ -1,0 +1,75 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: bifi
+      POSTGRES_USER: bifi
+      POSTGRES_PASSWORD: bifi_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bifi"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata_dev:/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules  # preserve container node_modules
+    environment:
+      DATABASE_URL: postgresql://bifi:bifi_password@db:5432/bifi
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+      APP_URL: http://localhost:3000
+      SESSION_SECRET: dev-secret-not-for-production
+      JACKPOT_ENABLED: "false"
+      ROLE_SYNC_ENABLED: "true"
+      BALANCE_WARN_THRESHOLD: "-2000"
+      # Uncomment and fill in for OIDC:
+      OIDC_ISSUER: https://auth.faigle.dev/application/o/bifi/
+      OIDC_CLIENT_ID: 0b947G6UmFJYTMgR55LMMw8eg1yxWV2txIaO52MQ
+      OIDC_CLIENT_SECRET: vKL3GAwlFg49apXSuQ6xBXzjlN38PWr2RyACGlr7IPhQwdX9iO0982GGG3kDeK1lGKSEirUUFGBVAGvvSIo1wpII1utvpru24sXyl1rdG7xsnc4OsRfoQRXcrJB7dO31
+      OIDC_GROUPS_CLAIM: groups
+      OIDC_ADMIN_GROUP: Admin
+      OIDC_MODERATOR_GROUP: Engineer
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: npm run db:migrate
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      DATABASE_URL: postgresql://bifi:bifi_password@db:5432/bifi
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - tools
+
+volumes:
+  pgdata_dev:
+  redisdata_dev:

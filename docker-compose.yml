@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: bifi
+      POSTGRES_USER: bifi
+      POSTGRES_PASSWORD: bifi_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bifi"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://bifi:bifi_password@db:5432/bifi
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+      APP_URL: http://localhost:3000
+      SESSION_SECRET: change-me-in-production
+      JACKPOT_ENABLED: "false"
+      ROLE_SYNC_ENABLED: "true"
+      BALANCE_WARN_THRESHOLD: "-2000"
+      # OIDC — fill in for SSO login
+      # OIDC_ISSUER: https://auth.example.com/application/o/bifi/
+      # OIDC_CLIENT_ID: your-client-id
+      # OIDC_CLIENT_SECRET: your-client-secret
+      OIDC_GROUPS_CLAIM: groups
+      OIDC_ADMIN_GROUP: bifi-admin
+      OIDC_MODERATOR_GROUP: bifi-moderator
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:

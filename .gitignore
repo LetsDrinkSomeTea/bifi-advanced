@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env
+pgdata/
+*.local
+
+# drizzle
+drizzle/meta/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+specs.md
