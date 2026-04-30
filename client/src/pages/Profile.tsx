@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { Layout } from '../components/layout/Layout'
 import { Modal } from '../components/Modal'
 import { AchievementGrid } from '../components/AchievementGrid'
+import { ActivityItem, type ActivityUser, ProfileLink } from '../components/ActivityItem'
 import { useAuth } from '../hooks/useAuth'
 import { usePublicProfile, useUpdateProfile } from '../hooks/useProfile'
 import { ProstVoucher, useProstVouchers } from '../hooks/useProst'
@@ -99,23 +100,54 @@ function EditProfileModal({ open, onClose, hasSso }: { open: boolean; onClose: (
 }
 
 
+type StackedVoucher = ProstVoucher & { count: number }
+
 // ─── Voucher Item ────────────────────────────────────────────────────────────────
-function ProstVoucherItem({ voucher }: { voucher: ProstVoucher }) {
-  // Hier ist der Hook erlaubt, da er auf Root-Level der Komponente liegt
+function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }) {
   const { data: profile, isLoading } = usePublicProfile(voucher.fromUserId)
+  const donor: ActivityUser = {
+    id: voucher.fromUserId,
+    displayName: profile?.displayName ?? 'Unbekannt',
+    avatarUrl: profile?.avatarUrl ?? null,
+  }
+  const drink = `${voucher.buyableName}${voucher.variantName ? ` ${voucher.variantName}` : ''}`
+  const isStacked = voucher.count > 1
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-card">
-      <div>
-        <p className="text-sm font-medium">
-          {voucher.buyableName} <span className="text-muted-foreground font-normal">{voucher.variantName}</span>
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {/* Hier zeigst du den Namen an, mit einem Fallback während es lädt */}
-          Geschenk von <span className="font-semibold">{isLoading ? '...' : (profile?.displayName || 'Unbekannt')}</span> • wird beim nächsten Kauf eingelöst
-        </p>
-      </div>
-      <span className="text-sm font-semibold text-green-500">+{formatCents(voucher.amount)}</span>
+    <div className={cn('group relative', isStacked && 'mb-2 mr-2')}>
+      {isStacked && (
+        <>
+          {/* Deepest layer */}
+          <div className="pointer-events-none absolute inset-0 z-0 rounded-xl border border-border/50 bg-card translate-x-2 translate-y-2 transition-transform duration-200 group-hover:translate-x-2.5 group-hover:translate-y-2.5" />
+          {/* Middle layer */}
+          <div className="pointer-events-none absolute inset-0 z-0 rounded-xl border border-border/80 bg-card translate-x-1 translate-y-1 transition-transform duration-200 group-hover:translate-x-1.5 group-hover:translate-y-1.5" />
+        </>
+      )}
+      <ActivityItem
+        user={donor}
+        icon="🍺"
+        createdAt={voucher.createdAt}
+        className='relative z-10 rounded-xl border border-border bg-background px-3 py-2 transition-transform duration-200'
+      >
+        <div className="flex-1 pr-1">
+          {isLoading ? (
+            <span className="font-semibold">...</span>
+          ) : (
+            <ProfileLink user={donor} />
+          )}{' '}
+          hat dir <span className="font-medium">{drink}</span> geschenkt (
+          <span className="font-semibold text-green-500">
+            +{formatCents(voucher.amount)}
+          </span>
+          )
+        </div>
+        {/* Prominent, always-visible count badge */}
+        {isStacked && (
+          <span className="absolute -top-1.5 -right-1.5 z-20 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-lg">
+            {voucher.count}x
+          </span>
+        )}
+      </ActivityItem>
     </div>
   )
 }
@@ -127,6 +159,27 @@ export function Profile() {
   const { data: profile, isLoading: profileLoading } = usePublicProfile(user?.id)
   const { data: vouchers } = useProstVouchers()
   const [editOpen, setEditOpen] = useState(false)
+  const stackedVouchers = useMemo<StackedVoucher[]>(() => {
+    if (!vouchers || vouchers.length === 0) return []
+
+    const grouped = new Map<string, StackedVoucher>()
+    for (const voucher of vouchers) {
+      const key = `${voucher.fromUserId}::${voucher.variantId}::${voucher.amount}`
+      const existing = grouped.get(key)
+      if (existing) {
+        existing.count += 1
+        if (new Date(voucher.createdAt).getTime() > new Date(existing.createdAt).getTime()) {
+          existing.createdAt = voucher.createdAt
+        }
+      } else {
+        grouped.set(key, { ...voucher, count: 1 })
+      }
+    }
+
+    return Array.from(grouped.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
+  }, [vouchers])
 
   return (
     <Layout>
@@ -200,15 +253,14 @@ export function Profile() {
         />
 
         {/* Prost vouchers */}
-        {vouchers && vouchers.length > 0 && (
+        {stackedVouchers.length > 0 && (
           <div>
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Prost-Gutscheine 🍺
             </h2>
-            <div className="space-y-2">
-              {/* Hier rufst du jetzt einfach deine neue Komponente auf */}
-              {vouchers.map((v) => (
-                <ProstVoucherItem key={v.id} voucher={v} />
+            <div className="rounded-2xl border border-border bg-card p-3 space-y-2">
+              {stackedVouchers.map((v) => (
+                <ProstVoucherItem key={`${v.fromUserId}-${v.variantId}-${v.amount}`} voucher={v} />
               ))}
             </div>
           </div>

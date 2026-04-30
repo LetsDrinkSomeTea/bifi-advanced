@@ -11,7 +11,6 @@ const TYPE_LABEL: Record<string, string> = {
   deposit: 'Einzahlung',
   correction: 'Korrektur',
   jackpot: 'Jackpot 🎰',
-  prost: 'Prost 🍺',
 }
 
 function txnLabel(txn: TransactionWithItems): string {
@@ -89,6 +88,8 @@ export function TransactionList({ transactions, isLoading, skeletonCount = 5 }: 
               <p className={cn('text-sm font-medium truncate', isCancelled && 'line-through')}>
                 {txnLabel(txn)}
                 {txn.groupId && <span className="ml-1.5 text-sm text-muted-foreground">{groupSummary ? groupSummary.name : "Gruppeneinkauf"}</span>}
+                {txn.type === 'prost' && <span className="ml-1.5 text-sm">{groupSummary ? groupSummary.name : 'verschenkt'}</span>}
+
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {formatRelative(txn.createdAt)}

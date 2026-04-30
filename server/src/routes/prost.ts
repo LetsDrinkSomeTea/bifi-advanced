@@ -7,6 +7,7 @@ import {
   buyables,
   productVariants,
   prostVouchers,
+  transactionItems,
   transactions,
   users,
 } from "../db/schema.ts";
@@ -78,7 +79,15 @@ router.post("/", requireAuth, zValidator("json", ProstSchema), async (c) => {
         totalAmount: -amount,
       })
       .returning();
-
+    await tx
+      .insert(transactionItems)
+      .values({
+        transactionId: txn!.id,
+        buyableId: variant.buyableId,
+        variantId: variant.id,
+        unitPrice: amount,
+        totalPrice: amount,
+      });
     await tx
       .update(users)
       .set({ balance: sql`balance - ${amount}`, updatedAt: new Date() })

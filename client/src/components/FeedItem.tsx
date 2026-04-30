@@ -1,8 +1,7 @@
-import { Link } from 'wouter'
 import type { FeedEntry } from '../hooks/useFeed'
 import { useAuth } from '../hooks/useAuth'
 import { ACHIEVEMENTS } from '@shared/achievements'
-import { formatTimestamp, cn } from '../lib/utils'
+import { ActivityItem, type ActivityUser, ProfileLink } from './ActivityItem'
 
 type Item = { name: string; variantName: string; count: number }
 
@@ -28,30 +27,12 @@ const TYPE_EMOJI: Record<string, string> = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function AvatarNode({ user }: { user: { id: string; displayName: string; avatarUrl: string | null } }) {
-  return (
-    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold overflow-hidden flex-shrink-0">
-      {user.avatarUrl
-        ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
-        : <span>{user.displayName[0]?.toUpperCase()}</span>}
-    </div>
-  )
-}
-
-function UserLink({ user }: { user: { id: string; displayName: string } }) {
-  return (
-    <Link href={`/profile/${user.id}`} className="font-semibold hover:underline">
-      {user.displayName}
-    </Link>
-  )
-}
-
-type ActorUser = { id: string; displayName: string; avatarUrl: string | null }
+type ActorUser = ActivityUser
 type TargetUser = { id: string; displayName: string; avatarUrl: string | null } | null
 
 function Actor({ user, currentUserId }: { user: ActorUser; currentUserId: string | undefined }) {
   if (currentUserId && user.id === currentUserId) return <span className="font-semibold">Du</span>
-  return <UserLink user={user} />
+  return <ProfileLink user={user} />
 }
 
 function targetName(
@@ -61,7 +42,7 @@ function targetName(
 ): React.ReactNode {
   if (!target) return accusative ? 'jemanden' : 'jemandem'
   if (currentUserId && target.id === currentUserId) return accusative ? 'dich' : 'dir'
-  return <UserLink user={target} />
+  return <ProfileLink user={target} />
 }
 
 // ─── Feed text ────────────────────────────────────────────────────────────────
@@ -130,7 +111,7 @@ function feedText(entry: GroupedFeedEntry, currentUserId: string | undefined): R
     case 'friendship_started': {
       const isTarget = !!currentUserId && targetUser?.id === currentUserId
       if (isMe) return <>Du und {targetName(targetUser, currentUserId, true)} seid jetzt befreundet 🤝</>
-      if (isTarget) return <>{<UserLink user={user} />} und du seid jetzt befreundet 🤝</>
+      if (isTarget) return <><ProfileLink user={user} /> und du seid jetzt befreundet 🤝</>
       return <><Actor user={user} currentUserId={currentUserId} /> und {targetName(targetUser, undefined)} sind jetzt befreundet 🤝</>
     }
     case 'goal_reached': {
@@ -162,22 +143,8 @@ export function FeedItem({ entry, hasConnector = false }: Props) {
   const emoji = TYPE_EMOJI[entry.type] ?? '•'
 
   return (
-    <div className="flex items-start gap-3">
-      <div className="flex flex-col items-center flex-shrink-0">
-        <div className="relative">
-          <Link href={`/profile/${entry.user.id}`}>
-            <AvatarNode user={entry.user} />
-          </Link>
-          <span className="absolute -bottom-1 -right-1 text-[11px] leading-none select-none bg-background rounded-full">
-            {emoji}
-          </span>
-        </div>
-        {hasConnector && <div className="w-px bg-border mt-2 flex-1 min-h-[1.5rem]" />}
-      </div>
-      <div className={cn('flex-1 min-w-0 pt-0.5', hasConnector && 'pb-3')}>
-        <p className="text-sm leading-snug">{feedText(entry, currentUser?.id)}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{formatTimestamp(entry.createdAt)}</p>
-      </div>
-    </div>
+    <ActivityItem user={entry.user} icon={emoji} hasConnector={hasConnector} createdAt={entry.createdAt}>
+      {feedText(entry, currentUser?.id)}
+    </ActivityItem>
   )
 }
