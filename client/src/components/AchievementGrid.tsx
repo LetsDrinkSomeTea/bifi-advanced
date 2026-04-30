@@ -172,21 +172,25 @@ export function AchievementGrid({ achievements, limit, allLink }: Props) {
   const unlockedMap = new Map(achievements.map((a) => [a.key, new Date(a.unlockedAt)]))
   const allCards = buildCards(unlockedMap)
 
-  let displayCards: Card[]
+  let displayCards: Card[] = allCards
+  allCards.sort((a, b) => {
+    const aDate = a.kind === 'group' ? a.latestUnlockedAt : a.unlockedAt
+    const bDate = b.kind === 'group' ? b.latestUnlockedAt : b.unlockedAt
+
+    const aLockedAndHidden = !aDate && a.hidden;
+    const bLockedAndHidden = !bDate && b.hidden;
+
+    if (aLockedAndHidden && !bLockedAndHidden) return 1;
+    if (!aLockedAndHidden && bLockedAndHidden) return -1;
+
+    if (!aDate && !bDate) return 0
+    if (!aDate) return 1
+    if (!bDate) return -1
+
+    return bDate.getTime() - aDate.getTime()
+  })
   if (limit !== undefined) {
-    // Only unlocked cards, sorted by most recently touched tier (newest first)
-    const unlocked = allCards.filter((c) => (c.kind === 'group' ? c.anyUnlocked : c.unlocked))
-    unlocked.sort((a, b) => {
-      const aDate = a.kind === 'group' ? a.latestUnlockedAt : a.unlockedAt
-      const bDate = b.kind === 'group' ? b.latestUnlockedAt : b.unlockedAt
-      if (!aDate && !bDate) return 0
-      if (!aDate) return 1
-      if (!bDate) return -1
-      return bDate.getTime() - aDate.getTime()
-    })
-    displayCards = unlocked.slice(0, limit)
-  } else {
-    displayCards = allCards
+    displayCards = allCards.slice(0, limit)
   }
 
   return (

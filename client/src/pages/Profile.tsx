@@ -5,7 +5,7 @@ import { Modal } from '../components/Modal'
 import { AchievementGrid } from '../components/AchievementGrid'
 import { useAuth } from '../hooks/useAuth'
 import { usePublicProfile, useUpdateProfile } from '../hooks/useProfile'
-import { useProstVouchers } from '../hooks/useProst'
+import { ProstVoucher, useProstVouchers } from '../hooks/useProst'
 import { formatCents, balanceColor, cn } from '../lib/utils'
 
 const ROLE_LABEL: Record<string, string> = {
@@ -98,6 +98,28 @@ function EditProfileModal({ open, onClose, hasSso }: { open: boolean; onClose: (
   )
 }
 
+
+// ─── Voucher Item ────────────────────────────────────────────────────────────────
+function ProstVoucherItem({ voucher }: { voucher: ProstVoucher }) {
+  // Hier ist der Hook erlaubt, da er auf Root-Level der Komponente liegt
+  const { data: profile, isLoading } = usePublicProfile(voucher.fromUserId)
+
+  return (
+    <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-card">
+      <div>
+        <p className="text-sm font-medium">
+          {voucher.buyableName} <span className="text-muted-foreground font-normal">{voucher.variantName}</span>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {/* Hier zeigst du den Namen an, mit einem Fallback während es lädt */}
+          Geschenk von <span className="font-semibold">{isLoading ? '...' : (profile?.displayName || 'Unbekannt')}</span> • wird beim nächsten Kauf eingelöst
+        </p>
+      </div>
+      <span className="text-sm font-semibold text-green-500">+{formatCents(voucher.amount)}</span>
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export function Profile() {
@@ -184,14 +206,9 @@ export function Profile() {
               Prost-Gutscheine 🍺
             </h2>
             <div className="space-y-2">
+              {/* Hier rufst du jetzt einfach deine neue Komponente auf */}
               {vouchers.map((v) => (
-                <div key={v.id} className="flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-card">
-                  <div>
-                    <p className="text-sm font-medium">{v.buyableName} <span className="text-muted-foreground font-normal">{v.variantName}</span></p>
-                    <p className="text-xs text-muted-foreground">wird beim nächsten Kauf eingelöst</p>
-                  </div>
-                  <span className="text-sm font-semibold text-green-500">+{formatCents(v.amount)}</span>
-                </div>
+                <ProstVoucherItem key={v.id} voucher={v} />
               ))}
             </div>
           </div>

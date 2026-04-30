@@ -39,7 +39,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
       setFeedback(null)
       setGroupId(null)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buyable?.id, initialVariantId])
 
   if (!open || !buyable) return null
@@ -48,7 +48,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
   const unitPrice = selectedVariant?.price ?? 0
   const totalPrice = unitPrice * quantity
   const canBuy = !!variantId
-  const hasVoucher = !!variantId && voucherSet.has(variantId)
+  const hasVoucher = !!variantId && voucherSet.has(variantId) && !groupId
 
   const selectedGroup = groups?.find((g) => g.id === groupId)
   const memberCount = selectedGroup?.memberCount ?? 1
@@ -95,8 +95,8 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                 {selectedVariant.name}
               </span>
               {voucherSet.has(selectedVariant.id) && (
-                <span className="text-xs font-medium px-2 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-full">
-                  🎁 Ausgegeben
+                <span className="text-sm font-medium px-2.5 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-full">
+                  🎁
                 </span>
               )}
             </div>
@@ -207,8 +207,11 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
             {isPending
               ? 'Kaufen…'
               : hasVoucher
-              ? `🎁 Einlösen · ${priceLabel}`
-              : `Kaufen · ${priceLabel}`}
+                ? <span className="inline-flex items-center gap-1.5">
+                  Wurde dir ausgegeben ·
+                  <span className="line-through opacity-70">{priceLabel}</span>
+                </span>
+                : `Kaufen · ${priceLabel}`}
           </button>
         </div>
       </div>

@@ -1,36 +1,46 @@
-import { Hono } from 'hono'
-import { zValidator } from '@hono/zod-validator'
-import { z } from 'zod'
-import { and, eq, isNull, sql } from 'drizzle-orm'
-import { db } from '../db/index.ts'
-import { buyables, productVariants, prostVouchers, transactions, users } from '../db/schema.ts'
-import { emitFeedEvent } from '../services/feed.ts'
-import { requireAuth } from '../middleware/auth.ts'
-import { createNotification, pushInvalidate } from '../services/notifications.ts'
-import { checkAchievements } from '../services/achievements.ts'
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { z } from "zod";
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { db } from "../db/index.ts";
+import {
+  buyables,
+  productVariants,
+  prostVouchers,
+  transactions,
+  users,
+} from "../db/schema.ts";
+import { emitFeedEvent } from "../services/feed.ts";
+import { requireAuth } from "../middleware/auth.ts";
+import {
+  createNotification,
+  pushInvalidate,
+} from "../services/notifications.ts";
+import { checkAchievements } from "../services/achievements.ts";
 
-const router = new Hono()
+const router = new Hono();
 
 const ProstSchema = z.object({
   toUserId: z.string().uuid(),
   variantId: z.string().uuid(),
-})
+});
 
 // ─── POST /api/prost ──────────────────────────────────────────────────────────
 
-router.post('/', requireAuth, zValidator('json', ProstSchema), async (c) => {
-  const sender = c.get('user')
-  const { toUserId, variantId } = c.req.valid('json')
+router.post("/", requireAuth, zValidator("json", ProstSchema), async (c) => {
+  const sender = c.get("user");
+  const { toUserId, variantId } = c.req.valid("json");
 
   if (toUserId === sender.id) {
-    return c.json({ error: 'Cannot prost yourself', code: 'SELF_PROST' }, 400)
+    return c.json({ error: "Cannot prost yourself", code: "SELF_PROST" }, 400);
   }
 
   const [recipient] = await db
     .select({ id: users.id, displayName: users.displayName })
     .from(users)
-    .where(and(eq(users.id, toUserId), eq(users.isActive, true)))
-  if (!recipient) return c.json({ error: 'Recipient not found', code: 'NOT_FOUND' }, 404)
+    .where(and(eq(users.id, toUserId), eq(users.isActive, true)));
+  if (!recipient)
+    return c.json({ error: "Recipient not found", code: "NOT_FOUND" }, 404);
 
   const [variant] = await db
     .select({
@@ -43,10 +53,19 @@ router.post('/', requireAuth, zValidator('json', ProstSchema), async (c) => {
     })
     .from(productVariants)
     .innerJoin(buyables, eq(productVariants.buyableId, buyables.id))
-    .where(and(eq(productVariants.id, variantId), eq(productVariants.isActive, true)))
-  if (!variant) return c.json({ error: 'Variant not found or inactive', code: 'VARIANT_NOT_FOUND' }, 404)
+    .where(
+      and(
+        eq(productVariants.id, variantId),
+        eq(productVariants.isActive, true),
+      ),
+    );
+  if (!variant)
+    return c.json(
+      { error: "Variant not found or inactive", code: "VARIANT_NOT_FOUND" },
+      404,
+    );
 
-  const amount = variant.price
+  const amount = variant.price;
 
   const { txn, voucher } = await db.transaction(async (tx) => {
     // Debit sender
@@ -55,15 +74,15 @@ router.post('/', requireAuth, zValidator('json', ProstSchema), async (c) => {
       .values({
         userId: sender.id,
         initiatedBy: sender.id,
-        type: 'prost',
+        type: "prost",
         totalAmount: -amount,
       })
-      .returning()
+      .returning();
 
     await tx
       .update(users)
       .set({ balance: sql`balance - ${amount}`, updatedAt: new Date() })
-      .where(eq(users.id, sender.id))
+      .where(eq(users.id, sender.id));
 
     const [voucher] = await tx
       .insert(prostVouchers)
@@ -74,38 +93,47 @@ router.post('/', requireAuth, zValidator('json', ProstSchema), async (c) => {
         amount,
         fromTransactionId: txn!.id,
       })
-      .returning()
+      .returning();
 
-    return { txn: txn!, voucher: voucher! }
-  })
+    return { txn: txn!, voucher: voucher! };
+  });
 
   emitFeedEvent({
-    type: 'prost_sent',
+    type: "prost_sent",
     userId: sender.id,
     targetUserId: toUserId,
-    metadata: { variantId, amount, buyableName: variant.buyableName, variantName: variant.name },
-  })
+    metadata: {
+      variantId,
+      amount,
+      buyableName: variant.buyableName,
+      variantName: variant.name,
+    },
+  });
 
-  checkAchievements({ type: 'prost_sent', userId: sender.id }).catch(console.error)
-  checkAchievements({ type: 'prost_received', userId: toUserId }).catch(console.error)
+  checkAchievements({ type: "prost_sent", userId: sender.id }).catch(
+    console.error,
+  );
+  checkAchievements({ type: "prost_received", userId: toUserId }).catch(
+    console.error,
+  );
 
-  pushInvalidate(toUserId, ['vouchers'])
+  pushInvalidate(toUserId, ["vouchers"]);
 
   createNotification({
     userId: toUserId,
-    type: 'prost',
+    type: "prost",
     title: `${sender.displayName} hat dir einen ausgegeben! 🍺`,
     message: `Du hast einen ${variant.buyableName} ${variant.name} von ${sender.displayName} bekommen.`,
     relatedId: voucher.id,
-  }).catch(console.error)
+  }).catch(console.error);
 
-  return c.json({ txnId: txn.id, voucherId: voucher.id, amount }, 201)
-})
+  return c.json({ txnId: txn.id, voucherId: voucher.id, amount }, 201);
+});
 
 // ─── GET /api/prost/vouchers ──────────────────────────────────────────────────
 
-router.get('/vouchers', requireAuth, async (c) => {
-  const user = c.get('user')
+router.get("/vouchers", requireAuth, async (c) => {
+  const user = c.get("user");
 
   const rows = await db
     .select({
@@ -120,9 +148,15 @@ router.get('/vouchers', requireAuth, async (c) => {
     .from(prostVouchers)
     .innerJoin(productVariants, eq(prostVouchers.variantId, productVariants.id))
     .innerJoin(buyables, eq(productVariants.buyableId, buyables.id))
-    .where(and(eq(prostVouchers.toUserId, user.id), isNull(prostVouchers.redeemedAt), isNull(prostVouchers.creditedAt)))
+    .where(
+      and(
+        eq(prostVouchers.toUserId, user.id),
+        isNull(prostVouchers.redeemedAt),
+        isNull(prostVouchers.creditedAt),
+      ),
+    );
 
-  return c.json(rows)
-})
+  return c.json(rows);
+});
 
-export default router
+export default router;

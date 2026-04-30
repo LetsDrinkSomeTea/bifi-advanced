@@ -6,6 +6,7 @@ import { useBuyables } from '../hooks/useBuyables'
 import { useFavorites, useToggleFavorite } from '../hooks/useFavorites'
 import type { BuyableWithVariants } from '@shared/types'
 import { formatCents, cn } from '../lib/utils'
+import { useVoucherSet } from '@/hooks/useProst'
 
 export function Shop() {
   const { data: items, isLoading } = useBuyables()
@@ -16,6 +17,8 @@ export function Shop() {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
+
+  const voucherSet = useVoucherSet()
 
   const favoriteIds = useMemo(
     () => new Set(favorites?.map((f) => f.variantId) ?? []),
@@ -142,6 +145,7 @@ export function Shop() {
                     <div className="flex flex-wrap gap-2">
                       {activeVariants.map((v) => {
                         const isFav = favoriteIds.has(v.id)
+                        const hasVoucher = voucherSet.has(v.id)
                         return (
                           <div
                             key={v.id}
@@ -151,8 +155,9 @@ export function Shop() {
                               onClick={() => openSheet(item, v.id)}
                               className="pl-3 pr-2 py-1.5 text-sm text-left"
                             >
-                              <span className="font-medium">{v.name}</span>
-                              <span className="ml-1.5 text-muted-foreground">{formatCents(v.price)}</span>
+                              {hasVoucher && <span>🎁</span>}
+                              <span className="ml-1.5 font-medium">{v.name}</span>
+                              <span className={hasVoucher ? "ml-1.5 text-muted-foreground line-through" : "ml-1.5 text-muted-foreground"}>{formatCents(v.price)}</span>
                             </button>
                             <button
                               onClick={(e) => {

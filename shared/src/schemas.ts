@@ -32,10 +32,13 @@ export const MeResponseSchema = z.object({
 
 // ─── Buyables ─────────────────────────────────────────────────────────────────
 
+export const BUYABLE_CATEGORIES = ['alcoholic', 'soft_drink', 'food', 'snack', 'other'] as const
+export type BuyableCategory = typeof BUYABLE_CATEGORIES[number]
+
 export const CreateBuyableSchema = z.object({
   name: z.string().min(1).max(80),
   imageUrl: z.string().url().optional(),
-  category: z.string().max(50).optional(),
+  category: z.enum(BUYABLE_CATEGORIES).optional(),
   sortOrder: z.number().int().default(0),
   firstVariant: z.object({
     name: z.string().min(1).max(80),

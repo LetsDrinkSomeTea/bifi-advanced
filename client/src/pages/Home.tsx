@@ -15,7 +15,7 @@ type CardState = { variantId: string; status: 'buying' | 'done' | 'error' } | nu
 
 function HomeFeedPreview() {
   const { data, isLoading } = useFeed()
-  const entries = (data?.pages[0]?.data ?? []).slice(0, 3)
+  const entries = (data?.pages[0]?.data ?? []).slice(0, 5)
 
   return <FeedTimeline entries={entries} isLoading={isLoading} />
 }
@@ -109,13 +109,13 @@ export function Home() {
                         {fav.isAvailable && voucherSet.has(fav.variantId) && state !== 'buying' && state !== 'done' && state !== 'error' && (
                           <span className="text-sm">🎁</span>
                         )}
-                        <span className={cn('text-sm font-bold', !fav.isAvailable && 'text-muted-foreground')}>
+                        <span className={cn('text-sm font-bold', !fav.isAvailable && 'text-muted-foreground', voucherSet.has(fav.variantId) && "line-through text-muted-foreground")}>
                           {!fav.isAvailable
                             ? 'Nicht verfügbar'
                             : state === 'buying' ? '…'
-                            : state === 'done' ? '✓'
-                            : state === 'error' ? '✕'
-                            : formatCents(fav.price)}
+                              : state === 'done' ? '✓'
+                                : state === 'error' ? '✕'
+                                  : formatCents(fav.price)}
                         </span>
                       </div>
                     </div>
@@ -138,15 +138,6 @@ export function Home() {
           </div>
 
           <TransactionList transactions={recentTxns} isLoading={txnLoading} skeletonCount={3} />
-
-          {!txnLoading && recentTxns.length > 0 && (
-            <Link
-              href="/history"
-              className="block text-center text-xs text-muted-foreground hover:text-foreground py-2 transition-colors"
-            >
-              Alle Käufe anzeigen →
-            </Link>
-          )}
         </section>
 
         {/* Feed preview */}

@@ -1,8 +1,10 @@
+import { useMemo } from 'react'
 import { Trash2 } from 'lucide-react'
 import { useCancelTransaction } from '../hooks/useTransactions'
 import { useAuth } from '../hooks/useAuth'
 import type { TransactionWithItems } from '@shared/types'
 import { formatCents, formatRelative, cn } from '../lib/utils'
+import { GroupSummary, useGroups } from '@/hooks/useGroups'
 
 const TYPE_LABEL: Record<string, string> = {
   purchase: 'Kauf',
@@ -38,6 +40,15 @@ interface TransactionListProps {
 export function TransactionList({ transactions, isLoading, skeletonCount = 5 }: TransactionListProps) {
   const { mutate: cancel, isPending: cancelling } = useCancelTransaction()
   const { isModerator } = useAuth()
+  const { data: groups } = useGroups()
+
+  const groupMap = useMemo(() => {
+    const map = new Map<string, GroupSummary>()
+    if (groups) {
+      groups.forEach(g => map.set(g.id, g))
+    }
+    return map
+  }, [groups])
 
   if (isLoading) {
     return (
@@ -62,6 +73,9 @@ export function TransactionList({ transactions, isLoading, skeletonCount = 5 }: 
       {transactions.map((txn) => {
         const isCancelled = !!txn.cancelledAt
         const canCancel = cancelable(txn, isModerator)
+        const groupSummary = (txn.groupId !== undefined && txn.groupId !== null)
+          ? groupMap.get(txn.groupId)
+          : null
 
         return (
           <div
@@ -74,6 +88,7 @@ export function TransactionList({ transactions, isLoading, skeletonCount = 5 }: 
             <div className="flex-1 min-w-0">
               <p className={cn('text-sm font-medium truncate', isCancelled && 'line-through')}>
                 {txnLabel(txn)}
+                {txn.groupId && <span className="ml-1.5 text-sm text-muted-foreground">{groupSummary ? groupSummary.name : "Gruppeneinkauf"}</span>}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {formatRelative(txn.createdAt)}
