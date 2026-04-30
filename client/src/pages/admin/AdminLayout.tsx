@@ -12,7 +12,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation()
   return (
     <Layout>
-      <div className="border-b border-border sticky top-0 bg-background z-10">
+      <div className="border-b border-border sticky top-14 bg-background z-10">
         <div className="flex px-2 max-w-lg mx-auto">
           {TABS.map((tab) => (
             <Link

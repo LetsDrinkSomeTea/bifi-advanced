@@ -34,6 +34,27 @@ export function formatRelative(date: string | Date): string {
   return formatDate(date)
 }
 
+export function formatTimestamp(date: string | Date): string {
+  const now = Date.now()
+  const then = new Date(date).getTime()
+  const diffMin = Math.floor((now - then) / 60_000)
+
+  if (diffMin < 1) return 'gerade eben'
+  if (diffMin < 60) return `vor ${diffMin} Min.`
+
+  const d = new Date(date)
+  const timeStr = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+  const today = new Date()
+  if (d.toDateString() === today.toDateString()) return timeStr
+
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  if (d.toDateString() === yesterday.toDateString()) return `gestern, ${timeStr}`
+
+  const dateStr = d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })
+  return `${dateStr}, ${timeStr}`
+}
+
 export function balanceColor(cents: number): string {
   if (cents > 500) return 'text-green-500'
   if (cents >= 0) return 'text-yellow-500'

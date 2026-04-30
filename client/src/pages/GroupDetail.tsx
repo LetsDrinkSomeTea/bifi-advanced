@@ -38,7 +38,7 @@ function QRModal({ code, groupName, onClose }: { code: string; groupName: string
         </div>
         <div className="bg-white p-4 rounded-xl">
           <img
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(code)}&margin=0`}
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/join/${code}`)}&margin=0`}
             alt="QR Code"
             width={200}
             height={200}
@@ -194,7 +194,7 @@ export function GroupDetail() {
         {/* Danger zone */}
         <div className="space-y-2 pb-4">
           <button
-            onClick={() => leave(group.id, { onSuccess: () => navigate('/groups') })}
+            onClick={() => leave(group.id, { onSuccess: () => navigate('/social') })}
             disabled={leaving}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-1 disabled:opacity-50"
           >
@@ -206,7 +206,7 @@ export function GroupDetail() {
             <button
               onClick={() => {
                 if (confirm(`Gruppe „${group.name}" wirklich löschen?`)) {
-                  deleteGroup(group.id, { onSuccess: () => navigate('/groups') })
+                  deleteGroup(group.id, { onSuccess: () => navigate('/social') })
                 }
               }}
               disabled={deleting}

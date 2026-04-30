@@ -4,6 +4,7 @@ import { db } from '../db/index.ts'
 import { userFriendships, users } from '../db/schema.ts'
 import { requireAuth } from '../middleware/auth.ts'
 import { createNotification } from '../services/notifications.ts'
+import { emitFeedEvent } from '../services/feed.ts'
 
 const router = new Hono()
 
@@ -87,6 +88,7 @@ router.post('/:userId/request', requireAuth, async (c) => {
       message: `${user.displayName} hat deine Freundschaftsanfrage angenommen.`,
       relatedId: user.id,
     }).catch(console.error)
+    emitFeedEvent({ type: 'friendship_started', userId: user.id, targetUserId: userId })
 
     return c.json({ status: 'friends' })
   }
@@ -149,6 +151,7 @@ router.post('/:userId/accept', requireAuth, async (c) => {
     message: `${user.displayName} hat deine Freundschaftsanfrage angenommen.`,
     relatedId: user.id,
   }).catch(console.error)
+  emitFeedEvent({ type: 'friendship_started', userId: user.id, targetUserId: userId })
 
   return c.json({ status: 'friends' })
 })

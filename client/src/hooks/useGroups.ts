@@ -51,7 +51,7 @@ export function useCreateGroup() {
 export function useJoinGroup() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (inviteCode: string) => api.post('/api/groups/join', { inviteCode }),
+    mutationFn: (inviteCode: string) => api.post<GroupSummary>('/api/groups/join', { inviteCode }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['groups'] }),
   })
 }

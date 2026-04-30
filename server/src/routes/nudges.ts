@@ -4,7 +4,8 @@ import { z } from 'zod'
 import { and, eq } from 'drizzle-orm'
 import { db } from '../db/index.ts'
 import { redis } from '../db/redis.ts'
-import { activityFeed, nudges, users } from '../db/schema.ts'
+import { nudges, users } from '../db/schema.ts'
+import { emitFeedEvent } from '../services/feed.ts'
 import { requireAuth } from '../middleware/auth.ts'
 import { createNotification } from '../services/notifications.ts'
 
@@ -79,16 +80,8 @@ router.post('/:recipientId', requireAuth, zValidator('json', NudgeSchema), async
     relatedId: nudge!.id,
   }).catch(console.error)
 
-  // Public feed entry for preset nudges
   if (isPublic) {
-    db.insert(activityFeed)
-      .values({
-        userId: sender.id,
-        type: 'nudge',
-        targetUserId: recipientId,
-        metadata: { message },
-      })
-      .catch(console.error)
+    emitFeedEvent({ type: 'nudge', userId: sender.id, targetUserId: recipientId, metadata: { message } })
   }
 
   return c.json({ ok: true, message, isPublic }, 201)

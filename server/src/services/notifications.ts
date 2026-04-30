@@ -34,6 +34,17 @@ async function pushToUser(userId: string, event: string, data: unknown) {
   if (set.size === 0) sseClients.delete(userId)
 }
 
+export function pushInvalidate(userId: string, keys: string[]): void {
+  pushToUser(userId, 'invalidate', { keys }).catch(() => {})
+}
+
+export function broadcastInvalidate(keys: string[]): void {
+  const payload = { keys }
+  for (const userId of sseClients.keys()) {
+    pushToUser(userId, 'invalidate', payload).catch(() => {})
+  }
+}
+
 // ─── Notification creation ────────────────────────────────────────────────────
 
 type NotifType = typeof notifications.$inferInsert['type']

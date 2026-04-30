@@ -3,12 +3,13 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { and, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 import { db } from '../db/index.ts'
-import { activityFeed, buyables, groupMembers, productVariants, prostVouchers, transactionItems, transactions, users } from '../db/schema.ts'
+import { buyables, groupMembers, productVariants, prostVouchers, transactionItems, transactions, users } from '../db/schema.ts'
+import { emitFeedEvent } from '../services/feed.ts'
 import { requireAuth, requireRole } from '../middleware/auth.ts'
 import { purchaseRateLimit } from '../middleware/rateLimit.ts'
 import { getActiveDiscount } from '../services/promotions.ts'
 import { writeAuditLog } from '../services/audit.ts'
-import { createNotification } from '../services/notifications.ts'
+import { createNotification, pushInvalidate } from '../services/notifications.ts'
 import { checkAchievements } from '../services/achievements.ts'
 
 const router = new Hono()
@@ -247,7 +248,7 @@ router.post('/purchase', requireAuth, purchaseRateLimit, zValidator('json', Purc
         await tx.update(users).set({ balance: sql`balance - ${netShare}`, updatedAt: new Date() }).where(eq(users.id, memberId))
         if (mc > 0) await tx.update(transactions).set({ totalAmount: -netShare }).where(eq(transactions.id, splitTxn!.id))
 
-        // Notify member
+        pushInvalidate(memberId, ['balance', 'transactions'])
         createNotification({
           userId: memberId,
           type: 'system',
@@ -260,13 +261,11 @@ router.post('/purchase', requireAuth, purchaseRateLimit, zValidator('json', Purc
       return { txn: primary!, feedItems, voucherCredit: credit, voucherIds: ids }
     })
 
-    db.insert(activityFeed)
-      .values({ userId: user.id, type: 'purchase', metadata: { items: feedItems, totalAmount: cost, groupId: body.groupId, memberCount: n } })
-      .catch(console.error)
+    emitFeedEvent({ type: 'purchase', userId: user.id, metadata: { items: feedItems, totalAmount: cost, groupId: body.groupId, memberCount: n } })
 
     checkAchievements({ type: 'purchase', userId: user.id, purchaseHour: new Date().getHours() }).catch(console.error)
 
-    return c.json(primaryTxn.txn, 201)
+    return c.json({ ...primaryTxn.txn, voucherRedeemed: primaryTxn.voucherCredit > 0 }, 201)
   }
 
   // ── Solo purchase ─────────────────────────────────────────────────────────
@@ -293,9 +292,7 @@ router.post('/purchase', requireAuth, purchaseRateLimit, zValidator('json', Purc
     return { txn: created!, redeemedVoucherIds: ids, voucherCredit: credit, feedItems }
   })
 
-  db.insert(activityFeed)
-    .values({ userId: user.id, type: 'purchase', metadata: { items: feedItems, totalAmount: txn.totalAmount } })
-    .catch(console.error)
+  emitFeedEvent({ type: 'purchase', userId: user.id, metadata: { items: feedItems, totalAmount: txn.totalAmount } })
 
   checkAchievements({ type: 'purchase', userId: user.id, purchaseHour: new Date().getHours() }).catch(console.error)
 

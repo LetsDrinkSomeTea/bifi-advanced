@@ -9,14 +9,14 @@ import { History } from './pages/History'
 import { Feed } from './pages/Feed'
 import { Profile } from './pages/Profile'
 import { ProfileDetail } from './pages/ProfileDetail'
-import { People } from './pages/People'
-import { Groups } from './pages/Groups'
+import { Social } from './pages/Social'
 import { GroupDetail } from './pages/GroupDetail'
-import { Leaderboard } from './pages/Leaderboard'
+import { Jackpot } from './pages/Jackpot'
 import { AllAchievements } from './pages/AllAchievements'
 import { AdminUsers } from './pages/admin/Users'
 import { AdminProducts } from './pages/admin/Products'
 import { AdminSettlement } from './pages/admin/Settlement'
+import { JoinGroup } from './pages/JoinGroup'
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -52,17 +52,20 @@ export function App() {
         <Route path="/feed">
           <ProtectedRoute><Feed /></ProtectedRoute>
         </Route>
-        <Route path="/people">
-          <ProtectedRoute><People /></ProtectedRoute>
-        </Route>
-        <Route path="/groups">
-          <ProtectedRoute><Groups /></ProtectedRoute>
+        <Route path="/social">
+          <ProtectedRoute><Social /></ProtectedRoute>
         </Route>
         <Route path="/groups/:groupId">
           {(params) => <ProtectedRoute><GroupDetail /></ProtectedRoute>}
         </Route>
+        <Route path="/join/:code">
+          {() => <ProtectedRoute><JoinGroup /></ProtectedRoute>}
+        </Route>
         <Route path="/leaderboard">
-          <ProtectedRoute><Leaderboard /></ProtectedRoute>
+          <Redirect to="/social" />
+        </Route>
+        <Route path="/jackpot">
+          <ProtectedRoute><Jackpot /></ProtectedRoute>
         </Route>
         <Route path="/achievements">
           <ProtectedRoute><AllAchievements /></ProtectedRoute>

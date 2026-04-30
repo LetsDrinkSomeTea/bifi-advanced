@@ -5,6 +5,7 @@ export interface ProstVoucher {
   id: string
   fromUserId: string
   variantId: string
+  buyableName: string
   variantName: string
   amount: number
   createdAt: string

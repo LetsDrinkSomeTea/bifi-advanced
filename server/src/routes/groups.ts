@@ -5,7 +5,8 @@ import { alias } from 'drizzle-orm/pg-core'
 import { and, eq, sql } from 'drizzle-orm'
 import { randomBytes } from 'node:crypto'
 import { db } from '../db/index.ts'
-import { activityFeed, groupMembers, groups, users } from '../db/schema.ts'
+import { groupMembers, groups, users } from '../db/schema.ts'
+import { emitFeedEvent } from '../services/feed.ts'
 import { requireAuth } from '../middleware/auth.ts'
 import { checkAchievements } from '../services/achievements.ts'
 
@@ -101,15 +102,7 @@ router.post('/', requireAuth, zValidator('json', CreateGroupSchema), async (c) =
     role: 'owner',
   })
 
-  // Feed entry
-  db.insert(activityFeed)
-    .values({
-      userId: user.id,
-      type: 'group_join',
-      targetGroupId: group!.id,
-      metadata: { groupName: name },
-    })
-    .catch(console.error)
+  emitFeedEvent({ type: 'group_created', userId: user.id, targetGroupId: group!.id, metadata: { groupName: name } })
 
   checkAchievements({ type: 'group_founded', userId: user.id }).catch(console.error)
 
@@ -137,14 +130,7 @@ router.post('/join', requireAuth, zValidator('json', z.object({ inviteCode: z.st
 
   await db.insert(groupMembers).values({ groupId: group.id, userId: user.id, role: 'member' })
 
-  db.insert(activityFeed)
-    .values({
-      userId: user.id,
-      type: 'group_join',
-      targetGroupId: group.id,
-      metadata: { groupName: group.name },
-    })
-    .catch(console.error)
+  emitFeedEvent({ type: 'group_join', userId: user.id, targetGroupId: group.id, metadata: { groupName: group.name } })
 
   return c.json(group, 201)
 })
@@ -155,10 +141,10 @@ router.post('/:id/leave', requireAuth, async (c) => {
   const user = c.get('user')
   const { id } = c.req.param()
 
-  const [membership] = await db
-    .select()
-    .from(groupMembers)
-    .where(and(eq(groupMembers.groupId, id), eq(groupMembers.userId, user.id)))
+  const [[membership], [group]] = await Promise.all([
+    db.select().from(groupMembers).where(and(eq(groupMembers.groupId, id), eq(groupMembers.userId, user.id))),
+    db.select({ id: groups.id, name: groups.name }).from(groups).where(eq(groups.id, id)),
+  ])
   if (!membership) return c.json({ error: 'Not a member', code: 'NOT_MEMBER' }, 404)
 
   if (membership.role === 'owner') {
@@ -171,12 +157,14 @@ router.post('/:id/leave', requireAuth, async (c) => {
       // Last member — archive the group
       await db.update(groups).set({ isActive: false }).where(eq(groups.id, id))
       await db.delete(groupMembers).where(eq(groupMembers.groupId, id))
+      emitFeedEvent({ type: 'group_deleted', userId: user.id, metadata: { groupName: group?.name ?? id } })
       return c.body(null, 204)
     }
     return c.json({ error: 'Transfer ownership before leaving', code: 'OWNER_MUST_TRANSFER' }, 400)
   }
 
   await db.delete(groupMembers).where(and(eq(groupMembers.groupId, id), eq(groupMembers.userId, user.id)))
+  emitFeedEvent({ type: 'group_left', userId: user.id, targetGroupId: id, metadata: { groupName: group?.name ?? id } })
   return c.body(null, 204)
 })
 
@@ -204,14 +192,15 @@ router.delete('/:id', requireAuth, async (c) => {
   const self = c.get('user')
   const { id } = c.req.param()
 
-  const [myMembership] = await db
-    .select()
-    .from(groupMembers)
-    .where(and(eq(groupMembers.groupId, id), eq(groupMembers.userId, self.id)))
+  const [[myMembership], [group]] = await Promise.all([
+    db.select().from(groupMembers).where(and(eq(groupMembers.groupId, id), eq(groupMembers.userId, self.id))),
+    db.select({ id: groups.id, name: groups.name }).from(groups).where(eq(groups.id, id)),
+  ])
   if (myMembership?.role !== 'owner') return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403)
 
   await db.update(groups).set({ isActive: false }).where(eq(groups.id, id))
   await db.delete(groupMembers).where(eq(groupMembers.groupId, id))
+  emitFeedEvent({ type: 'group_deleted', userId: self.id, metadata: { groupName: group?.name ?? id } })
   return c.body(null, 204)
 })
 

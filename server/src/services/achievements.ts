@@ -1,6 +1,7 @@
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import { db } from '../db/index.ts'
-import { activityFeed, donationContributions, prostVouchers, transactions, userAchievements } from '../db/schema.ts'
+import { donationContributions, prostVouchers, transactions, userAchievements } from '../db/schema.ts'
+import { emitFeedEvent } from './feed.ts'
 import { ACHIEVEMENTS } from '../../../shared/src/achievements.ts'
 import type { AchievementKey } from '../../../shared/src/achievements.ts'
 import { createNotification } from './notifications.ts'
@@ -102,9 +103,7 @@ function notifyAchievement(userId: string, key: AchievementKey) {
     title: `${def.icon} Achievement freigeschaltet!`,
     message: `${def.name}${tierSuffix}: ${def.description}`,
   }).catch(console.error)
-  db.insert(activityFeed)
-    .values({ userId, type: 'achievement', metadata: { achievementKey: key } })
-    .catch(console.error)
+  emitFeedEvent({ type: 'achievement', userId, metadata: { achievementKey: key } })
 }
 
 export async function checkAchievements(event: AchievementEvent): Promise<void> {

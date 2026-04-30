@@ -3,9 +3,10 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import { db } from '../db/index.ts'
-import { activityFeed, productVariants, prostVouchers, transactions, users } from '../db/schema.ts'
+import { buyables, productVariants, prostVouchers, transactions, users } from '../db/schema.ts'
+import { emitFeedEvent } from '../services/feed.ts'
 import { requireAuth } from '../middleware/auth.ts'
-import { createNotification } from '../services/notifications.ts'
+import { createNotification, pushInvalidate } from '../services/notifications.ts'
 import { checkAchievements } from '../services/achievements.ts'
 
 const router = new Hono()
@@ -32,8 +33,16 @@ router.post('/', requireAuth, zValidator('json', ProstSchema), async (c) => {
   if (!recipient) return c.json({ error: 'Recipient not found', code: 'NOT_FOUND' }, 404)
 
   const [variant] = await db
-    .select({ id: productVariants.id, name: productVariants.name, price: productVariants.price, isActive: productVariants.isActive, buyableId: productVariants.buyableId })
+    .select({
+      id: productVariants.id,
+      name: productVariants.name,
+      price: productVariants.price,
+      isActive: productVariants.isActive,
+      buyableId: productVariants.buyableId,
+      buyableName: buyables.name,
+    })
     .from(productVariants)
+    .innerJoin(buyables, eq(productVariants.buyableId, buyables.id))
     .where(and(eq(productVariants.id, variantId), eq(productVariants.isActive, true)))
   if (!variant) return c.json({ error: 'Variant not found or inactive', code: 'VARIANT_NOT_FOUND' }, 404)
 
@@ -70,25 +79,23 @@ router.post('/', requireAuth, zValidator('json', ProstSchema), async (c) => {
     return { txn: txn!, voucher: voucher! }
   })
 
-  // Feed entry
-  db.insert(activityFeed)
-    .values({
-      userId: sender.id,
-      type: 'prost_sent',
-      targetUserId: toUserId,
-      metadata: { variantId, amount },
-    })
-    .catch(console.error)
+  emitFeedEvent({
+    type: 'prost_sent',
+    userId: sender.id,
+    targetUserId: toUserId,
+    metadata: { variantId, amount, buyableName: variant.buyableName, variantName: variant.name },
+  })
 
   checkAchievements({ type: 'prost_sent', userId: sender.id }).catch(console.error)
   checkAchievements({ type: 'prost_received', userId: toUserId }).catch(console.error)
 
-  // Notify
+  pushInvalidate(toUserId, ['vouchers'])
+
   createNotification({
     userId: toUserId,
     type: 'prost',
-    title: `Prost von ${sender.displayName}! 🍺`,
-    message: `Du hast einen Gutschein für dein nächstes Getränk erhalten.`,
+    title: `${sender.displayName} hat dir einen ausgegeben! 🍺`,
+    message: `Du hast einen ${variant.buyableName} ${variant.name} von ${sender.displayName} bekommen.`,
     relatedId: voucher.id,
   }).catch(console.error)
 
@@ -107,10 +114,12 @@ router.get('/vouchers', requireAuth, async (c) => {
       variantId: prostVouchers.variantId,
       amount: prostVouchers.amount,
       createdAt: prostVouchers.createdAt,
+      buyableName: buyables.name,
       variantName: productVariants.name,
     })
     .from(prostVouchers)
     .innerJoin(productVariants, eq(prostVouchers.variantId, productVariants.id))
+    .innerJoin(buyables, eq(productVariants.buyableId, buyables.id))
     .where(and(eq(prostVouchers.toUserId, user.id), isNull(prostVouchers.redeemedAt), isNull(prostVouchers.creditedAt)))
 
   return c.json(rows)

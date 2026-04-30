@@ -1,13 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'wouter'
-import { ChevronRight, LogOut, Pencil } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import { Layout } from '../components/layout/Layout'
 import { Modal } from '../components/Modal'
-import { TransactionList } from '../components/TransactionList'
 import { AchievementGrid } from '../components/AchievementGrid'
-import { useAuth, useLogout } from '../hooks/useAuth'
+import { useAuth } from '../hooks/useAuth'
 import { usePublicProfile, useUpdateProfile } from '../hooks/useProfile'
-import { useTransactionHistory } from '../hooks/useTransactions'
 import { useProstVouchers } from '../hooks/useProst'
 import { formatCents, balanceColor, cn } from '../lib/utils'
 
@@ -106,12 +103,8 @@ function EditProfileModal({ open, onClose, hasSso }: { open: boolean; onClose: (
 export function Profile() {
   const { user } = useAuth()
   const { data: profile, isLoading: profileLoading } = usePublicProfile(user?.id)
-  const { data: txnData, isLoading: txnLoading } = useTransactionHistory()
   const { data: vouchers } = useProstVouchers()
-  const logout = useLogout()
   const [editOpen, setEditOpen] = useState(false)
-
-  const recentTxns = (txnData?.pages[0]?.data ?? []).slice(0, 5)
 
   return (
     <Layout>
@@ -194,7 +187,7 @@ export function Profile() {
               {vouchers.map((v) => (
                 <div key={v.id} className="flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-card">
                   <div>
-                    <p className="text-sm font-medium">{v.variantName}</p>
+                    <p className="text-sm font-medium">{v.buyableName} <span className="text-muted-foreground font-normal">{v.variantName}</span></p>
                     <p className="text-xs text-muted-foreground">wird beim nächsten Kauf eingelöst</p>
                   </div>
                   <span className="text-sm font-semibold text-green-500">+{formatCents(v.amount)}</span>
@@ -204,25 +197,6 @@ export function Profile() {
           </div>
         )}
 
-        {/* Recent purchases */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Letzte Käufe</h2>
-            <Link href="/history" className="flex items-center gap-0.5 text-xs text-primary hover:underline">
-              Alle <ChevronRight size={13} />
-            </Link>
-          </div>
-          <TransactionList transactions={recentTxns} isLoading={txnLoading} skeletonCount={3} />
-        </div>
-
-        {/* Logout */}
-        <button
-          onClick={logout}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2"
-        >
-          <LogOut size={16} />
-          Abmelden
-        </button>
       </div>
 
       <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} hasSso={profile?.hasSso ?? false} />

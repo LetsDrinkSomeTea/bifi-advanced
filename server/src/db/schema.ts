@@ -41,9 +41,13 @@ export const feedTypeEnum = pgEnum('feed_type', [
   'purchase',
   'achievement',
   'group_join',
+  'group_created',
+  'group_left',
+  'group_deleted',
   'nudge',
   'prost_sent',
   'prost_received',
+  'friendship_started',
   'goal_reached',
   'jackpot_win',
 ])

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bell } from 'lucide-react'
-import { Link } from 'wouter'
-import { useAuth } from '../../hooks/useAuth'
+import { Bell, UserCircle, ShieldCheck, LogOut } from 'lucide-react'
+import { useLocation } from 'wouter'
+import { useAuth, useLogout } from '../../hooks/useAuth'
 import { useNotifications, useMarkRead, useMarkAllRead, useSSE } from '../../hooks/useNotifications'
 import { formatCents, formatRelative, balanceColor, cn } from '../../lib/utils'
 
@@ -9,10 +9,6 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
   const { data: notifs } = useNotifications()
   const { mutate: markRead } = useMarkRead()
   const { mutate: markAll } = useMarkAllRead()
-
-  const handleMarkRead = (id: string) => {
-    markRead(id)
-  }
 
   if (!notifs || notifs.length === 0) {
     return (
@@ -37,7 +33,7 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
         {notifs.map((n) => (
           <button
             key={n.id}
-            onClick={() => handleMarkRead(n.id)}
+            onClick={() => markRead(n.id)}
             className="w-full text-left px-4 py-3 hover:bg-accent transition-colors border-b border-border last:border-0"
           >
             <p className="text-sm font-medium leading-snug">{n.title}</p>
@@ -50,32 +46,72 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
   )
 }
 
+function AvatarMenuDropdown({ onClose }: { onClose: () => void }) {
+  const { isModerator } = useAuth()
+  const logout = useLogout()
+  const [, navigate] = useLocation()
+
+  const go = (path: string) => { navigate(path); onClose() }
+
+  return (
+    <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-border bg-popover shadow-xl ring-1 ring-black/5 z-50 overflow-hidden">
+      <div className="py-1.5">
+        <button
+          onClick={() => go('/profile')}
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors"
+        >
+          <UserCircle size={16} className="text-muted-foreground flex-shrink-0" />
+          Profil
+        </button>
+        {isModerator && (
+          <button
+            onClick={() => go('/admin/users')}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors"
+          >
+            <ShieldCheck size={16} className="text-muted-foreground flex-shrink-0" />
+            Admin
+          </button>
+        )}
+      </div>
+      <div className="border-t border-border" />
+      <div className="py-1.5">
+        <button
+          onClick={() => { logout(); onClose() }}
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut size={16} className="flex-shrink-0" />
+          Abmelden
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function TopBar() {
   const { user } = useAuth()
   const { unreadCount, setUnreadCount } = useSSE()
   const { data: notifs } = useNotifications()
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const notifRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
-  // Sync unread count from query cache
   useEffect(() => {
     if (notifs) setUnreadCount(notifs.length)
   }, [notifs, setUnreadCount])
 
-  // Close dropdown on outside click
   useEffect(() => {
-    if (!dropdownOpen) return
+    if (!notifOpen && !menuOpen) return
     const handler = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) {
-        setDropdownOpen(false)
-      }
+      if (notifOpen && !notifRef.current?.contains(e.target as Node)) setNotifOpen(false)
+      if (menuOpen && !menuRef.current?.contains(e.target as Node)) setMenuOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [dropdownOpen])
+  }, [notifOpen, menuOpen])
 
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between px-4 h-14 border-b border-border bg-background/80 backdrop-blur-sm">
+    <header className="sticky top-0 z-20 flex items-center justify-between px-4 h-14 border-b border-border bg-background/80 backdrop-blur-sm">
       <span className="font-bold text-base tracking-tight">🍺 BiFi</span>
 
       <div className="flex items-center gap-3">
@@ -86,9 +122,9 @@ export function TopBar() {
         )}
 
         {/* Notification bell */}
-        <div ref={containerRef} className="relative">
+        <div ref={notifRef} className="relative">
           <button
-            onClick={() => setDropdownOpen((o) => !o)}
+            onClick={() => { setNotifOpen((o) => !o); setMenuOpen(false) }}
             className="relative p-1 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Benachrichtigungen"
           >
@@ -99,21 +135,23 @@ export function TopBar() {
               </span>
             )}
           </button>
-
-          {dropdownOpen && (
-            <NotificationDropdown onClose={() => setDropdownOpen(false)} />
-          )}
+          {notifOpen && <NotificationDropdown onClose={() => setNotifOpen(false)} />}
         </div>
 
-        {/* Avatar → profile */}
+        {/* Avatar menu */}
         {user && (
-          <Link href="/profile">
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold overflow-hidden hover:ring-2 hover:ring-primary transition-all cursor-pointer">
+          <div ref={menuRef} className="relative">
+            <button
+              onClick={() => { setMenuOpen((o) => !o); setNotifOpen(false) }}
+              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold overflow-hidden hover:ring-2 hover:ring-primary transition-all cursor-pointer flex-shrink-0"
+              aria-label="Menü"
+            >
               {user.avatarUrl
                 ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
                 : <span>{user.displayName[0]?.toUpperCase()}</span>}
-            </div>
-          </Link>
+            </button>
+            {menuOpen && <AvatarMenuDropdown onClose={() => setMenuOpen(false)} />}
+          </div>
         )}
       </div>
     </header>

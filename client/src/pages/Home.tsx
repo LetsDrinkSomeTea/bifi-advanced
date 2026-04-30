@@ -3,7 +3,7 @@ import { Star, ChevronRight } from 'lucide-react'
 import { Link } from 'wouter'
 import { Layout } from '../components/layout/Layout'
 import { TransactionList } from '../components/TransactionList'
-import { FeedItem } from '../components/FeedItem'
+import { FeedTimeline } from '../components/FeedTimeline'
 import { useFavorites } from '../hooks/useFavorites'
 import { useFeed } from '../hooks/useFeed'
 import { usePurchase, useTransactionHistory } from '../hooks/useTransactions'
@@ -16,27 +16,7 @@ function HomeFeedPreview() {
   const { data, isLoading } = useFeed()
   const entries = (data?.pages[0]?.data ?? []).slice(0, 3)
 
-  if (isLoading) {
-    return (
-      <div className="space-y-2">
-        {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />)}
-      </div>
-    )
-  }
-
-  if (entries.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-        Noch keine Aktivitäten
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-2">
-      {entries.map((e) => <FeedItem key={e.id} entry={e} />)}
-    </div>
-  )
+  return <FeedTimeline entries={entries} isLoading={isLoading} />
 }
 
 export function Home() {
@@ -166,7 +146,7 @@ export function Home() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Aktivität</h2>
-            <Link href="/feed" className="flex items-center gap-0.5 text-xs text-primary hover:underline">
+            <Link href="/social?tab=activity" className="flex items-center gap-0.5 text-xs text-primary hover:underline">
               Alle <ChevronRight size={13} />
             </Link>
           </div>
