@@ -89,7 +89,7 @@ function EditUserModal({ user, onClose, canChangeRole }: { user: AdminUser | nul
             <label className="block text-sm font-medium mb-1">Rolle</label>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value)}
+              onChange={(e) => setRole(e.target.value as 'admin' | 'moderator' | 'member')}
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="member">Member</option>

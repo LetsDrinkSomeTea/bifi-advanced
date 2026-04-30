@@ -1,7 +1,8 @@
 import type { FeedEntry } from '../hooks/useFeed'
 import { useAuth } from '../hooks/useAuth'
-import { ACHIEVEMENTS } from '@shared/achievements'
+import type { AchievementDef } from '@shared/achievements'
 import { ActivityItem, type ActivityUser, ProfileLink } from './ActivityItem'
+import { useAchievementMeta } from '@/hooks/useAchievements'
 
 type Item = { name: string; variantName: string; count: number }
 
@@ -47,7 +48,11 @@ function targetName(
 
 // ─── Feed text ────────────────────────────────────────────────────────────────
 
-function feedText(entry: GroupedFeedEntry, currentUserId: string | undefined): React.ReactNode {
+function feedText(
+  entry: GroupedFeedEntry,
+  currentUserId: string | undefined,
+  achievements: AchievementDef[] | undefined
+): React.ReactNode {
   const { type, user, targetUser, metadata, mergedItems } = entry
   const isMe = !!currentUserId && user.id === currentUserId
 
@@ -67,7 +72,7 @@ function feedText(entry: GroupedFeedEntry, currentUserId: string | undefined): R
     }
     case 'achievement': {
       const key = (metadata?.achievementKey ?? metadata?.key) as string | undefined
-      const def = key ? ACHIEVEMENTS[key as keyof typeof ACHIEVEMENTS] : undefined
+      const def = achievements?.find(a => a.key === key)
       const name = def ? `${def.icon} ${def.name}` : 'ein Achievement'
       return isMe
         ? <>Du hast <span className="font-medium">„{name}"</span> freigeschaltet</>
@@ -146,11 +151,12 @@ interface Props {
 
 export function FeedItem({ entry, hasConnector = false }: Props) {
   const { user: currentUser } = useAuth()
+  const { data: achievements } = useAchievementMeta()
   const emoji = TYPE_EMOJI[entry.type] ?? '•'
 
   return (
     <ActivityItem user={entry.user} icon={emoji} hasConnector={hasConnector} createdAt={entry.createdAt}>
-      {feedText(entry, currentUser?.id)}
+      {feedText(entry, currentUser?.id, achievements)}
     </ActivityItem>
   )
 }

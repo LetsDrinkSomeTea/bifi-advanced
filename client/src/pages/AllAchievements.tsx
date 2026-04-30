@@ -1,7 +1,7 @@
 import { useParams, useLocation } from 'wouter'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Award } from 'lucide-react'
 import { Layout } from '../components/layout/Layout'
-import { AchievementGrid } from '../components/AchievementGrid'
+import { AchievementGrid } from '@/components/AchievementGrid'
 import { usePublicProfile } from '../hooks/useProfile'
 import { useAuth } from '../hooks/useAuth'
 export function AllAchievements() {

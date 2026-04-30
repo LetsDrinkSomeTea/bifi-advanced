@@ -112,6 +112,19 @@ export const openApiSpec = {
           nextCursor: { type: 'string', nullable: true },
         },
       },
+      Achievement: {
+        type: 'object',
+        properties: {
+          key:         { type: 'string' },
+          name:        { type: 'string' },
+          description: { type: 'string' },
+          icon:        { type: 'string' },
+          tier:        { type: 'string', enum: ['bronze', 'silver', 'gold'], nullable: true },
+          groupKey:    { type: 'string', nullable: true },
+          hidden:      { type: 'boolean', nullable: true },
+          threshold:   { type: 'integer', nullable: true },
+        },
+      },
     },
   },
 
@@ -536,6 +549,19 @@ export const openApiSpec = {
         responses: {
           200: { description: 'Paginated transaction list' },
           403: { description: 'Forbidden' },
+        },
+      },
+    },
+
+    // ── Achievements ──────────────────────────────────────────────────────────
+
+    '/api/achievements/meta': {
+      get: {
+        tags: ['Achievements'],
+        summary: 'Get achievement metadata',
+        description: 'Returns list of all available achievements and their UI properties.',
+        responses: {
+          200: { description: 'Achievement list', content: { 'application/json': { schema: { type: 'array', items: { '$ref': '#/components/schemas/Achievement' } } } } },
         },
       },
     },

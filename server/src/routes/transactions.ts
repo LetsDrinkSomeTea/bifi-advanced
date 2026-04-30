@@ -145,6 +145,13 @@ async function resolveItems(
   const toInsert: ItemRow[] = [];
   const feedItems: Array<{ name: string; variantName: string; count: number }> =
     [];
+  const achievementItems: Array<{
+    buyableId: string;
+    variantId: string;
+    category: string | null;
+    quantity: number;
+    buyableName: string;
+  }> = [];
   let cost = 0;
 
   for (const item of items) {
@@ -202,9 +209,16 @@ async function resolveItems(
       variantName: variant.name,
       count: item.quantity,
     });
+    achievementItems.push({
+      buyableId: buyable.id,
+      variantId: variant.id,
+      category: buyable.category,
+      quantity: item.quantity,
+      buyableName: buyable.name,
+    });
   }
 
-  return { toInsert, feedItems, cost };
+  return { toInsert, feedItems, achievementItems, cost };
 }
 
 // ─── Shared: redeem prost vouchers for a user ─────────────────────────────────
@@ -364,6 +378,7 @@ router.post(
         return {
           txn: primary!,
           feedItems,
+          achievementItems,
           cost,
           splitNotifications,
         };
@@ -401,19 +416,21 @@ router.post(
       checkAchievements({
         type: "purchase",
         userId: user.id,
-        purchaseHour: new Date().getHours(),
+        now: new Date(),
+        items: primaryTxn.achievementItems,
+        groupId: body.groupId,
       }).catch(console.error);
 
       return c.json(
-        { ...primaryTxn.txn, voucherRedeemed: primaryTxn.voucherCredit > 0 },
+        { ...primaryTxn.txn, voucherRedeemed: false },
         201,
       );
     }
 
     // ── Solo purchase ─────────────────────────────────────────────────────────
-    const { txn, redeemedVoucherIds, voucherCredit, feedItems } =
+    const { txn, redeemedVoucherIds, voucherCredit, feedItems, achievementItems } =
       await db.transaction(async (tx) => {
-        const { toInsert, feedItems, cost } = await resolveItems(
+        const { toInsert, feedItems, achievementItems, cost } = await resolveItems(
           tx,
           body.items,
         );
@@ -460,6 +477,7 @@ router.post(
           redeemedVoucherIds: ids,
           voucherCredit: credit,
           feedItems,
+          achievementItems,
         };
       });
 
@@ -472,7 +490,8 @@ router.post(
     checkAchievements({
       type: "purchase",
       userId: user.id,
-      purchaseHour: new Date().getHours(),
+      now: new Date(),
+      items: achievementItems,
     }).catch(console.error);
 
     if (voucherCredit > 0) {

@@ -9,6 +9,7 @@ import { requireAuth, requireRole } from '../middleware/auth.ts'
 import { invalidateUserSessions } from '../middleware/session.ts'
 import { writeAuditLog } from '../services/audit.ts'
 import { pushInvalidate } from '../services/notifications.ts'
+import { checkAchievements } from '../services/achievements.ts'
 
 const router = new Hono()
 
@@ -166,6 +167,14 @@ router.post('/users/:id/deposit', zValidator('json', DepositSchema), async (c) =
     changes: { after: { userId: id, amount } },
     ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
   })
+
+  checkAchievements({
+    type: 'deposit',
+    userId: id,
+    amount,
+    balanceBefore: target.balance,
+    balanceAfter: target.balance + amount,
+  }).catch(console.error)
 
   pushInvalidate(id, ['balance', 'transactions'])
 

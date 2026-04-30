@@ -153,10 +153,12 @@ router.post('/:id/leave', requireAuth, async (c) => {
   if (!membership) return c.json({ error: 'Not a member', code: 'NOT_MEMBER' }, 404)
 
   if (membership.role === 'owner') {
-    const [{ count }] = await db
+    const [row] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(groupMembers)
       .where(and(eq(groupMembers.groupId, id), isNull(groupMembers.leftAt)))
+
+    const count = row?.count ?? 0
 
     if (count <= 1) {
       // Last member — archive the group
