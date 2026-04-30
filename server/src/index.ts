@@ -18,8 +18,12 @@ import favoritesRoutes from './routes/favorites.ts'
 import adminRoutes from './routes/admin.ts'
 import usersRoutes from './routes/users.ts'
 import friendsRoutes from './routes/friends.ts'
+import nudgesRoutes from './routes/nudges.ts'
+import prostRoutes from './routes/prost.ts'
+import groupsRoutes from './routes/groups.ts'
 import notificationsRoutes from './routes/notifications.ts'
 import feedRoutes from './routes/feed.ts'
+import leaderboardRoutes from './routes/leaderboard.ts'
 
 const app = new Hono()
 
@@ -52,8 +56,12 @@ app.route('/api/favorites', favoritesRoutes)
 app.route('/api/admin', adminRoutes)
 app.route('/api/users', usersRoutes)
 app.route('/api/friends', friendsRoutes)
+app.route('/api/nudges', nudgesRoutes)
+app.route('/api/prost', prostRoutes)
+app.route('/api/groups', groupsRoutes)
 app.route('/api/notifications', notificationsRoutes)
 app.route('/api/feed', feedRoutes)
+app.route('/api/leaderboard', leaderboardRoutes)
 
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }))
 

@@ -10,6 +10,10 @@ import { Feed } from './pages/Feed'
 import { Profile } from './pages/Profile'
 import { ProfileDetail } from './pages/ProfileDetail'
 import { People } from './pages/People'
+import { Groups } from './pages/Groups'
+import { GroupDetail } from './pages/GroupDetail'
+import { Leaderboard } from './pages/Leaderboard'
+import { AllAchievements } from './pages/AllAchievements'
 import { AdminUsers } from './pages/admin/Users'
 import { AdminProducts } from './pages/admin/Products'
 import { AdminSettlement } from './pages/admin/Settlement'
@@ -50,6 +54,21 @@ export function App() {
         </Route>
         <Route path="/people">
           <ProtectedRoute><People /></ProtectedRoute>
+        </Route>
+        <Route path="/groups">
+          <ProtectedRoute><Groups /></ProtectedRoute>
+        </Route>
+        <Route path="/groups/:groupId">
+          {(params) => <ProtectedRoute><GroupDetail /></ProtectedRoute>}
+        </Route>
+        <Route path="/leaderboard">
+          <ProtectedRoute><Leaderboard /></ProtectedRoute>
+        </Route>
+        <Route path="/achievements">
+          <ProtectedRoute><AllAchievements /></ProtectedRoute>
+        </Route>
+        <Route path="/achievements/:userId">
+          {() => <ProtectedRoute><AllAchievements /></ProtectedRoute>}
         </Route>
 
         {/* Admin */}

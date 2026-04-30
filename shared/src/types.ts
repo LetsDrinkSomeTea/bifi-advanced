@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 import type { MeResponseSchema } from './schemas.ts'
-import type { AchievementKey } from './achievements.ts'
+import type { AchievementKey, AchievementTier } from './achievements.ts'
 
 export type User = z.infer<typeof MeResponseSchema>
 export type Role = User['role']
@@ -106,7 +106,7 @@ export interface PublicProfile {
     leaderboardRank: number | null
     favoriteProduct: { name: string; count: number } | null
   }
-  achievements: string[]
+  achievements: Array<{ key: string; unlockedAt: string }>
 }
 
 export interface FeedEvent {
@@ -149,7 +149,7 @@ export interface LeaderboardEntry {
   userId: string
   displayName: string
   avatarUrl: string | null
-  value: number
+  value: number | null  // null = hidden (non-friend spending)
 }
 
 export interface AchievementWithDef {
@@ -157,4 +157,4 @@ export interface AchievementWithDef {
   unlockedAt: string
 }
 
-export { AchievementKey }
+export { AchievementKey, AchievementTier }

@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { and, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm'
 import { db } from '../db/index.ts'
-import { buyables, transactionItems, transactions, userFriendships, users } from '../db/schema.ts'
+import { buyables, transactionItems, transactions, userAchievements, userFriendships, users } from '../db/schema.ts'
 import { requireAuth } from '../middleware/auth.ts'
 
 const router = new Hono()
@@ -117,6 +117,12 @@ router.get('/:id/profile', requireAuth, async (c) => {
     }
   }
 
+  const achievementRows = await db
+    .select({ key: userAchievements.achievementKey, unlockedAt: userAchievements.unlockedAt })
+    .from(userAchievements)
+    .where(eq(userAchievements.userId, id))
+    .orderBy(desc(userAchievements.unlockedAt))
+
   return c.json({
     ...user,
     friendshipStatus,
@@ -125,7 +131,7 @@ router.get('/:id/profile', requireAuth, async (c) => {
       leaderboardRank: rank,
       favoriteProduct: favProduct ?? null,
     },
-    achievements: [] as string[], // populated in Phase 5
+    achievements: achievementRows,
   })
 })
 

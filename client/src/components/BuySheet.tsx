@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Minus, Plus, X } from 'lucide-react'
+import { Minus, Plus, X, Users2 } from 'lucide-react'
 import type { BuyableWithVariants } from '@shared/types'
 import { usePurchase } from '../hooks/useTransactions'
+import { useGroups } from '../hooks/useGroups'
 import { cn, formatCents } from '../lib/utils'
 
 interface Props {
@@ -14,13 +15,13 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
   const [variantId, setVariantId] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [groupId, setGroupId] = useState<string | null>(null)
   const { mutate, isPending } = usePurchase()
+  const { data: groups } = useGroups()
 
   const open = buyable !== null
-
   const variants = buyable?.variants.filter((v) => v.isActive) ?? []
   const isSingleVariant = variants.length === 1
-  // Auto-select when single variant or a specific variant was requested
   const autoSelected = isSingleVariant || !!initialVariantId
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
       }
       setQuantity(1)
       setFeedback(null)
+      setGroupId(null)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buyable?.id, initialVariantId])
@@ -42,14 +44,17 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
 
   const selectedVariant = variants.find((v) => v.id === variantId)
   const unitPrice = selectedVariant?.price ?? 0
+  const totalPrice = unitPrice * quantity
   const canBuy = !!variantId
+
+  const selectedGroup = groups?.find((g) => g.id === groupId)
+  const memberCount = selectedGroup?.memberCount ?? 1
+  const pricePerPerson = groupId && memberCount > 1 ? Math.ceil(totalPrice / memberCount) : totalPrice
 
   const handleBuy = () => {
     if (!variantId) return
     mutate(
-      {
-        items: [{ buyableId: buyable.id, variantId, quantity }],
-      },
+      { items: [{ buyableId: buyable.id, variantId, quantity }], groupId: groupId ?? undefined },
       {
         onSuccess: () => {
           setFeedback('Gekauft! ✓')
@@ -62,14 +67,14 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
     )
   }
 
+  const priceLabel = groupId && memberCount > 1
+    ? `${formatCents(pricePerPerson)} / Person · ${memberCount} Personen`
+    : formatCents(totalPrice)
+
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-
-      {/* Sheet */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl shadow-2xl">
-        {/* Handle + close */}
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div className="w-10 h-1 bg-border rounded-full mx-auto absolute left-0 right-0 top-3" />
           <h2 className="text-lg font-semibold">{buyable.name}</h2>
@@ -79,7 +84,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
         </div>
 
         <div className="px-5 pb-8 space-y-5">
-          {/* Selected variant label (auto-selected, no picker needed) */}
+          {/* Auto-selected variant label */}
           {autoSelected && selectedVariant && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Variante:</span>
@@ -89,7 +94,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
             </div>
           )}
 
-          {/* Variant picker (multi-variant, nothing pre-selected) */}
+          {/* Variant picker */}
           {!autoSelected && variants.length > 1 && (
             <div className="space-y-2">
               <p className="text-sm font-medium">Variante wählen</p>
@@ -133,14 +138,47 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
             </div>
           </div>
 
+          {/* Group split */}
+          {groups && groups.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Users2 size={15} className="text-muted-foreground" />
+                <span className="text-sm font-medium">Mit Gruppe teilen</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setGroupId(null)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-xs font-medium transition-colors border',
+                    !groupId ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  Nur ich
+                </button>
+                {groups.map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => setGroupId(g.id === groupId ? null : g.id)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-xs font-medium transition-colors border',
+                      groupId === g.id ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {g.name} ({g.memberCount})
+                  </button>
+                ))}
+              </div>
+              {groupId && memberCount > 1 && (
+                <p className="text-xs text-muted-foreground">
+                  Kosten werden auf {memberCount} Personen aufgeteilt
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Feedback */}
           {feedback && (
-            <p
-              className={cn(
-                'text-sm text-center',
-                feedback.includes('✓') ? 'text-green-500' : 'text-destructive',
-              )}
-            >
+            <p className={cn('text-sm text-center', feedback.includes('✓') ? 'text-green-500' : 'text-destructive')}>
               {feedback}
             </p>
           )}
@@ -151,13 +189,11 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
             onClick={handleBuy}
             className={cn(
               'w-full py-3.5 rounded-xl font-semibold text-base transition-colors',
-              canBuy
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'bg-muted text-muted-foreground cursor-not-allowed',
+              canBuy ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed',
               'disabled:opacity-60',
             )}
           >
-            {isPending ? 'Kaufen…' : `Kaufen · ${formatCents(unitPrice * quantity)}`}
+            {isPending ? 'Kaufen…' : `Kaufen · ${priceLabel}`}
           </button>
         </div>
       </div>

@@ -41,6 +41,7 @@ export const feedTypeEnum = pgEnum('feed_type', [
   'purchase',
   'achievement',
   'group_join',
+  'nudge',
   'prost_sent',
   'prost_received',
   'goal_reached',
@@ -187,6 +188,8 @@ export const nudges = pgTable('nudges', {
     .notNull()
     .references(() => users.id),
   type: nudgeTypeEnum('type').notNull(),
+  message: text('message').notNull(),
+  isPublic: boolean('is_public').notNull().default(false),
   transactionId: uuid('transaction_id').references(() => transactions.id),
   createdAt: createdAt(),
 })
@@ -269,6 +272,25 @@ export const userFriendships = pgTable(
   },
   (t) => [unique().on(t.requesterId, t.addresseeId)],
 )
+
+export const prostVouchers = pgTable('prost_vouchers', {
+  id: id(),
+  fromUserId: uuid('from_user_id')
+    .notNull()
+    .references(() => users.id),
+  toUserId: uuid('to_user_id')
+    .notNull()
+    .references(() => users.id),
+  variantId: uuid('variant_id')
+    .notNull()
+    .references(() => productVariants.id),
+  amount: integer('amount').notNull(),
+  fromTransactionId: uuid('from_transaction_id').references(() => transactions.id),
+  redeemedTransactionId: uuid('redeemed_transaction_id').references(() => transactions.id),
+  redeemedAt: timestamp('redeemed_at'),
+  creditedAt: timestamp('credited_at'),
+  createdAt: createdAt(),
+})
 
 export const userFavorites = pgTable(
   'user_favorites',

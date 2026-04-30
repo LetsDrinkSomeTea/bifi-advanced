@@ -1,11 +1,15 @@
+import { useState } from 'react'
 import { useParams } from 'wouter'
-import { UserPlus, UserCheck, UserX, Clock } from 'lucide-react'
+import { UserPlus, UserCheck, UserX, Clock, Bell, X, Beer } from 'lucide-react'
 import { Layout } from '../components/layout/Layout'
 import { AchievementGrid } from '../components/AchievementGrid'
 import { usePublicProfile } from '../hooks/useProfile'
 import { useSendFriendRequest, useAcceptFriendRequest, useRemoveFriend } from '../hooks/useFriends'
+import { useNudgePresets, useSendNudge } from '../hooks/useNudge'
+import { useSendProst } from '../hooks/useProst'
+import { useBuyables } from '../hooks/useBuyables'
 import { useAuth } from '../hooks/useAuth'
-import { cn } from '../lib/utils'
+import { formatCents, cn } from '../lib/utils'
 import type { FriendshipStatus } from '@shared/types'
 
 const ROLE_LABEL: Record<string, string> = {
@@ -87,10 +91,137 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
   )
 }
 
+function NudgeSheet({ userId, displayName, onClose }: {
+  userId: string
+  displayName: string
+  onClose: () => void
+}) {
+  const [freetext, setFreetext] = useState('')
+  const { data: presets } = useNudgePresets()
+  const { mutate: send, isPending, isSuccess, error } = useSendNudge()
+
+  const handleSend = (preset?: string, message?: string) => {
+    send({ recipientId: userId, preset, message }, { onSuccess: onClose })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-background rounded-t-2xl sm:rounded-2xl p-5 shadow-xl">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold">{displayName} anstupsen</h2>
+          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Presets */}
+        <div className="space-y-2 mb-4">
+          {presets?.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => handleSend(p.key)}
+              disabled={isPending}
+              className="w-full text-left px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-sm disabled:opacity-50"
+            >
+              {p.text}
+            </button>
+          ))}
+        </div>
+
+        {/* Freetext */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Eigene Nachricht (privat)…"
+            value={freetext}
+            onChange={(e) => setFreetext(e.target.value)}
+            maxLength={200}
+            className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            onKeyDown={(e) => e.key === 'Enter' && freetext.trim() && handleSend(undefined, freetext.trim())}
+          />
+          <button
+            onClick={() => handleSend(undefined, freetext.trim())}
+            disabled={isPending || !freetext.trim()}
+            className="px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40"
+          >
+            Senden
+          </button>
+        </div>
+
+        {error && (
+          <p className="text-xs text-destructive mt-2">
+            {(error as { message?: string })?.message ?? 'Fehler beim Senden'}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ProstSheet({ toUserId, displayName, onClose }: {
+  toUserId: string
+  displayName: string
+  onClose: () => void
+}) {
+  const { data: buyables, isLoading } = useBuyables()
+  const { mutate: send, isPending, error } = useSendProst()
+
+  const variants = buyables?.flatMap((b) =>
+    b.variants.filter((v) => v.isActive).map((v) => ({ ...v, buyableName: b.name })),
+  ) ?? []
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-background rounded-t-2xl sm:rounded-2xl p-5 shadow-xl max-h-[80vh] flex flex-col">
+        <div className="flex items-center justify-between mb-4 flex-shrink-0">
+          <h2 className="font-semibold">Prost an {displayName} 🍺</h2>
+          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground">
+            <X size={18} />
+          </button>
+        </div>
+        <p className="text-sm text-muted-foreground mb-3 flex-shrink-0">
+          Du zahlst jetzt — {displayName} bekommt den Gutschein für den nächsten Kauf.
+        </p>
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => <div key={i} className="h-12 rounded-xl bg-muted animate-pulse" />)}
+          </div>
+        ) : (
+          <div className="overflow-y-auto space-y-2">
+            {variants.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => send({ toUserId, variantId: v.id }, { onSuccess: onClose })}
+                disabled={isPending}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-sm disabled:opacity-50"
+              >
+                <span>
+                  <span className="font-medium">{v.buyableName}</span>
+                  <span className="text-muted-foreground ml-1.5">{v.name}</span>
+                </span>
+                <span className="font-semibold tabular-nums">{formatCents(v.price)}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {error && (
+          <p className="text-xs text-destructive mt-2 flex-shrink-0">
+            Fehler beim Senden
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function ProfileDetail() {
   const { userId } = useParams<{ userId: string }>()
   const { user: currentUser } = useAuth()
   const { data: profile, isLoading } = usePublicProfile(userId)
+  const [nudgeOpen, setNudgeOpen] = useState(false)
+  const [prostOpen, setProstOpen] = useState(false)
 
   if (isLoading) {
     return (
@@ -128,7 +259,7 @@ export function ProfileDetail() {
       <div className="px-4 py-4 max-w-lg mx-auto space-y-6">
 
         {/* Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-start gap-4">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold overflow-hidden flex-shrink-0">
             {profile.avatarUrl
               ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -141,10 +272,28 @@ export function ProfileDetail() {
                 {ROLE_LABEL[profile.role]}
               </span>
             </div>
+            {!isOwnProfile && (
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                {profile.friendshipStatus && (
+                  <FriendButton userId={profile.id} status={profile.friendshipStatus} />
+                )}
+                <button
+                  onClick={() => setProstOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Beer size={15} />
+                  Prost
+                </button>
+                <button
+                  onClick={() => setNudgeOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Bell size={15} />
+                  Anstupsen
+                </button>
+              </div>
+            )}
           </div>
-          {!isOwnProfile && profile.friendshipStatus && (
-            <FriendButton userId={profile.id} status={profile.friendshipStatus} />
-          )}
         </div>
 
         {/* Stats */}
@@ -165,8 +314,27 @@ export function ProfileDetail() {
         </div>
 
         {/* Achievements */}
-        <AchievementGrid unlocked={profile.achievements} />
+        <AchievementGrid
+          achievements={profile.achievements}
+          limit={5}
+          allLink={`/achievements/${profile.id}`}
+        />
       </div>
+
+      {prostOpen && (
+        <ProstSheet
+          toUserId={profile.id}
+          displayName={profile.displayName}
+          onClose={() => setProstOpen(false)}
+        />
+      )}
+      {nudgeOpen && (
+        <NudgeSheet
+          userId={profile.id}
+          displayName={profile.displayName}
+          onClose={() => setNudgeOpen(false)}
+        />
+      )}
     </Layout>
   )
 }

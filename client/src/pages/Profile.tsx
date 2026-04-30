@@ -8,6 +8,7 @@ import { AchievementGrid } from '../components/AchievementGrid'
 import { useAuth, useLogout } from '../hooks/useAuth'
 import { usePublicProfile, useUpdateProfile } from '../hooks/useProfile'
 import { useTransactionHistory } from '../hooks/useTransactions'
+import { useProstVouchers } from '../hooks/useProst'
 import { formatCents, balanceColor, cn } from '../lib/utils'
 
 const ROLE_LABEL: Record<string, string> = {
@@ -106,6 +107,7 @@ export function Profile() {
   const { user } = useAuth()
   const { data: profile, isLoading: profileLoading } = usePublicProfile(user?.id)
   const { data: txnData, isLoading: txnLoading } = useTransactionHistory()
+  const { data: vouchers } = useProstVouchers()
   const logout = useLogout()
   const [editOpen, setEditOpen] = useState(false)
 
@@ -176,7 +178,31 @@ export function Profile() {
         </div>
 
         {/* Achievements */}
-        <AchievementGrid unlocked={profile?.achievements ?? []} />
+        <AchievementGrid
+          achievements={profile?.achievements ?? []}
+          limit={5}
+          allLink="/achievements"
+        />
+
+        {/* Prost vouchers */}
+        {vouchers && vouchers.length > 0 && (
+          <div>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              Prost-Gutscheine 🍺
+            </h2>
+            <div className="space-y-2">
+              {vouchers.map((v) => (
+                <div key={v.id} className="flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-card">
+                  <div>
+                    <p className="text-sm font-medium">{v.variantName}</p>
+                    <p className="text-xs text-muted-foreground">wird beim nächsten Kauf eingelöst</p>
+                  </div>
+                  <span className="text-sm font-semibold text-green-500">+{formatCents(v.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Recent purchases */}
         <div>

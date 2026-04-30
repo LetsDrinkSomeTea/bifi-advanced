@@ -70,6 +70,12 @@ function feedText(
         ? <>Du bist der Gruppe <span className="font-medium">{groupName ?? 'einer Gruppe'}</span> beigetreten</>
         : <><Actor user={user} currentUserId={currentUserId} /> ist der Gruppe <span className="font-medium">{groupName ?? 'einer Gruppe'}</span> beigetreten</>
     }
+    case 'nudge': {
+      const message = metadata?.message as string | undefined
+      return isMe
+        ? <>Du hast {targetName(targetUser, currentUserId, true)} angestupst: <span className="italic">„{message}"</span></>
+        : <><Actor user={user} currentUserId={currentUserId} /> hat {targetName(targetUser, currentUserId, true)} angestupst: <span className="italic">„{message}"</span></>
+    }
     case 'prost_sent': {
       return isMe
         ? <>Du hast {targetName(targetUser, currentUserId, true)} einen Prost geschickt 🍺</>
