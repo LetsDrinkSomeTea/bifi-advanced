@@ -14,7 +14,8 @@ export type FeedEvent =
   | {
       type: 'purchase'
       userId: string
-      metadata: { items: PurchaseItem[]; totalAmount: number; groupId?: string; memberCount?: number }
+      targetGroupId?: string
+      metadata: { items: PurchaseItem[]; totalAmount: number; groupId?: string; groupName?: string; memberCount?: number }
     }
   | {
       type: 'prost_sent'

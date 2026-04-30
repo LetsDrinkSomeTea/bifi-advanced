@@ -6,6 +6,7 @@ import { useBuyables } from '../hooks/useBuyables'
 import { useFavorites, useToggleFavorite } from '../hooks/useFavorites'
 import type { BuyableWithVariants } from '@shared/types'
 import { formatCents, cn } from '../lib/utils'
+import { BUYABLE_CATEGORIES, CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas'
 import { useVoucherSet } from '@/hooks/useProst'
 
 export function Shop() {
@@ -28,7 +29,7 @@ export function Shop() {
   const categories = useMemo(() => {
     const cats = new Set<string>()
     items?.forEach((i) => { if (i.category) cats.add(i.category) })
-    return Array.from(cats).sort()
+    return BUYABLE_CATEGORIES.filter(cat => cats.has(cat))
   }, [items])
 
   const filtered = useMemo(() => {
@@ -48,12 +49,14 @@ export function Shop() {
   const grouped = useMemo(() => {
     const map = new Map<string, BuyableWithVariants[]>()
     for (const item of filtered) {
-      const key = item.category ?? 'Sonstiges'
+      const key = item.category ?? 'other'
       const list = map.get(key) ?? []
       list.push(item)
       map.set(key, list)
     }
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
+    return BUYABLE_CATEGORIES
+      .filter(cat => map.has(cat))
+      .map(cat => [cat, map.get(cat)!] as [string, BuyableWithVariants[]])
   }, [filtered])
 
   const openSheet = (item: BuyableWithVariants, variantId: string) => {
@@ -79,7 +82,7 @@ export function Shop() {
 
         {/* Category filter */}
         {categories.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             <button
               onClick={() => setActiveCategory(null)}
               className={cn(
@@ -98,7 +101,7 @@ export function Shop() {
                   activeCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
                 )}
               >
-                {cat}
+                {CATEGORY_LABELS[cat as BuyableCategory]}
               </button>
             ))}
           </div>
@@ -123,7 +126,7 @@ export function Shop() {
           <section key={category}>
             {!activeCategory && (
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                {category}
+                {CATEGORY_LABELS[category as BuyableCategory] ?? category}
               </h2>
             )}
             <div className="space-y-3">

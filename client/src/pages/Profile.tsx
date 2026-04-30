@@ -118,9 +118,9 @@ function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }) {
       {isStacked && (
         <>
           {/* Deepest layer */}
-          <div className="pointer-events-none absolute inset-0 z-0 rounded-xl border border-border/50 bg-card translate-x-2 translate-y-2 transition-transform duration-200 group-hover:translate-x-2.5 group-hover:translate-y-2.5" />
+          <div className="pointer-events-none absolute inset-0 z-0 rounded-xl border border-border/50 bg-card translate-x-2 translate-y-2" />
           {/* Middle layer */}
-          <div className="pointer-events-none absolute inset-0 z-0 rounded-xl border border-border/80 bg-card translate-x-1 translate-y-1 transition-transform duration-200 group-hover:translate-x-1.5 group-hover:translate-y-1.5" />
+          <div className="pointer-events-none absolute inset-0 z-0 rounded-xl border border-border/80 bg-card translate-x-1 translate-y-1" />
         </>
       )}
       <ActivityItem

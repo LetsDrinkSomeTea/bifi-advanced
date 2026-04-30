@@ -18,6 +18,7 @@ export interface AchievementDef {
   tier?: AchievementTier
   groupKey?: string    // ties tiers together in the UI
   hidden?: boolean     // true = show as ??? until any tier in the group is unlocked
+  threshold?: number   // numeric threshold for this tier (used for progress bars)
 }
 
 // ─── Achievement registry ─────────────────────────────────────────────────────
@@ -41,6 +42,7 @@ export const ACHIEVEMENTS = {
     icon: '🛒',
     tier: 'bronze',
     groupKey: 'purchases',
+    threshold: 1,
   },
   purchases_silver: {
     key: 'purchases_silver',
@@ -49,6 +51,7 @@ export const ACHIEVEMENTS = {
     icon: '🛒',
     tier: 'silver',
     groupKey: 'purchases',
+    threshold: 10,
   },
   purchases_gold: {
     key: 'purchases_gold',
@@ -57,6 +60,7 @@ export const ACHIEVEMENTS = {
     icon: '🛒',
     tier: 'gold',
     groupKey: 'purchases',
+    threshold: 100,
   },
 
   // ── Prost gesendet (tiered) ────────────────────────────────────────────────
@@ -68,6 +72,7 @@ export const ACHIEVEMENTS = {
     icon: '🥂',
     tier: 'bronze',
     groupKey: 'prost_sent',
+    threshold: 5,
   },
   prost_sent_silver: {
     key: 'prost_sent_silver',
@@ -76,6 +81,7 @@ export const ACHIEVEMENTS = {
     icon: '🥂',
     tier: 'silver',
     groupKey: 'prost_sent',
+    threshold: 15,
   },
   prost_sent_gold: {
     key: 'prost_sent_gold',
@@ -84,6 +90,7 @@ export const ACHIEVEMENTS = {
     icon: '🥂',
     tier: 'gold',
     groupKey: 'prost_sent',
+    threshold: 30,
   },
 
   // ── Prost erhalten (tiered) ────────────────────────────────────────────────
@@ -95,6 +102,7 @@ export const ACHIEVEMENTS = {
     icon: '❤️',
     tier: 'bronze',
     groupKey: 'prost_received',
+    threshold: 10,
   },
   prost_received_silver: {
     key: 'prost_received_silver',
@@ -103,6 +111,7 @@ export const ACHIEVEMENTS = {
     icon: '❤️',
     tier: 'silver',
     groupKey: 'prost_received',
+    threshold: 25,
   },
   prost_received_gold: {
     key: 'prost_received_gold',
@@ -111,6 +120,7 @@ export const ACHIEVEMENTS = {
     icon: '❤️',
     tier: 'gold',
     groupKey: 'prost_received',
+    threshold: 50,
   },
 
   // ── Spenden (tiered, hidden) ───────────────────────────────────────────────
@@ -152,6 +162,7 @@ export const ACHIEVEMENTS = {
     icon: '🏆',
     tier: 'bronze',
     groupKey: 'achievements_collected',
+    threshold: 10,
   },
   achievements_collected_silver: {
     key: 'achievements_collected_silver',
@@ -160,6 +171,7 @@ export const ACHIEVEMENTS = {
     icon: '🏆',
     tier: 'silver',
     groupKey: 'achievements_collected',
+    threshold: 20,
   },
   achievements_collected_gold: {
     key: 'achievements_collected_gold',
@@ -168,6 +180,7 @@ export const ACHIEVEMENTS = {
     icon: '🏆',
     tier: 'gold',
     groupKey: 'achievements_collected',
+    threshold: 30,
   },
 
   // ── Kategorie-Tränke (silver/gold only) ───────────────────────────────────
@@ -179,6 +192,7 @@ export const ACHIEVEMENTS = {
     icon: '🍺',
     tier: 'silver',
     groupKey: 'alcoholic_drinker',
+    threshold: 100,
   },
   alcoholic_drinker_gold: {
     key: 'alcoholic_drinker_gold',
@@ -187,6 +201,7 @@ export const ACHIEVEMENTS = {
     icon: '🍺',
     tier: 'gold',
     groupKey: 'alcoholic_drinker',
+    threshold: 1337,
   },
 
   softdrink_lover_silver: {
@@ -196,6 +211,7 @@ export const ACHIEVEMENTS = {
     icon: '🥤',
     tier: 'silver',
     groupKey: 'softdrink_lover',
+    threshold: 100,
   },
   softdrink_lover_gold: {
     key: 'softdrink_lover_gold',
@@ -204,6 +220,7 @@ export const ACHIEVEMENTS = {
     icon: '🥤',
     tier: 'gold',
     groupKey: 'softdrink_lover',
+    threshold: 1337,
   },
 
   food_fan_silver: {
@@ -213,6 +230,7 @@ export const ACHIEVEMENTS = {
     icon: '🍔',
     tier: 'silver',
     groupKey: 'food_fan',
+    threshold: 100,
   },
   food_fan_gold: {
     key: 'food_fan_gold',
@@ -221,6 +239,7 @@ export const ACHIEVEMENTS = {
     icon: '🍔',
     tier: 'gold',
     groupKey: 'food_fan',
+    threshold: 1337,
   },
 
   snack_king_silver: {
@@ -230,6 +249,7 @@ export const ACHIEVEMENTS = {
     icon: '🍿',
     tier: 'silver',
     groupKey: 'snack_king',
+    threshold: 100,
   },
   snack_king_gold: {
     key: 'snack_king_gold',
@@ -238,6 +258,7 @@ export const ACHIEVEMENTS = {
     icon: '🍿',
     tier: 'gold',
     groupKey: 'snack_king',
+    threshold: 1337,
   },
 
   misc_collector_silver: {
@@ -247,6 +268,7 @@ export const ACHIEVEMENTS = {
     icon: '📦',
     tier: 'silver',
     groupKey: 'misc_collector',
+    threshold: 100,
   },
   misc_collector_gold: {
     key: 'misc_collector_gold',
@@ -255,6 +277,7 @@ export const ACHIEVEMENTS = {
     icon: '📦',
     tier: 'gold',
     groupKey: 'misc_collector',
+    threshold: 1337,
   },
 
   // ── Balance-related (standalone) ──────────────────────────────────────────

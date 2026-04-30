@@ -2,9 +2,9 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { alias } from 'drizzle-orm/pg-core'
-import { and, desc, eq, inArray, lt, ne, or } from 'drizzle-orm'
+import { and, desc, eq, exists, gt, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from 'drizzle-orm'
 import { db } from '../db/index.ts'
-import { activityFeed, userFriendships, users } from '../db/schema.ts'
+import { activityFeed, groupMembers, userFriendships, users } from '../db/schema.ts'
 import { requireAuth } from '../middleware/auth.ts'
 
 const router = new Hono()
@@ -35,7 +35,6 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
   const cursorDate = parsed ? new Date(parsed.t) : null
   const cursorId = parsed?.id ?? null
 
-  // Collect accepted friend IDs for purchase filtering
   const friendRows = await db
     .select({ requesterId: userFriendships.requesterId, addresseeId: userFriendships.addresseeId })
     .from(userFriendships)
@@ -48,15 +47,40 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
 
   const friendIds = friendRows.map((f) => (f.requesterId === user.id ? f.addresseeId : f.requesterId))
 
-  // Purchases are visible only for self and friends; all other event types are global
-  const purchaseFilter =
+  // Events by self or friends (or targeting self/friend)
+  const selfOrFriendFilter =
     friendIds.length > 0
       ? or(
-          ne(activityFeed.type, 'purchase'),
           eq(activityFeed.userId, user.id),
           inArray(activityFeed.userId, friendIds),
+          eq(activityFeed.targetUserId, user.id),
+          inArray(activityFeed.targetUserId, friendIds),
         )
-      : or(ne(activityFeed.type, 'purchase'), eq(activityFeed.userId, user.id))
+      : or(eq(activityFeed.userId, user.id), eq(activityFeed.targetUserId, user.id))
+
+  // Group events: visible only while the user was an active member at event time
+  const wasGroupMember = exists(
+    db
+      .select({ one: sql`1` })
+      .from(groupMembers)
+      .where(
+        and(
+          eq(groupMembers.groupId, activityFeed.targetGroupId!),
+          eq(groupMembers.userId, user.id),
+          lte(groupMembers.joinedAt, activityFeed.createdAt),
+          or(isNull(groupMembers.leftAt), gt(groupMembers.leftAt, activityFeed.createdAt)),
+        ),
+      ),
+  )
+
+  // goal_reached is a global club event — always visible
+  // Events with a targetGroupId use membership-based visibility
+  // All other events use self/friends filter
+  const visibilityFilter = or(
+    eq(activityFeed.type, 'goal_reached'),
+    and(isNotNull(activityFeed.targetGroupId), wasGroupMember),
+    and(isNull(activityFeed.targetGroupId), ne(activityFeed.type, 'goal_reached'), selfOrFriendFilter),
+  )
 
   const cursorFilter =
     cursorDate && cursorId
@@ -89,7 +113,7 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
     .from(activityFeed)
     .innerJoin(users, eq(activityFeed.userId, users.id))
     .leftJoin(targetUsers, eq(activityFeed.targetUserId, targetUsers.id))
-    .where(and(purchaseFilter, cursorFilter))
+    .where(and(visibilityFilter, cursorFilter))
     .orderBy(desc(activityFeed.createdAt), desc(activityFeed.id))
     .limit(limit + 1)
 

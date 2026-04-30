@@ -107,6 +107,7 @@ export interface PublicProfile {
     favoriteProduct: { name: string; count: number } | null
   }
   achievements: Array<{ key: string; unlockedAt: string }>
+  achievementProgress: Record<string, number>
 }
 
 export interface FeedEvent {

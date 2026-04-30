@@ -3,7 +3,7 @@ import { Star, ChevronRight } from 'lucide-react'
 import { Link } from 'wouter'
 import { Layout } from '../components/layout/Layout'
 import { TransactionList } from '../components/TransactionList'
-import { FeedTimeline } from '../components/FeedTimeline'
+import { FeedTimeline, groupEntries } from '../components/FeedTimeline'
 import { useFavorites } from '../hooks/useFavorites'
 import { useFeed } from '../hooks/useFeed'
 import { usePurchase, useTransactionHistory } from '../hooks/useTransactions'
@@ -15,9 +15,9 @@ type CardState = { variantId: string; status: 'buying' | 'done' | 'error' } | nu
 
 function HomeFeedPreview() {
   const { data, isLoading } = useFeed()
-  const entries = (data?.pages[0]?.data ?? []).slice(0, 5)
+  const entries = groupEntries(data?.pages[0]?.data ?? []).slice(0, 3)
 
-  return <FeedTimeline entries={entries} isLoading={isLoading} />
+  return <FeedTimeline entries={entries} isLoading={isLoading} preGrouped />
 }
 
 export function Home() {

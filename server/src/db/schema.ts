@@ -156,6 +156,7 @@ export const groupMembers = pgTable(
       .references(() => users.id),
     role: groupRoleEnum('role').notNull().default('member'),
     joinedAt: timestamp('joined_at').notNull().defaultNow(),
+    leftAt: timestamp('left_at'),
   },
   (t) => [primaryKey({ columns: [t.groupId, t.userId] })],
 )

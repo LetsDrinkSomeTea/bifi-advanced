@@ -36,7 +36,10 @@ export function AllAchievements() {
             ))}
           </div>
         ) : (
-          <AchievementGrid achievements={profile?.achievements ?? []} />
+          <AchievementGrid
+            achievements={profile?.achievements ?? []}
+            progress={profile?.achievementProgress}
+          />
         )}
       </div>
     </Layout>

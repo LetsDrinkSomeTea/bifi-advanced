@@ -1,5 +1,6 @@
 import type { FeedEntry } from '../hooks/useFeed'
 import { FeedItem, type GroupedFeedEntry } from './FeedItem'
+export type { GroupedFeedEntry }
 
 type Item = { name: string; variantName: string; count: number }
 
@@ -27,7 +28,7 @@ function mergeItems(a: Item[], b: Item[]): Item[] {
   return Array.from(map.values())
 }
 
-function groupEntries(entries: FeedEntry[]): GroupedFeedEntry[] {
+export function groupEntries(entries: FeedEntry[]): GroupedFeedEntry[] {
   const result: GroupedFeedEntry[] = []
   for (const entry of entries) {
     const last = result.at(-1)
@@ -67,9 +68,10 @@ interface Props {
   hasNextPage?: boolean
   fetchNextPage?: () => void
   isFetchingNextPage?: boolean
+  preGrouped?: boolean
 }
 
-export function FeedTimeline({ entries, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage }: Props) {
+export function FeedTimeline({ entries, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage, preGrouped }: Props) {
   if (isLoading) {
     return (
       <div className="space-y-5">
@@ -95,7 +97,7 @@ export function FeedTimeline({ entries, isLoading, hasNextPage, fetchNextPage, i
     )
   }
 
-  const grouped = groupEntries(entries)
+  const grouped = preGrouped ? (entries as GroupedFeedEntry[]) : groupEntries(entries)
   const items = buildTimeline(grouped)
 
   return (

@@ -4,11 +4,11 @@ DC = docker compose -f docker-compose.dev.yml
 
 # Start full dev stack (build if needed)
 dev:
-	$(DC) up --build
+	$(DC) up --build --renew-anon-volumes
 
 # Start in background
 up:
-	$(DC) up -d --build
+	$(DC) up -d --build --renew-anon-volumes
 
 # Stop services
 down:

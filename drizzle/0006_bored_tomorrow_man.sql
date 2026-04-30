@@ -1,0 +1,2 @@
+CREATE TYPE "public"."buyable_category" AS ENUM('alcoholic', 'soft_drink', 'food', 'snack', 'other');--> statement-breakpoint
+ALTER TABLE "buyables" ALTER COLUMN "category" SET DATA TYPE buyable_category USING category::text::buyable_category;

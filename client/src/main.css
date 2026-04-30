@@ -61,3 +61,13 @@ body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
 }
+
+@keyframes achievement-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+  20%  { box-shadow: 0 0 0 5px rgba(234, 179, 8, 0.55); }
+  100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+}
+
+.achievement-glow {
+  animation: achievement-glow 1.5s ease-out;
+}

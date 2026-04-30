@@ -55,6 +55,12 @@ function feedText(entry: GroupedFeedEntry, currentUserId: string | undefined): R
     case 'purchase': {
       const items = mergedItems ?? (metadata?.items as Item[] | undefined)
       const itemStr = items?.map((i) => `${i.count}× ${i.name}${i.variantName ? ` ${i.variantName}` : ''}`).join(', ') ?? 'etwas'
+      const groupName = metadata?.groupName as string | undefined
+      if (groupName) {
+        return isMe
+          ? <>Du hast {itemStr} für die Gruppe <span className="font-medium">{groupName}</span> gekauft</>
+          : <><Actor user={user} currentUserId={currentUserId} /> hat {itemStr} für die Gruppe <span className="font-medium">{groupName}</span> gekauft</>
+      }
       return isMe
         ? <>Du hast {itemStr} gekauft</>
         : <><Actor user={user} currentUserId={currentUserId} /> hat {itemStr} gekauft</>

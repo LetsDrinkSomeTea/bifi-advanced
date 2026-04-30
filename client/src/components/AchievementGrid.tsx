@@ -1,7 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'wouter'
 import { ChevronRight } from 'lucide-react'
 import { ACHIEVEMENTS, TIER_META } from '@shared/achievements'
-import type { AchievementTier } from '@shared/achievements'
+import type { AchievementDef, AchievementKey, AchievementTier } from '@shared/achievements'
 import { cn } from '../lib/utils'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -13,8 +14,9 @@ interface AchievementEntry {
 
 interface Props {
   achievements: AchievementEntry[]
-  limit?: number    // if set: show only the N most recently unlocked, as grid tiles
-  allLink?: string  // if set: show "Alle →" link in the header
+  limit?: number                      // if set: show only the N most recently unlocked
+  allLink?: string                    // if set: show "Alle →" link in the header
+  progress?: Record<string, number>   // groupKey → current count (only passed in full view)
 }
 
 // ─── Card types ───────────────────────────────────────────────────────────────
@@ -48,13 +50,15 @@ type Card = GroupCard | StandaloneCard
 
 const TIER_ORDER: Record<AchievementTier, number> = { bronze: 0, silver: 1, gold: 2 }
 
+const RECENT_UNLOCK_MS = 60_000
+
 // ─── Card builder ─────────────────────────────────────────────────────────────
 
 function buildCards(unlockedMap: Map<string, Date>): Card[] {
   const groupMap = new Map<string, GroupCard>()
   const cards: Card[] = []
 
-  for (const def of Object.values(ACHIEVEMENTS)) {
+  for (const def of Object.values(ACHIEVEMENTS) as AchievementDef[]) {
     if (def.groupKey && def.tier) {
       if (!groupMap.has(def.groupKey)) {
         const card: GroupCard = {
@@ -121,11 +125,54 @@ function TierBadge({ tier, unlocked }: { tier: AchievementTier; unlocked: boolea
   )
 }
 
-function GroupCard({ card }: { card: GroupCard }) {
+function ProgressBar({ value, max }: { value: number; max: number }) {
+  const [animWidth, setAnimWidth] = useState(0)
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setAnimWidth(Math.min(value / max, 1) * 100)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [value, max])
+
+  return (
+    <div className="w-full">
+      <div className="flex justify-between text-[9px] text-muted-foreground leading-none mb-0.5">
+        <span>{value.toLocaleString('de-DE')}</span>
+        <span>{max.toLocaleString('de-DE')}</span>
+      </div>
+      <div className="h-1 bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
+          style={{ width: `${animWidth}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function GroupCard({ card, progress }: { card: GroupCard; progress?: Record<string, number> }) {
   const isHiddenAndLocked = card.hidden && !card.anyUnlocked
   const tooltip = isHiddenAndLocked
     ? '???'
     : card.tiers.map((t) => `${TIER_META[t.tier].emoji} ${t.description}${t.unlocked ? ' ✓' : ''}`).join('\n')
+
+  const justUnlocked = card.latestUnlockedAt
+    ? Date.now() - card.latestUnlockedAt.getTime() < RECENT_UNLOCK_MS
+    : false
+
+  // Progress bar: only for non-hidden groups with data, when next tier exists
+  let progressBar: React.ReactNode = null
+  if (!card.hidden && progress !== undefined) {
+    const nextTier = card.tiers.find(t => !t.unlocked)
+    if (nextTier) {
+      const def = (ACHIEVEMENTS as Record<string, AchievementDef>)[nextTier.key]
+      if (def?.threshold !== undefined) {
+        const currentValue = progress[card.groupKey] ?? 0
+        progressBar = <ProgressBar value={currentValue} max={def.threshold} />
+      }
+    }
+  }
 
   return (
     <div
@@ -133,6 +180,7 @@ function GroupCard({ card }: { card: GroupCard }) {
       className={cn(
         'flex flex-col items-center gap-1.5 p-2 rounded-xl border text-center',
         card.anyUnlocked ? 'border-primary/20 bg-primary/5' : 'border-border bg-muted/30 opacity-60',
+        justUnlocked && 'achievement-glow',
       )}
     >
       <span className="text-2xl leading-none">{isHiddenAndLocked ? '🔒' : card.icon}</span>
@@ -144,18 +192,24 @@ function GroupCard({ card }: { card: GroupCard }) {
           <TierBadge key={t.tier} tier={t.tier} unlocked={t.unlocked} />
         ))}
       </div>
+      {progressBar && <div className="w-full mt-0.5">{progressBar}</div>}
     </div>
   )
 }
 
 function StandaloneCard({ card }: { card: StandaloneCard }) {
   const isHiddenAndLocked = card.hidden && !card.unlocked
+  const justUnlocked = card.unlockedAt
+    ? Date.now() - card.unlockedAt.getTime() < RECENT_UNLOCK_MS
+    : false
+
   return (
     <div
       title={isHiddenAndLocked ? '???' : `${card.name}: ${card.description}`}
       className={cn(
         'flex flex-col items-center gap-1 p-2 rounded-xl border text-center',
         card.unlocked ? 'border-primary/20 bg-primary/5' : 'border-border bg-muted/30 opacity-60',
+        justUnlocked && 'achievement-glow',
       )}
     >
       <span className="text-2xl leading-none">{isHiddenAndLocked ? '🔒' : card.icon}</span>
@@ -168,20 +222,19 @@ function StandaloneCard({ card }: { card: StandaloneCard }) {
 
 // ─── Grid ─────────────────────────────────────────────────────────────────────
 
-export function AchievementGrid({ achievements, limit, allLink }: Props) {
+export function AchievementGrid({ achievements, limit, allLink, progress }: Props) {
   const unlockedMap = new Map(achievements.map((a) => [a.key, new Date(a.unlockedAt)]))
   const allCards = buildCards(unlockedMap)
 
-  let displayCards: Card[] = allCards
   allCards.sort((a, b) => {
     const aDate = a.kind === 'group' ? a.latestUnlockedAt : a.unlockedAt
     const bDate = b.kind === 'group' ? b.latestUnlockedAt : b.unlockedAt
 
-    const aLockedAndHidden = !aDate && a.hidden;
-    const bLockedAndHidden = !bDate && b.hidden;
+    const aLockedAndHidden = !aDate && a.hidden
+    const bLockedAndHidden = !bDate && b.hidden
 
-    if (aLockedAndHidden && !bLockedAndHidden) return 1;
-    if (!aLockedAndHidden && bLockedAndHidden) return -1;
+    if (aLockedAndHidden && !bLockedAndHidden) return 1
+    if (!aLockedAndHidden && bLockedAndHidden) return -1
 
     if (!aDate && !bDate) return 0
     if (!aDate) return 1
@@ -189,9 +242,8 @@ export function AchievementGrid({ achievements, limit, allLink }: Props) {
 
     return bDate.getTime() - aDate.getTime()
   })
-  if (limit !== undefined) {
-    displayCards = allCards.slice(0, limit)
-  }
+
+  const displayCards = limit !== undefined ? allCards.slice(0, limit) : allCards
 
   return (
     <div>
@@ -209,7 +261,7 @@ export function AchievementGrid({ achievements, limit, allLink }: Props) {
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
           {displayCards.map((card) =>
             card.kind === 'group'
-              ? <GroupCard key={card.groupKey} card={card} />
+              ? <GroupCard key={card.groupKey} card={card} progress={progress} />
               : <StandaloneCard key={card.key} card={card} />
           )}
         </div>

@@ -7,6 +7,7 @@ import { db } from "../db/index.ts";
 import {
   buyables,
   groupMembers,
+  groups,
   productVariants,
   prostVouchers,
   transactionItems,
@@ -252,10 +253,13 @@ router.post(
 
     // ── Group purchase: split equally among all members ───────────────────────
     if (body.groupId) {
-      const members = await db
-        .select({ userId: groupMembers.userId })
-        .from(groupMembers)
-        .where(eq(groupMembers.groupId, body.groupId!));
+      const [members, [group]] = await Promise.all([
+        db
+          .select({ userId: groupMembers.userId })
+          .from(groupMembers)
+          .where(and(eq(groupMembers.groupId, body.groupId!), isNull(groupMembers.leftAt))),
+        db.select({ name: groups.name }).from(groups).where(eq(groups.id, body.groupId!)),
+      ]);
 
       if (members.length === 0)
         return c.json(
@@ -384,10 +388,12 @@ router.post(
       emitFeedEvent({
         type: "purchase",
         userId: user.id,
+        targetGroupId: body.groupId,
         metadata: {
           items: primaryTxn.feedItems,
           totalAmount: primaryTxn.cost,
           groupId: body.groupId,
+          groupName: group?.name,
           memberCount: n,
         },
       });

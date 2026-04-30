@@ -35,6 +35,14 @@ export const MeResponseSchema = z.object({
 export const BUYABLE_CATEGORIES = ['alcoholic', 'soft_drink', 'food', 'snack', 'other'] as const
 export type BuyableCategory = typeof BUYABLE_CATEGORIES[number]
 
+export const CATEGORY_LABELS: Record<BuyableCategory, string> = {
+  alcoholic: 'Alkoholische Getränke',
+  soft_drink: 'Softdrink',
+  food: 'Essen',
+  snack: 'Snacks',
+  other: 'Sonstiges',
+}
+
 export const CreateBuyableSchema = z.object({
   name: z.string().min(1).max(80),
   imageUrl: z.string().url().optional(),

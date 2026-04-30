@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import type { BuyableWithVariants } from '@shared/types'
 import { formatCents, cn } from '../../lib/utils'
+import { BUYABLE_CATEGORIES, CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas'
 
 // ─── Create Product Modal ─────────────────────────────────────────────────────
 
@@ -46,8 +47,16 @@ function CreateProductModal({ open, onClose }: { open: boolean; onClose: () => v
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Kategorie</label>
-          <input value={form.category} onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))} placeholder="z.B. Getränke"
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          <select
+            value={form.category}
+            onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
+            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">Keine Kategorie</option>
+            {BUYABLE_CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>
+            ))}
+          </select>
         </div>
         <div className="border-t border-border pt-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Erste Variante</p>
@@ -136,7 +145,7 @@ function ProductRow({ item, onAddVariant }: { item: BuyableWithVariants; onAddVa
           {expanded ? <ChevronDown size={16} className="flex-shrink-0 text-muted-foreground" /> : <ChevronRight size={16} className="flex-shrink-0 text-muted-foreground" />}
           <div className="min-w-0">
             <span className="font-semibold text-sm">{item.name}</span>
-            {item.category && <span className="ml-2 text-xs text-muted-foreground">{item.category}</span>}
+            {item.category && <span className="ml-2 text-xs text-muted-foreground">{CATEGORY_LABELS[item.category as BuyableCategory] ?? item.category}</span>}
             {!item.isActive && <span className="ml-2 text-xs text-muted-foreground">(inaktiv)</span>}
           </div>
         </button>

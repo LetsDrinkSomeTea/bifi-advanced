@@ -5,6 +5,7 @@ import { and, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm'
 import { db } from '../db/index.ts'
 import { buyables, transactionItems, transactions, userAchievements, userFriendships, users } from '../db/schema.ts'
 import { requireAuth } from '../middleware/auth.ts'
+import { prostSentCount, prostReceivedCount, categoryItemCount } from '../services/achievements.ts'
 
 const router = new Hono()
 
@@ -57,55 +58,72 @@ router.get('/:id/profile', requireAuth, async (c) => {
 
   if (!user) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404)
 
-  // Purchase count
-  const [countRow] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(transactions)
-    .where(and(eq(transactions.userId, id), eq(transactions.type, 'purchase'), isNull(transactions.cancelledAt)))
-
-  // Leaderboard rank by total spent alltime
-  const rankResult = await db.execute(sql`
-    WITH totals AS (
-      SELECT user_id, SUM(ABS(total_amount)) AS total
-      FROM transactions
-      WHERE type = 'purchase' AND cancelled_at IS NULL
-      GROUP BY user_id
-    ),
-    ranked AS (
-      SELECT user_id, RANK() OVER (ORDER BY total DESC)::int AS rank
-      FROM totals
-    )
-    SELECT rank FROM ranked WHERE user_id = ${id}
-  `)
-  const rank = (rankResult.rows[0] as { rank: number } | undefined)?.rank ?? null
-
-  // Favorite product
-  const [favProduct] = await db
-    .select({
-      name: buyables.name,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(transactionItems)
-    .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
-    .innerJoin(buyables, eq(transactionItems.buyableId, buyables.id))
-    .where(and(eq(transactions.userId, id), eq(transactions.type, 'purchase'), isNull(transactions.cancelledAt)))
-    .groupBy(buyables.id, buyables.name)
-    .orderBy(desc(sql`count(*)`))
-    .limit(1)
-
-  // Friendship status (skip if own profile)
-  let friendshipStatus: 'none' | 'pending_sent' | 'pending_received' | 'friends' | null = null
-  if (id !== self.id) {
-    const [fs] = await db
-      .select()
-      .from(userFriendships)
-      .where(
+  const friendshipQuery = id !== self.id
+    ? db.select().from(userFriendships).where(
         or(
           and(eq(userFriendships.requesterId, self.id), eq(userFriendships.addresseeId, id)),
           and(eq(userFriendships.requesterId, id), eq(userFriendships.addresseeId, self.id)),
         ),
       )
+    : Promise.resolve(null)
 
+  const [
+    [countRow],
+    rankResult,
+    [favProduct],
+    achievementRows,
+    friendshipRows,
+    prostSent,
+    prostReceived,
+    alcoholicCount,
+    softDrinkCount,
+    foodCount,
+    snackCount,
+    otherCount,
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` })
+      .from(transactions)
+      .where(and(eq(transactions.userId, id), eq(transactions.type, 'purchase'), isNull(transactions.cancelledAt))),
+    db.execute(sql`
+      WITH totals AS (
+        SELECT user_id, SUM(ABS(total_amount)) AS total
+        FROM transactions
+        WHERE type = 'purchase' AND cancelled_at IS NULL
+        GROUP BY user_id
+      ),
+      ranked AS (
+        SELECT user_id, RANK() OVER (ORDER BY total DESC)::int AS rank
+        FROM totals
+      )
+      SELECT rank FROM ranked WHERE user_id = ${id}
+    `),
+    db.select({ name: buyables.name, count: sql<number>`count(*)::int` })
+      .from(transactionItems)
+      .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+      .innerJoin(buyables, eq(transactionItems.buyableId, buyables.id))
+      .where(and(eq(transactions.userId, id), eq(transactions.type, 'purchase'), isNull(transactions.cancelledAt)))
+      .groupBy(buyables.id, buyables.name)
+      .orderBy(desc(sql`count(*)`))
+      .limit(1),
+    db.select({ key: userAchievements.achievementKey, unlockedAt: userAchievements.unlockedAt })
+      .from(userAchievements)
+      .where(eq(userAchievements.userId, id))
+      .orderBy(desc(userAchievements.unlockedAt)),
+    friendshipQuery,
+    prostSentCount(id),
+    prostReceivedCount(id),
+    categoryItemCount(id, 'alcoholic'),
+    categoryItemCount(id, 'soft_drink'),
+    categoryItemCount(id, 'food'),
+    categoryItemCount(id, 'snack'),
+    categoryItemCount(id, 'other'),
+  ])
+
+  const rank = (rankResult.rows[0] as { rank: number } | undefined)?.rank ?? null
+
+  let friendshipStatus: 'none' | 'pending_sent' | 'pending_received' | 'friends' | null = null
+  if (friendshipRows !== null) {
+    const fs = friendshipRows[0]
     if (!fs) {
       friendshipStatus = 'none'
     } else if (fs.status === 'accepted') {
@@ -117,11 +135,17 @@ router.get('/:id/profile', requireAuth, async (c) => {
     }
   }
 
-  const achievementRows = await db
-    .select({ key: userAchievements.achievementKey, unlockedAt: userAchievements.unlockedAt })
-    .from(userAchievements)
-    .where(eq(userAchievements.userId, id))
-    .orderBy(desc(userAchievements.unlockedAt))
+  const achievementProgress: Record<string, number> = {
+    purchases: countRow?.count ?? 0,
+    prost_sent: prostSent,
+    prost_received: prostReceived,
+    achievements_collected: achievementRows.length,
+    alcoholic_drinker: alcoholicCount,
+    softdrink_lover: softDrinkCount,
+    food_fan: foodCount,
+    snack_king: snackCount,
+    misc_collector: otherCount,
+  }
 
   return c.json({
     ...user,
@@ -132,6 +156,7 @@ router.get('/:id/profile', requireAuth, async (c) => {
       favoriteProduct: favProduct ?? null,
     },
     achievements: achievementRows,
+    achievementProgress,
   })
 })
 
