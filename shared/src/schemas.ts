@@ -83,7 +83,6 @@ export const DepositSchema = z.object({
 export const CreateGroupSchema = z.object({
   name: z.string().min(1).max(80),
   description: z.string().max(500).optional(),
-  maxMembers: z.number().int().min(2).max(20).default(10),
 })
 
 export const JoinGroupSchema = z.object({

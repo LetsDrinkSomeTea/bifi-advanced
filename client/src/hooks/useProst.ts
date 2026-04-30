@@ -18,6 +18,11 @@ export function useProstVouchers() {
   })
 }
 
+export function useVoucherSet(): Set<string> {
+  const { data } = useProstVouchers()
+  return new Set(data?.map((v) => v.variantId) ?? [])
+}
+
 export function useSendProst() {
   const qc = useQueryClient()
   return useMutation({

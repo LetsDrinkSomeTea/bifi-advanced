@@ -163,14 +163,30 @@ router.delete('/:userId', requireAuth, async (c) => {
   const user = c.get('user')
   const { userId } = c.req.param()
 
-  await db.delete(userFriendships).where(
-    or(
-      and(eq(userFriendships.requesterId, user.id), eq(userFriendships.addresseeId, userId)),
-      and(eq(userFriendships.requesterId, userId), eq(userFriendships.addresseeId, user.id)),
-    ),
-  )
+  const [row] = await db
+    .select()
+    .from(userFriendships)
+    .where(
+      or(
+        and(eq(userFriendships.requesterId, user.id), eq(userFriendships.addresseeId, userId)),
+        and(eq(userFriendships.requesterId, userId), eq(userFriendships.addresseeId, user.id)),
+      ),
+    )
 
-  return c.body(null, 204)
+  if (!row) return c.json({ error: 'Not found', code: 'NOT_FOUND' }, 404)
+
+  await db.delete(userFriendships).where(eq(userFriendships.id, row.id))
+
+  let action: 'unfriended' | 'request_cancelled' | 'request_declined'
+  if (row.status === 'accepted') {
+    action = 'unfriended'
+  } else if (row.requesterId === user.id) {
+    action = 'request_cancelled'
+  } else {
+    action = 'request_declined'
+  }
+
+  return c.json({ action })
 })
 
 export default router

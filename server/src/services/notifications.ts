@@ -3,6 +3,9 @@ import { db } from '../db/index.ts'
 import { notifications } from '../db/schema.ts'
 
 // ─── SSE client registry ─────────────────────────────────────────────────────
+// NOTE: sseClients is process-local. In a multi-instance deployment, broadcastInvalidate
+// and pushInvalidate only reach clients connected to this instance. Replace with a
+// Redis pub/sub fan-out if horizontal scaling is needed.
 
 type SSEWriter = (event: string, data: unknown) => Promise<void>
 const sseClients = new Map<string, Set<SSEWriter>>()

@@ -110,14 +110,23 @@ export async function checkAchievements(event: AchievementEvent): Promise<void> 
   const { userId } = event
   const triggered = rules.filter((r) => r.triggers.includes(event.type))
 
-  for (const rule of triggered) {
-    try {
-      const met = await rule.check({ userId, event })
-      if (met && await tryUnlock(userId, rule.key)) {
-        notifyAchievement(userId, rule.key)
+  await Promise.all(
+    triggered.map(async (rule) => {
+      try {
+        const met = await rule.check({ userId, event })
+        if (!met) return
+        // Pre-check avoids a noisy unique-constraint error on every re-trigger
+        const [existing] = await db
+          .select({ id: userAchievements.id })
+          .from(userAchievements)
+          .where(and(eq(userAchievements.userId, userId), eq(userAchievements.achievementKey, rule.key)))
+          .limit(1)
+        if (!existing && await tryUnlock(userId, rule.key)) {
+          notifyAchievement(userId, rule.key)
+        }
+      } catch (err) {
+        console.error(`Achievement check failed for "${rule.key}":`, err)
       }
-    } catch (err) {
-      console.error(`Achievement check failed for "${rule.key}":`, err)
-    }
-  }
+    }),
+  )
 }

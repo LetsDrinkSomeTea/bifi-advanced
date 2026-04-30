@@ -163,7 +163,6 @@ router.patch('/me', requireAuth, zValidator('json', UpdateProfileSchema), async 
       .where(eq(users.id, self.id))
       .returning()
 
-    await c.get('session' as never)
     return c.json({
       id: updated!.id,
       displayName: updated!.displayName,

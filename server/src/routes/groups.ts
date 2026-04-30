@@ -9,6 +9,8 @@ import { groupMembers, groups, users } from '../db/schema.ts'
 import { emitFeedEvent } from '../services/feed.ts'
 import { requireAuth } from '../middleware/auth.ts'
 import { checkAchievements } from '../services/achievements.ts'
+import { rateLimit } from '../middleware/rateLimit.ts'
+import { CreateGroupSchema } from '../../../shared/src/schemas.ts'
 
 const router = new Hono()
 
@@ -75,11 +77,6 @@ router.get('/:id', requireAuth, async (c) => {
 
 // ─── POST /api/groups ─────────────────────────────────────────────────────────
 
-const CreateGroupSchema = z.object({
-  name: z.string().min(1).max(60),
-  description: z.string().max(200).optional(),
-})
-
 router.post('/', requireAuth, zValidator('json', CreateGroupSchema), async (c) => {
   const user = c.get('user')
   const { name, description } = c.req.valid('json')
@@ -111,7 +108,9 @@ router.post('/', requireAuth, zValidator('json', CreateGroupSchema), async (c) =
 
 // ─── POST /api/groups/join ────────────────────────────────────────────────────
 
-router.post('/join', requireAuth, zValidator('json', z.object({ inviteCode: z.string() })), async (c) => {
+const joinRateLimit = rateLimit(10, 300, (c) => `rl:join:${c.get('user')?.id ?? 'anon'}`)
+
+router.post('/join', requireAuth, joinRateLimit, zValidator('json', z.object({ inviteCode: z.string() })), async (c) => {
   const user = c.get('user')
   const { inviteCode } = c.req.valid('json')
 

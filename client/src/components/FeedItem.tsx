@@ -16,7 +16,6 @@ const TYPE_EMOJI: Record<string, string> = {
   purchase: '🛒',
   achievement: '🏆',
   prost_sent: '🍺',
-  prost_received: '🍺',
   nudge: '👋',
   group_join: '👥',
   group_created: '🏗️',
@@ -118,14 +117,15 @@ function feedText(entry: GroupedFeedEntry, currentUserId: string | undefined): R
         : <><Actor user={user} currentUserId={currentUserId} /> hat {targetName(targetUser, currentUserId, true)} angestupst{message ? <> – <span className="italic">„{message}"</span></> : ''}</>
     }
     case 'prost_sent': {
+      const drink = metadata?.buyableName
+        ? `${metadata.buyableName as string}${metadata.variantName ? ` ${metadata.variantName as string}` : ''}`
+        : null
+      const drinkNode = drink
+        ? <>einen <span className="font-medium">{drink}</span></>
+        : <>einen</>
       return isMe
-        ? <>Du hast {targetName(targetUser, currentUserId, true)} einen Prost geschickt 🍺</>
-        : <><Actor user={user} currentUserId={currentUserId} /> hat {targetName(targetUser, currentUserId, true)} einen Prost geschickt 🍺</>
-    }
-    case 'prost_received': {
-      return isMe
-        ? <>Du hast einen Prost von {targetName(targetUser, currentUserId, false)} erhalten 🍺</>
-        : <><Actor user={user} currentUserId={currentUserId} /> hat einen Prost von {targetName(targetUser, currentUserId, false)} erhalten 🍺</>
+        ? <>Du hast {targetName(targetUser, currentUserId, true)} {drinkNode} ausgegeben 🍺</>
+        : <><Actor user={user} currentUserId={currentUserId} /> hat {targetName(targetUser, currentUserId, true)} {drinkNode} ausgegeben 🍺</>
     }
     case 'friendship_started': {
       const isTarget = !!currentUserId && targetUser?.id === currentUserId

@@ -65,6 +65,16 @@ app.route('/api/leaderboard', leaderboardRoutes)
 
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }))
 
+// Translate thrown errors that carry a status/code (e.g. from resolveItems) into proper responses
+app.onError((err, c) => {
+  const e = err as Error & { status?: number; code?: string }
+  if (typeof e.status === 'number' && e.status >= 400 && e.status < 500) {
+    return c.json({ error: e.message, code: e.code }, e.status as 400 | 403 | 404 | 409 | 422 | 429)
+  }
+  console.error(err)
+  return c.json({ error: 'Internal server error' }, 500)
+})
+
 // ─── API Docs ─────────────────────────────────────────────────────────────────
 
 app.get('/api/openapi.json', (c) => c.json(openApiSpec))

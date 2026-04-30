@@ -11,7 +11,7 @@ import {
   randomPKCECodeVerifier,
   calculatePKCECodeChallenge,
 } from '../services/oidc.ts'
-import { linkSessionToUser } from '../middleware/session.ts'
+import { linkSessionToUser, regenerateSession } from '../middleware/session.ts'
 import { requireAuth } from '../middleware/auth.ts'
 
 type RoleSyncMode = 'always' | 'on_creation' | 'never'
@@ -40,7 +40,8 @@ auth.get('/login', async (c) => {
     return c.json({ error: 'SSO not configured', code: 'OIDC_NOT_CONFIGURED' }, 503)
   }
 
-  const session = c.get('session')
+  // Regenerate session ID to prevent fixation if a prior OIDC flow is in progress
+  const session = await regenerateSession(c)
   const pkceVerifier = randomPKCECodeVerifier()
   const codeChallenge = await calculatePKCECodeChallenge(pkceVerifier)
   const state = randomBytes(32).toString('hex')

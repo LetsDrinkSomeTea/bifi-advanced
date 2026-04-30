@@ -1,3 +1,4 @@
+import type { Context } from 'hono'
 import { createMiddleware } from 'hono/factory'
 import { getCookie, setCookie } from 'hono/cookie'
 import { randomUUID } from 'crypto'
@@ -67,4 +68,18 @@ export async function invalidateUserSessions(userId: string) {
     await Promise.all(sessionIds.map((id) => redis.del(`session:${id}`)))
   }
   await redis.del(`user:sessions:${userId}`)
+}
+
+// Invalidates the current session and issues a fresh session ID, carrying over
+// any existing session data. Prevents session-fixation on OIDC login start.
+export async function regenerateSession(c: Context): Promise<SessionData> {
+  const oldId = c.get('sessionId')
+  if (oldId) {
+    await redis.del(`session:${oldId}`)
+  }
+  const newId = randomUUID()
+  c.set('sessionId', newId)
+  const fresh: SessionData = {}
+  c.set('session', fresh)
+  return fresh
 }

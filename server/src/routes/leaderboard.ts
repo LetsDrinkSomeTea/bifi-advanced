@@ -124,10 +124,14 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
       .limit(50)
   }
 
+  // Rank and name are public; value is only visible to friends (and self) for monetary types
+  const hideValue = type === 'total_spent' || type === 'total_purchases'
   const data = rows.map((r, i) => ({
     rank: i + 1,
-    ...r,
-    value: type === 'total_spent' && !friendIds.has(r.userId) ? null : r.value,
+    userId: r.userId,
+    displayName: r.displayName,
+    avatarUrl: r.avatarUrl,
+    value: hideValue && !friendIds.has(r.userId) ? null : r.value,
   }))
   return c.json(data)
 })

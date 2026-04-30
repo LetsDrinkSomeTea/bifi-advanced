@@ -2,10 +2,11 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { and, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
+import { PurchaseSchema } from '../../../shared/src/schemas.ts'
 import { db } from '../db/index.ts'
 import { buyables, groupMembers, productVariants, prostVouchers, transactionItems, transactions, users } from '../db/schema.ts'
 import { emitFeedEvent } from '../services/feed.ts'
-import { requireAuth, requireRole } from '../middleware/auth.ts'
+import { requireAuth } from '../middleware/auth.ts'
 import { purchaseRateLimit } from '../middleware/rateLimit.ts'
 import { getActiveDiscount } from '../services/promotions.ts'
 import { writeAuditLog } from '../services/audit.ts'
@@ -95,22 +96,6 @@ router.get('/', requireAuth, zValidator('query', HistoryQuerySchema), async (c) 
   return c.json({ data, nextCursor })
 })
 
-// ─── POST /api/transactions/purchase ─────────────────────────────────────────
-
-const PurchaseSchema = z.object({
-  items: z
-    .array(
-      z.object({
-        buyableId: z.string().uuid(),
-        variantId: z.string().uuid().optional(),
-        quantity: z.number().int().min(1).max(99),
-      }),
-    )
-    .min(1),
-  groupId: z.string().uuid().optional(),
-  note: z.string().max(200).optional(),
-})
-
 // ─── Shared: resolve and price items ──────────────────────────────────────────
 
 async function resolveItems(
@@ -193,16 +178,21 @@ router.post('/purchase', requireAuth, purchaseRateLimit, zValidator('json', Purc
 
     if (members.length === 0) return c.json({ error: 'Group not found or empty', code: 'GROUP_ERROR' }, 400)
 
+    // Verify caller is a member of the group
+    if (!members.some((m) => m.userId === user.id)) {
+      return c.json({ error: 'Not a member of this group', code: 'FORBIDDEN' }, 403)
+    }
+
     const memberIds = members.map((m) => m.userId)
     const n = memberIds.length
 
-    const { toInsert, feedItems, cost } = await db.transaction(async (tx) => resolveItems(tx, body.items))
-
-    // Distribute cost: each member pays ceil(cost/n), buyer absorbs rounding
-    const sharePerOther = Math.ceil(cost / n)
-    const buyerShare = cost - sharePerOther * (n - 1)
-
+    // resolveItems runs inside the same transaction as balance deduction (fixes TOCTOU)
     const primaryTxn = await db.transaction(async (tx) => {
+      const { toInsert, feedItems, cost } = await resolveItems(tx, body.items)
+
+      // Distribute cost: each member pays ceil(cost/n), buyer absorbs rounding
+      const sharePerOther = Math.ceil(cost / n)
+      const buyerShare = cost - sharePerOther * (n - 1)
       // Purchaser's transaction (has items)
       const [primary] = await tx
         .insert(transactions)
@@ -229,6 +219,7 @@ router.post('/purchase', requireAuth, purchaseRateLimit, zValidator('json', Purc
       }
 
       // Other members' split transactions (no items)
+      const splitNotifications: Array<{ memberId: string; netShare: number; txnId: string }> = []
       for (const memberId of memberIds) {
         if (memberId === user.id) continue
         const [splitTxn] = await tx
@@ -243,25 +234,30 @@ router.post('/purchase', requireAuth, purchaseRateLimit, zValidator('json', Purc
           })
           .returning()
 
-        const { credit: mc, ids: mids } = await redeemVouchers(tx, memberId, variantIds, splitTxn!.id)
+        const { credit: mc } = await redeemVouchers(tx, memberId, variantIds, splitTxn!.id)
         const netShare = Math.max(0, sharePerOther - mc)
         await tx.update(users).set({ balance: sql`balance - ${netShare}`, updatedAt: new Date() }).where(eq(users.id, memberId))
         if (mc > 0) await tx.update(transactions).set({ totalAmount: -netShare }).where(eq(transactions.id, splitTxn!.id))
 
-        pushInvalidate(memberId, ['balance', 'transactions'])
-        createNotification({
-          userId: memberId,
-          type: 'system',
-          title: 'Gruppenaufteilung',
-          message: `${user.displayName} hat eine Gruppenbestellung aufgegeben. Dein Anteil: ${(netShare / 100).toFixed(2)} €`,
-          relatedId: splitTxn!.id,
-        }).catch(console.error)
+        splitNotifications.push({ memberId, netShare, txnId: splitTxn!.id })
       }
 
-      return { txn: primary!, feedItems, voucherCredit: credit, voucherIds: ids }
+      return { txn: primary!, feedItems, cost, voucherCredit: credit, voucherIds: ids, splitNotifications }
     })
 
-    emitFeedEvent({ type: 'purchase', userId: user.id, metadata: { items: feedItems, totalAmount: cost, groupId: body.groupId, memberCount: n } })
+    // Notify split members outside the transaction
+    for (const { memberId, netShare, txnId } of primaryTxn.splitNotifications) {
+      pushInvalidate(memberId, ['balance', 'transactions'])
+      createNotification({
+        userId: memberId,
+        type: 'system',
+        title: 'Gruppenaufteilung',
+        message: `${user.displayName} hat eine Gruppenbestellung aufgegeben. Dein Anteil: ${(netShare / 100).toFixed(2)} €`,
+        relatedId: txnId,
+      }).catch(console.error)
+    }
+
+    emitFeedEvent({ type: 'purchase', userId: user.id, metadata: { items: primaryTxn.feedItems, totalAmount: primaryTxn.cost, groupId: body.groupId, memberCount: n } })
 
     checkAchievements({ type: 'purchase', userId: user.id, purchaseHour: new Date().getHours() }).catch(console.error)
 
@@ -301,13 +297,13 @@ router.post('/purchase', requireAuth, purchaseRateLimit, zValidator('json', Purc
       for (const voucherId of redeemedVoucherIds) {
         const [v] = await db.select({ fromUserId: prostVouchers.fromUserId }).from(prostVouchers).where(eq(prostVouchers.id, voucherId))
         if (v) {
-          createNotification({ userId: v.fromUserId, type: 'prost', title: 'Prost eingelöst! 🍺', message: `${user.displayName} hat deinen Gutschein eingelöst.`, relatedId: txn.id }).catch(console.error)
+          createNotification({ userId: v.fromUserId, type: 'prost', title: `${user.displayName} hat deinen ausgegeben! 🍺`, message: `${user.displayName} hat den Gutschein eingelöst.`, relatedId: txn.id }).catch(console.error)
         }
       }
     })().catch(console.error)
   }
 
-  return c.json(txn, 201)
+  return c.json({ ...txn, voucherRedeemed: voucherCredit > 0 }, 201)
 })
 
 // ─── DELETE /api/transactions/:id (cancel) ────────────────────────────────────
@@ -339,17 +335,39 @@ router.delete('/:id', requireAuth, async (c) => {
     return c.json({ error: 'Cancel window expired (5 minutes)', code: 'CANCEL_WINDOW_EXPIRED' }, 403)
   }
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(transactions)
-      .set({ cancelledAt: new Date(), cancelledBy: user.id })
-      .where(eq(transactions.id, id))
+  const cancelledAt = new Date()
 
-    // Refund: totalAmount is negative for purchases, so subtracting it adds it back
-    await tx
-      .update(users)
-      .set({ balance: sql`balance - ${txn.totalAmount}`, updatedAt: new Date() })
-      .where(eq(users.id, txn.userId))
+  await db.transaction(async (tx) => {
+    const cancelTxn = async (t: typeof txn) => {
+      await tx.update(transactions).set({ cancelledAt, cancelledBy: user.id }).where(eq(transactions.id, t.id))
+      // totalAmount is negative for purchases, so subtracting it adds back the balance
+      await tx.update(users).set({ balance: sql`balance - ${t.totalAmount}`, updatedAt: cancelledAt }).where(eq(users.id, t.userId))
+      // Reinstate any vouchers that were redeemed as part of this transaction
+      await tx.update(prostVouchers)
+        .set({ redeemedAt: null, redeemedTransactionId: null })
+        .where(eq(prostVouchers.redeemedTransactionId, t.id))
+    }
+
+    await cancelTxn(txn)
+
+    // Cascade: cancel all split transactions created in the same group purchase
+    if (txn.groupId && txn.initiatedBy === txn.userId) {
+      const splits = await tx
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.groupId, txn.groupId),
+            eq(transactions.initiatedBy, txn.userId),
+            eq(transactions.createdAt, txn.createdAt),
+            isNull(transactions.cancelledAt),
+            sql`${transactions.id} != ${txn.id}`,
+          ),
+        )
+      for (const split of splits) {
+        await cancelTxn(split)
+      }
+    }
   })
 
   await writeAuditLog({
@@ -362,33 +380,6 @@ router.delete('/:id', requireAuth, async (c) => {
   })
 
   return c.body(null, 204)
-})
-
-// ─── GET /api/admin/transactions ──────────────────────────────────────────────
-
-router.get('/admin/all', requireAuth, requireRole('moderator'), zValidator('query', HistoryQuerySchema), async (c) => {
-  const { cursor, limit } = c.req.valid('query')
-  const parsed = cursor ? decodeCursor(cursor) : null
-
-  const rows = await db
-    .select()
-    .from(transactions)
-    .where(
-      parsed
-        ? or(
-            lt(transactions.createdAt, new Date(parsed.t)),
-            and(eq(transactions.createdAt, new Date(parsed.t)), lt(transactions.id, parsed.id)),
-          )
-        : undefined,
-    )
-    .orderBy(desc(transactions.createdAt), desc(transactions.id))
-    .limit(limit + 1)
-
-  const hasMore = rows.length > limit
-  const page = hasMore ? rows.slice(0, limit) : rows
-  const nextCursor = hasMore ? encodeCursor(page[page.length - 1]!.createdAt, page[page.length - 1]!.id) : null
-
-  return c.json({ data: page, nextCursor })
 })
 
 export default router

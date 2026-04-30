@@ -1,13 +1,14 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import { and, asc, eq, lt, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, lt, or, sql } from 'drizzle-orm'
 import * as argon2 from 'argon2'
 import { db } from '../db/index.ts'
 import { transactions, users } from '../db/schema.ts'
 import { requireAuth, requireRole } from '../middleware/auth.ts'
 import { invalidateUserSessions } from '../middleware/session.ts'
 import { writeAuditLog } from '../services/audit.ts'
+import { pushInvalidate } from '../services/notifications.ts'
 
 const router = new Hono()
 
@@ -98,6 +99,11 @@ router.patch('/users/:id', zValidator('json', UpdateUserSchema), async (c) => {
   const body = c.req.valid('json')
   const actor = c.get('user')
 
+  // Only admins can assign the admin role
+  if (body.role === 'admin' && actor.role !== 'admin') {
+    return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403)
+  }
+
   const [before] = await db.select().from(users).where(eq(users.id, id))
   if (!before) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404)
 
@@ -161,6 +167,8 @@ router.post('/users/:id/deposit', zValidator('json', DepositSchema), async (c) =
     ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
   })
 
+  pushInvalidate(id, ['balance', 'transactions'])
+
   return c.json(txn, 201)
 })
 
@@ -180,6 +188,50 @@ router.get('/settlement', async (c) => {
     .orderBy(asc(users.balance))
 
   return c.json(debtors)
+})
+
+// ─── GET /api/admin/transactions ─────────────────────────────────────────────
+
+function encodeCursor(createdAt: Date, id: string): string {
+  return Buffer.from(JSON.stringify({ t: createdAt.toISOString(), id })).toString('base64url')
+}
+
+function decodeCursor(cursor: string): { t: string; id: string } | null {
+  try {
+    return JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8')) as { t: string; id: string }
+  } catch {
+    return null
+  }
+}
+
+const TxnQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+})
+
+router.get('/transactions', zValidator('query', TxnQuerySchema), async (c) => {
+  const { cursor, limit } = c.req.valid('query')
+  const parsed = cursor ? decodeCursor(cursor) : null
+
+  const rows = await db
+    .select()
+    .from(transactions)
+    .where(
+      parsed
+        ? or(
+            lt(transactions.createdAt, new Date(parsed.t)),
+            and(eq(transactions.createdAt, new Date(parsed.t)), lt(transactions.id, parsed.id)),
+          )
+        : undefined,
+    )
+    .orderBy(desc(transactions.createdAt), desc(transactions.id))
+    .limit(limit + 1)
+
+  const hasMore = rows.length > limit
+  const page = hasMore ? rows.slice(0, limit) : rows
+  const nextCursor = hasMore ? encodeCursor(page[page.length - 1]!.createdAt, page[page.length - 1]!.id) : null
+
+  return c.json({ data: page, nextCursor })
 })
 
 export default router

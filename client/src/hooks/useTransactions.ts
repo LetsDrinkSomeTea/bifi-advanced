@@ -26,14 +26,19 @@ interface PurchaseBody {
   note?: string
 }
 
+export interface PurchaseResult {
+  id: string
+  voucherRedeemed: boolean
+}
+
 export function usePurchase() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: PurchaseBody) => api.post('/api/transactions/purchase', body),
+    mutationFn: (body: PurchaseBody) => api.post<PurchaseResult>('/api/transactions/purchase', body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['auth', 'me'] })
       qc.invalidateQueries({ queryKey: ['transactions'] })
-      qc.invalidateQueries({ queryKey: ['feed'] })
+      qc.invalidateQueries({ queryKey: ['prost', 'vouchers'] })
     },
   })
 }

@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { and, eq } from 'drizzle-orm'
 import { db } from '../db/index.ts'
-import { buyables, productVariants } from '../db/schema.ts'
+import { buyables, buyableCategoryEnum, productVariants } from '../db/schema.ts'
 import { requireAuth, requireRole } from '../middleware/auth.ts'
 import { writeAuditLog } from '../services/audit.ts'
 
@@ -44,10 +44,12 @@ router.get('/', requireAuth, async (c) => {
 
 // ─── POST /api/buyables ───────────────────────────────────────────────────────
 
+const BUYABLE_CATEGORIES = ['alcoholic', 'soft_drink', 'food', 'snack', 'other'] as const
+
 const CreateBuyableSchema = z.object({
   name: z.string().min(1).max(80),
   imageUrl: z.string().url().optional(),
-  category: z.string().max(50).optional(),
+  category: z.enum(BUYABLE_CATEGORIES).optional(),
   sortOrder: z.number().int().default(0),
   firstVariant: z.object({
     name: z.string().min(1).max(80),
@@ -95,7 +97,7 @@ router.post('/', requireAuth, requireRole('moderator'), zValidator('json', Creat
 const UpdateBuyableSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   imageUrl: z.string().url().nullable().optional(),
-  category: z.string().max(50).nullable().optional(),
+  category: z.enum(BUYABLE_CATEGORIES).nullable().optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
 })

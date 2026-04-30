@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Minus, Plus, X, Users2 } from 'lucide-react'
 import type { BuyableWithVariants } from '@shared/types'
 import { usePurchase } from '../hooks/useTransactions'
+import { useVoucherSet } from '../hooks/useProst'
 import { useGroups } from '../hooks/useGroups'
 import { cn, formatCents } from '../lib/utils'
 
@@ -18,6 +19,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
   const [groupId, setGroupId] = useState<string | null>(null)
   const { mutate, isPending } = usePurchase()
   const { data: groups } = useGroups()
+  const voucherSet = useVoucherSet()
 
   const open = buyable !== null
   const variants = buyable?.variants.filter((v) => v.isActive) ?? []
@@ -46,6 +48,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
   const unitPrice = selectedVariant?.price ?? 0
   const totalPrice = unitPrice * quantity
   const canBuy = !!variantId
+  const hasVoucher = !!variantId && voucherSet.has(variantId)
 
   const selectedGroup = groups?.find((g) => g.id === groupId)
   const memberCount = selectedGroup?.memberCount ?? 1
@@ -56,9 +59,9 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
     mutate(
       { items: [{ buyableId: buyable.id, variantId, quantity }], groupId: groupId ?? undefined },
       {
-        onSuccess: () => {
-          setFeedback('Gekauft! ✓')
-          setTimeout(onClose, 800)
+        onSuccess: (data) => {
+          setFeedback(data?.voucherRedeemed ? 'Ausgegeben eingelöst! 🎁' : 'Gekauft! ✓')
+          setTimeout(onClose, 1000)
         },
         onError: (err) => {
           setFeedback(err instanceof Error ? err.message : 'Fehler beim Kauf')
@@ -91,6 +94,11 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
               <span className="text-sm font-medium px-2.5 py-0.5 bg-muted rounded-full">
                 {selectedVariant.name}
               </span>
+              {voucherSet.has(selectedVariant.id) && (
+                <span className="text-xs font-medium px-2 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-full">
+                  🎁 Ausgegeben
+                </span>
+              )}
             </div>
           )}
 
@@ -111,7 +119,10 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                     )}
                   >
                     <span className="block">{v.name}</span>
-                    <span className="block text-xs mt-0.5 opacity-75">{formatCents(v.price)}</span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs opacity-75">{formatCents(v.price)}</span>
+                      {voucherSet.has(v.id) && <span className="text-xs">🎁</span>}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -193,7 +204,11 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
               'disabled:opacity-60',
             )}
           >
-            {isPending ? 'Kaufen…' : `Kaufen · ${priceLabel}`}
+            {isPending
+              ? 'Kaufen…'
+              : hasVoucher
+              ? `🎁 Einlösen · ${priceLabel}`
+              : `Kaufen · ${priceLabel}`}
           </button>
         </div>
       </div>

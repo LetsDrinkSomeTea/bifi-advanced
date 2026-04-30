@@ -73,6 +73,17 @@ export function useSSE() {
         setUnreadCount(count)
       })
 
+      es.addEventListener('invalidate', (e) => {
+        const { keys } = JSON.parse((e as MessageEvent).data) as { keys: string[] }
+        for (const key of keys) {
+          if (key === 'feed') qc.invalidateQueries({ queryKey: ['feed'] })
+          else if (key === 'balance') qc.invalidateQueries({ queryKey: ['auth', 'me'] })
+          else if (key === 'transactions') qc.invalidateQueries({ queryKey: ['transactions'] })
+          else if (key === 'vouchers') qc.invalidateQueries({ queryKey: ['prost', 'vouchers'] })
+          else if (key === 'leaderboard') qc.invalidateQueries({ queryKey: ['leaderboard'] })
+        }
+      })
+
       es.addEventListener('ping', () => {})
 
       es.onerror = () => {

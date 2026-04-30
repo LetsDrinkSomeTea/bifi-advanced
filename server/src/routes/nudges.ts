@@ -7,6 +7,7 @@ import { redis } from '../db/redis.ts'
 import { nudges, users } from '../db/schema.ts'
 import { emitFeedEvent } from '../services/feed.ts'
 import { requireAuth } from '../middleware/auth.ts'
+import { nudgeRateLimit } from '../middleware/rateLimit.ts'
 import { createNotification } from '../services/notifications.ts'
 
 const router = new Hono()
@@ -26,7 +27,7 @@ const NudgeSchema = z.object({
 
 // ─── POST /api/nudges/:recipientId ────────────────────────────────────────────
 
-router.post('/:recipientId', requireAuth, zValidator('json', NudgeSchema), async (c) => {
+router.post('/:recipientId', requireAuth, nudgeRateLimit, zValidator('json', NudgeSchema), async (c) => {
   const sender = c.get('user')
   const { recipientId } = c.req.param()
   const body = c.req.valid('json')

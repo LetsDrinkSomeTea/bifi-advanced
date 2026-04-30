@@ -35,6 +35,7 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'system',
 ])
 
+export const buyableCategoryEnum = pgEnum('buyable_category', ['alcoholic', 'soft_drink', 'food', 'snack', 'other'])
 export const friendshipStatusEnum = pgEnum('friendship_status', ['pending', 'accepted'])
 export const groupRoleEnum = pgEnum('group_role', ['owner', 'member'])
 export const feedTypeEnum = pgEnum('feed_type', [
@@ -80,7 +81,7 @@ export const buyables = pgTable('buyables', {
   id: id(),
   name: text('name').notNull(),
   imageUrl: text('image_url'),
-  category: text('category'),
+  category: buyableCategoryEnum('category'),
   isActive: boolean('is_active').notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: createdAt(),
