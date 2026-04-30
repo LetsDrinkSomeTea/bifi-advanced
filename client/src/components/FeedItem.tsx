@@ -108,11 +108,11 @@ function feedText(entry: GroupedFeedEntry, currentUserId: string | undefined): R
         ? `${metadata.buyableName as string}${metadata.variantName ? ` ${metadata.variantName as string}` : ''}`
         : null
       const drinkNode = drink
-        ? <>einen <span className="font-medium">{drink}</span></>
+        ? <>1× <span className="font-medium">{drink}</span></>
         : <>einen</>
       return isMe
         ? <>Du hast {targetName(targetUser, currentUserId, true)} {drinkNode} ausgegeben 🍺</>
-        : <><Actor user={user} currentUserId={currentUserId} /> hat {targetName(targetUser, currentUserId, true)} {drinkNode} ausgegeben 🍺</>
+        : <><Actor user={user} currentUserId={currentUserId} /> hat {targetName(targetUser, currentUserId, false)} {drinkNode} ausgegeben 🍺</>
     }
     case 'friendship_started': {
       const isTarget = !!currentUserId && targetUser?.id === currentUserId

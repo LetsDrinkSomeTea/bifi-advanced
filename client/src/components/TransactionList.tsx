@@ -14,6 +14,13 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 function txnLabel(txn: TransactionWithItems): string {
+  if (txn.type === 'prost') {
+    const items = txn.items
+      .map((i) => `${i.quantity}× ${i.variantName ? `${i.buyableName} (${i.variantName})` : i.buyableName}`)
+      .join(', ')
+    const prefix = txn.note ? `${txn.note} ` : ''
+    return `${prefix}${items} ausgegeben`
+  }
   if (txn.items.length > 0) {
     return txn.items
       .map((i) => `${i.quantity}× ${i.variantName ? `${i.buyableName} (${i.variantName})` : i.buyableName}`)
@@ -87,8 +94,14 @@ export function TransactionList({ transactions, isLoading, skeletonCount = 5 }: 
             <div className="flex-1 min-w-0">
               <p className={cn('text-sm font-medium truncate', isCancelled && 'line-through')}>
                 {txnLabel(txn)}
-                {txn.groupId && <span className="ml-1.5 text-sm text-muted-foreground">{groupSummary ? groupSummary.name : "Gruppeneinkauf"}</span>}
-                {txn.type === 'prost' && <span className="ml-1.5 text-sm">{groupSummary ? groupSummary.name : 'verschenkt'}</span>}
+                {txn.groupId && txn.type !== 'prost' && (
+                  <>
+                    <span className="ml-1.5 mr-1.5 text-sm text-muted-foreground">
+                      für Gruppe
+                    </span>
+                    {groupSummary ? groupSummary.name : "Gruppeneinkauf"}
+                  </>
+                )}
 
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -100,9 +113,9 @@ export function TransactionList({ transactions, isLoading, skeletonCount = 5 }: 
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className={cn(
                 'font-semibold text-sm tabular-nums',
-                txn.totalAmount < 0 ? 'text-red-500' : 'text-green-500',
+                txn.totalAmount <= 0 ? 'text-red-500' : 'text-green-500',
               )}>
-                {txn.totalAmount < 0 ? '' : '+'}{formatCents(txn.totalAmount)}
+                {txn.totalAmount <= 0 ? '' : '+'}{formatCents(txn.totalAmount)}
               </span>
 
               {canCancel && (

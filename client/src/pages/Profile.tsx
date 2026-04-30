@@ -258,7 +258,7 @@ export function Profile() {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Prost-Gutscheine 🍺
             </h2>
-            <div className="rounded-2xl border border-border bg-card p-3 space-y-2">
+            <div className="rounded-2xl bg-card p-3 space-y-2">
               {stackedVouchers.map((v) => (
                 <ProstVoucherItem key={`${v.fromUserId}-${v.variantId}-${v.amount}`} voucher={v} />
               ))}

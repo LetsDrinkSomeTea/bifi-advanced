@@ -77,6 +77,7 @@ router.post("/", requireAuth, zValidator("json", ProstSchema), async (c) => {
         initiatedBy: sender.id,
         type: "prost",
         totalAmount: -amount,
+        note: recipient.displayName,
       })
       .returning();
     await tx

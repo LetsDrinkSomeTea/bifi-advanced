@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Search, Star } from 'lucide-react'
 import { Layout } from '../components/layout/Layout'
 import { BuySheet } from '../components/BuySheet'
@@ -7,7 +7,7 @@ import { useFavorites, useToggleFavorite } from '../hooks/useFavorites'
 import type { BuyableWithVariants } from '@shared/types'
 import { formatCents, cn } from '../lib/utils'
 import { BUYABLE_CATEGORIES, CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas'
-import { useVoucherSet } from '@/hooks/useProst'
+import { useVoucherMap } from '@/hooks/useProst'
 
 export function Shop() {
   const { data: items, isLoading } = useBuyables()
@@ -19,7 +19,7 @@ export function Shop() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
 
-  const voucherSet = useVoucherSet()
+  const voucherMap = useVoucherMap()
 
   const favoriteIds = useMemo(
     () => new Set(favorites?.map((f) => f.variantId) ?? []),
@@ -59,6 +59,22 @@ export function Shop() {
       .map(cat => [cat, map.get(cat)!] as [string, BuyableWithVariants[]])
   }, [filtered])
 
+  const filterRef = useRef<HTMLDivElement>(null)
+  const [leftFade, setLeftFade] = useState(false)
+  const [rightFade, setRightFade] = useState(false)
+
+  useEffect(() => {
+    const el = filterRef.current
+    if (!el) return
+    const update = () => {
+      setLeftFade(el.scrollLeft > 0)
+      setRightFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 1)
+    }
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    return () => el.removeEventListener('scroll', update)
+  }, [categories])
+
   const openSheet = (item: BuyableWithVariants, variantId: string) => {
     setSelected(item)
     setSelectedVariantId(variantId)
@@ -82,28 +98,36 @@ export function Shop() {
 
         {/* Category filter */}
         {categories.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <button
-              onClick={() => setActiveCategory(null)}
-              className={cn(
-                'flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
-              )}
-            >
-              Alle
-            </button>
-            {categories.map((cat) => (
+          <div className="relative">
+            {leftFade && (
+              <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-5 bg-gradient-to-r from-background to-transparent z-10" />
+            )}
+            {rightFade && (
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-5 bg-gradient-to-l from-background to-transparent z-10" />
+            )}
+            <div ref={filterRef} className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin-x">
               <button
-                key={cat}
-                onClick={() => setActiveCategory(cat === activeCategory ? null : cat)}
+                onClick={() => setActiveCategory(null)}
                 className={cn(
                   'flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                  activeCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                  !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
                 )}
               >
-                {CATEGORY_LABELS[cat as BuyableCategory]}
+                Alle
               </button>
-            ))}
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat === activeCategory ? null : cat)}
+                  className={cn(
+                    'flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                    activeCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                  )}
+                >
+                  {CATEGORY_LABELS[cat as BuyableCategory]}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -148,7 +172,7 @@ export function Shop() {
                     <div className="flex flex-wrap gap-2">
                       {activeVariants.map((v) => {
                         const isFav = favoriteIds.has(v.id)
-                        const hasVoucher = voucherSet.has(v.id)
+                        const hasVoucher = voucherMap.has(v.id)
                         return (
                           <div
                             key={v.id}

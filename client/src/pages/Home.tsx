@@ -7,7 +7,7 @@ import { FeedTimeline, groupEntries } from '../components/FeedTimeline'
 import { useFavorites } from '../hooks/useFavorites'
 import { useFeed } from '../hooks/useFeed'
 import { usePurchase, useTransactionHistory } from '../hooks/useTransactions'
-import { useVoucherSet } from '../hooks/useProst'
+import { useVoucherMap } from '../hooks/useProst'
 import type { Favorite } from '@shared/types'
 import { formatCents, cn } from '../lib/utils'
 
@@ -24,7 +24,7 @@ export function Home() {
   const { data: favorites, isLoading } = useFavorites()
   const { data: txnData, isLoading: txnLoading } = useTransactionHistory()
   const { mutate: purchase } = usePurchase()
-  const voucherSet = useVoucherSet()
+  const voucherMap = useVoucherMap()
   const [cardState, setCardState] = useState<CardState>(null)
 
   const recentTxns = (txnData?.pages[0]?.data ?? []).slice(0, 3)
@@ -106,10 +106,10 @@ export function Home() {
                     <div className="flex items-end justify-between mt-1">
                       <span className="text-xs text-muted-foreground">{fav.variantName}</span>
                       <div className="flex items-center gap-1">
-                        {fav.isAvailable && voucherSet.has(fav.variantId) && state !== 'buying' && state !== 'done' && state !== 'error' && (
+                        {fav.isAvailable && voucherMap.has(fav.variantId) && state !== 'buying' && state !== 'done' && state !== 'error' && (
                           <span className="text-sm">🎁</span>
                         )}
-                        <span className={cn('text-sm font-bold', !fav.isAvailable && 'text-muted-foreground', voucherSet.has(fav.variantId) && "line-through text-muted-foreground")}>
+                        <span className={cn('text-sm font-bold', !fav.isAvailable && 'text-muted-foreground', voucherMap.has(fav.variantId) && "line-through text-muted-foreground")}>
                           {!fav.isAvailable
                             ? 'Nicht verfügbar'
                             : state === 'buying' ? '…'

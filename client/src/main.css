@@ -71,3 +71,20 @@ body {
 .achievement-glow {
   animation: achievement-glow 1.5s ease-out;
 }
+
+/* Thin horizontal scrollbar */
+.scrollbar-thin-x {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+.scrollbar-thin-x::-webkit-scrollbar {
+  height: 3px;
+}
+.scrollbar-thin-x::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin-x::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 9999px;
+}
+

@@ -18,9 +18,13 @@ export function useProstVouchers() {
   })
 }
 
-export function useVoucherSet(): Set<string> {
+export function useVoucherMap(): Map<string, number> {
   const { data } = useProstVouchers()
-  return new Set(data?.map((v) => v.variantId) ?? [])
+  const map = new Map<string, number>()
+  for (const v of data ?? []) {
+    map.set(v.variantId, (map.get(v.variantId) ?? 0) + 1)
+  }
+  return map
 }
 
 export function useSendProst() {

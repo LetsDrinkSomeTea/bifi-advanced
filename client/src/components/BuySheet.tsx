@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Minus, Plus, X, Users2 } from 'lucide-react'
 import type { BuyableWithVariants } from '@shared/types'
 import { usePurchase } from '../hooks/useTransactions'
-import { useVoucherSet } from '../hooks/useProst'
+import { useVoucherMap } from '../hooks/useProst'
 import { useGroups } from '../hooks/useGroups'
 import { cn, formatCents } from '../lib/utils'
 
@@ -19,7 +19,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
   const [groupId, setGroupId] = useState<string | null>(null)
   const { mutate, isPending } = usePurchase()
   const { data: groups } = useGroups()
-  const voucherSet = useVoucherSet()
+  const voucherMap = useVoucherMap()
 
   const open = buyable !== null
   const variants = buyable?.variants.filter((v) => v.isActive) ?? []
@@ -48,11 +48,15 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
   const unitPrice = selectedVariant?.price ?? 0
   const totalPrice = unitPrice * quantity
   const canBuy = !!variantId
-  const hasVoucher = !!variantId && voucherSet.has(variantId) && !groupId
+
+  const voucherCount = !groupId && variantId ? (voucherMap.get(variantId) ?? 0) : 0
+  const vouchersApplied = Math.min(voucherCount, quantity)
+  const hasVoucher = vouchersApplied > 0
+  const effectiveTotal = totalPrice - unitPrice * vouchersApplied
 
   const selectedGroup = groups?.find((g) => g.id === groupId)
   const memberCount = selectedGroup?.memberCount ?? 1
-  const pricePerPerson = groupId && memberCount > 1 ? Math.ceil(totalPrice / memberCount) : totalPrice
+  const pricePerPerson = groupId && memberCount > 1 ? Math.ceil(effectiveTotal / memberCount) : effectiveTotal
 
   const handleBuy = () => {
     if (!variantId) return
@@ -72,7 +76,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
 
   const priceLabel = groupId && memberCount > 1
     ? `${formatCents(pricePerPerson)} / Person · ${memberCount} Personen`
-    : formatCents(totalPrice)
+    : formatCents(effectiveTotal)
 
   return (
     <>
@@ -94,7 +98,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
               <span className="text-sm font-medium px-2.5 py-0.5 bg-muted rounded-full">
                 {selectedVariant.name}
               </span>
-              {voucherSet.has(selectedVariant.id) && (
+              {voucherMap.has(selectedVariant.id) && (
                 <span className="text-sm font-medium px-2.5 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-full">
                   🎁
                 </span>
@@ -121,7 +125,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                     <span className="block">{v.name}</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-xs opacity-75">{formatCents(v.price)}</span>
-                      {voucherSet.has(v.id) && <span className="text-xs">🎁</span>}
+                      {voucherMap.has(v.id) && <span className="text-xs">🎁</span>}
                     </div>
                   </button>
                 ))}
@@ -194,6 +198,13 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
             </p>
           )}
 
+          {/* Voucher savings note */}
+          {hasVoucher && effectiveTotal > 0 && (
+            <p className="text-xs text-center text-amber-600 dark:text-amber-400">
+              🎁 {vouchersApplied} Gutschein{vouchersApplied > 1 ? 'e' : ''} angewendet · du sparst {formatCents(unitPrice * vouchersApplied)}
+            </p>
+          )}
+
           {/* Buy button */}
           <button
             disabled={!canBuy || isPending}
@@ -206,11 +217,11 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
           >
             {isPending
               ? 'Kaufen…'
-              : hasVoucher
+              : effectiveTotal === 0
                 ? <span className="inline-flex items-center gap-1.5">
-                  Wurde dir ausgegeben ·
-                  <span className="line-through opacity-70">{priceLabel}</span>
-                </span>
+                    Wurde dir ausgegeben ·
+                    <span className="line-through opacity-70">{formatCents(totalPrice)}</span>
+                  </span>
                 : `Kaufen · ${priceLabel}`}
           </button>
         </div>
