@@ -18,11 +18,15 @@ import {
   getISOWeek,
   globalPurchaseCount,
   isAllSevens,
+  jackpotLossCount,
+  jackpotPlayCount,
+  jackpotWinCount,
   prostReceivedCount,
   prostSentCount,
   purchaseCount,
   purchasesOnBiFiDay,
   toBerlin,
+  unlockedAchievementCount,
 } from "../achievements.ts";
 
 // ─── Registry Types ──────────────────────────────────────────────────────────
@@ -32,13 +36,14 @@ export interface ServerAchievementDef extends AchievementDef {
   check: (
     event: AchievementEvent,
   ) => Promise<boolean | number> | boolean | number;
+  progress?: (userId: string) => Promise<number> | number;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
  * Helper to define a tiered achievement (Bronze, Silver, Gold).
- * The 'check' function should return a numeric value.
+ * The 'check' or 'progress' function should return a numeric value.
  */
 function defineTieredAchievement(config: {
   groupKey: string;
@@ -52,7 +57,8 @@ function defineTieredAchievement(config: {
     threshold: number;
     hidden?: boolean;
   }>;
-  check: (event: AchievementEvent) => Promise<number> | number;
+  check?: (event: AchievementEvent) => Promise<number> | number;
+  progress?: (userId: string) => Promise<number> | number;
 }): ServerAchievementDef[] {
   return config.tiers.map((t) => ({
     key: `${config.groupKey}_${t.tier}`,
@@ -64,8 +70,13 @@ function defineTieredAchievement(config: {
     threshold: t.threshold,
     hidden: t.hidden ?? config.hidden,
     events: config.events,
+    progress: config.progress,
     check: async (event) => {
-      const value = await config.check(event);
+      const value = config.check
+        ? await config.check(event)
+        : config.progress
+          ? await config.progress(event.userId)
+          : 0;
       return value >= t.threshold;
     },
   }));
@@ -80,7 +91,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     name: "Stammkunde",
     icon: "🛒",
     events: ["purchase"],
-    check: (e) => purchaseCount(e.userId),
+    progress: (userId) => purchaseCount(userId),
     tiers: [
       { tier: "bronze", description: "1 Kauf getätigt", threshold: 1 },
       { tier: "silver", description: "10 Käufe getätigt", threshold: 10 },
@@ -94,7 +105,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     name: "Großzügig",
     icon: "🥂",
     events: ["prost_sent"],
-    check: (e) => prostSentCount(e.userId),
+    progress: (userId) => prostSentCount(userId),
     tiers: [
       { tier: "bronze", description: "5× Prost gesendet", threshold: 5 },
       { tier: "silver", description: "15× Prost gesendet", threshold: 15 },
@@ -108,7 +119,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     name: "Beliebt",
     icon: "❤️",
     events: ["prost_received"],
-    check: (e) => prostReceivedCount(e.userId),
+    progress: (userId) => prostReceivedCount(userId),
     tiers: [
       { tier: "bronze", description: "10× Prost erhalten", threshold: 10 },
       { tier: "silver", description: "25× Prost erhalten", threshold: 25 },
@@ -123,7 +134,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     icon: "🦸",
     events: ["contribution"],
     hidden: true,
-    check: (e) => donationCount(e.userId),
+    progress: (userId) => donationCount(userId),
     tiers: [
       { tier: "bronze", description: "3× zum Ziel beigetragen", threshold: 3 },
       {
@@ -140,7 +151,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     name: "Erfolgsjäger",
     icon: "🏆",
     events: [], // Internal trigger
-    check: () => 0, // Logic is handled manually in achievements.ts
+    progress: (userId) => unlockedAchievementCount(userId),
     tiers: [
       {
         tier: "bronze",
@@ -149,10 +160,10 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       },
       {
         tier: "silver",
-        description: "20 Achievements gesammelt",
-        threshold: 20,
+        description: "25 Achievements gesammelt",
+        threshold: 25,
       },
-      { tier: "gold", description: "30 Achievements gesammelt", threshold: 30 },
+      { tier: "gold", description: "50 Achievements gesammelt", threshold: 50 },
     ],
   }),
 
@@ -162,8 +173,13 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     name: "Hopfenheld",
     icon: "🍺",
     events: ["purchase"],
-    check: (e) => categoryItemCount(e.userId, "alcoholic"),
+    progress: (userId) => categoryItemCount(userId, "alcoholic"),
     tiers: [
+      {
+        tier: "bronze",
+        description: "25 alkoholische Getränke",
+        threshold: 25,
+      },
       {
         tier: "silver",
         description: "100 alkoholische Getränke",
@@ -171,8 +187,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       },
       {
         tier: "gold",
-        description: "1337 alkoholische Getränke — Legende im Krug",
-        threshold: 1337,
+        description: "500 alkoholische Getränke — Legende im Krug",
+        threshold: 500,
       },
     ],
   }),
@@ -182,13 +198,14 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     name: "Zuckerschock",
     icon: "🥤",
     events: ["purchase"],
-    check: (e) => categoryItemCount(e.userId, "soft_drink"),
+    progress: (userId) => categoryItemCount(userId, "soft_drink"),
     tiers: [
+      { tier: "bronze", description: "25 Softdrinks", threshold: 25 },
       { tier: "silver", description: "100 Softdrinks", threshold: 100 },
       {
         tier: "gold",
-        description: "Limo-Legende: 1337 Softdrinks",
-        threshold: 1337,
+        description: "Limo-Legende: 500 Softdrinks",
+        threshold: 500,
       },
     ],
   }),
@@ -198,13 +215,14 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     name: "Schlemmerchampion",
     icon: "🍔",
     events: ["purchase"],
-    check: (e) => categoryItemCount(e.userId, "food"),
+    progress: (userId) => categoryItemCount(userId, "food"),
     tiers: [
+      { tier: "bronze", description: "25 Speisen", threshold: 25 },
       { tier: "silver", description: "100 Speisen", threshold: 100 },
       {
         tier: "gold",
-        description: "Teller-Titan: 1337 Speisen",
-        threshold: 1337,
+        description: "Teller-Titan: 500 Speisen",
+        threshold: 500,
       },
     ],
   }),
@@ -214,13 +232,14 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     name: "Snack-König",
     icon: "🍿",
     events: ["purchase"],
-    check: (e) => categoryItemCount(e.userId, "snack"),
+    progress: (userId) => categoryItemCount(userId, "snack"),
     tiers: [
+      { tier: "bronze", description: "25 Snacks", threshold: 25 },
       { tier: "silver", description: "100 Snacks", threshold: 100 },
       {
         tier: "gold",
-        description: "Knusper-Kaiser: 1337 Snacks",
-        threshold: 1337,
+        description: "Knusper-Kaiser: 500 Snacks",
+        threshold: 500,
       },
     ],
   }),
@@ -230,18 +249,19 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     name: "Sammler",
     icon: "📦",
     events: ["purchase"],
-    check: (e) => categoryItemCount(e.userId, "other"),
+    progress: (userId) => categoryItemCount(userId, "other"),
     tiers: [
+      { tier: "bronze", description: "25 sonstige Artikel", threshold: 25 },
       { tier: "silver", description: "100 sonstige Artikel", threshold: 100 },
       {
         tier: "gold",
-        description: "Kuriositäten-König: 1337 sonstige Artikel",
-        threshold: 1337,
+        description: "Kuriositäten-König: 500 sonstige Artikel",
+        threshold: 500,
       },
     ],
   }),
 
-  // ── Balance-related (standalone) ──────────────────────────────────────────
+  // ── Balance-related ────────────────────────────────────────────────────────
   {
     key: "pleite",
     name: "Pleite",
@@ -301,15 +321,6 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     check: (e) => e.type === "deposit" && e.amount >= 5000,
   },
   {
-    key: "dreistellig",
-    name: "Dreistellig",
-    description: "Kontostand von 100 € erreicht",
-    icon: "🤑",
-    hidden: true,
-    events: ["deposit"],
-    check: (e) => e.type === "deposit" && e.balanceAfter >= 10000,
-  },
-  {
     key: "finanz_phoenix",
     name: "Finanz-Phönix",
     description: "Von unter -20 € auf über 20 € in einer Einzahlung",
@@ -328,6 +339,32 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     events: ["deposit"],
     check: (e) => e.type === "deposit" && e.balanceBefore > 0,
   },
+
+  ...defineTieredAchievement({
+    groupKey: "dagobert",
+    name: "Dagobert",
+    icon: "🤑",
+    events: ["deposit"],
+    hidden: true,
+    check: (e) => (e.type === "deposit" ? e.balanceAfter : 0),
+    tiers: [
+      {
+        tier: "bronze",
+        description: "Kontostand von 30 € erreicht",
+        threshold: 3000,
+      },
+      {
+        tier: "silver",
+        description: "Kontostand von 50 € erreicht",
+        threshold: 5000,
+      },
+      {
+        tier: "gold",
+        description: "Kontostand von 100 € erreicht",
+        threshold: 10000,
+      },
+    ],
+  }),
 
   // ── Tageszeit (standalone) ─────────────────────────────────────────────────
   {
@@ -411,19 +448,35 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     },
   },
 
-  // ── Muster (standalone) ────────────────────────────────────────────────────
-  {
-    key: "shopper",
+  // ── Muster (tiered & standalone) ───────────────────────────────────────────
+  ...defineTieredAchievement({
+    groupKey: "shopper",
     name: "Shopper",
-    description: "5 Käufe für sich selbst an einem BiFi-Tag",
     icon: "🛍️",
     events: ["purchase"],
     check: async (e) => {
-      if (e.type !== "purchase") return false;
-      const count = await purchasesOnBiFiDay(e.userId, getBiFiDay(e.now));
-      return count >= 5;
+      if (e.type !== "purchase") return 0;
+      return await purchasesOnBiFiDay(e.userId, getBiFiDay(e.now));
     },
-  },
+    tiers: [
+      {
+        tier: "bronze",
+        description: "5 Käufe an einem Tag",
+        threshold: 5,
+      },
+      {
+        tier: "silver",
+        description: "10 Käufe an einem Tag",
+        threshold: 10,
+      },
+      {
+        tier: "gold",
+        description: "15 Käufe an einem Tag",
+        threshold: 15,
+      },
+    ],
+  }),
+
   {
     key: "schnellfeuer",
     name: "Schnellfeuer",
@@ -438,8 +491,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       const recent = await db
         .select({ createdAt: transactions.createdAt })
         .from(transactions)
-        .where(eq(transactions.userId, e.userId)); // simplified, actual logic is more complex but we can keep it
-      // Re-using logic from achievements.ts (extracted)
+        .where(eq(transactions.userId, e.userId));
       const rows = recent.filter((r) => r.createdAt >= oneHourAgo);
       if (rows.length < 3) return false;
       const sorted = rows
@@ -464,7 +516,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
         .select({ createdAt: transactions.createdAt })
         .from(transactions)
         .where(eq(transactions.userId, e.userId))
-        .limit(3); // simplified
+        .limit(3);
       if (lastThree.length < 3) return false;
       const times = lastThree
         .map((r) => r.createdAt.getTime())
@@ -474,14 +526,14 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       return Math.abs(gap1 - gap2) <= 60000;
     },
   },
-  {
-    key: "tagliches_ritual",
+
+  ...defineTieredAchievement({
+    groupKey: "tagliches_ritual",
     name: "Tägliches Ritual",
-    description: "5 BiFi-Tage in Folge mindestens einen Kauf",
     icon: "📅",
     events: ["purchase"],
     check: async (e) => {
-      if (e.type !== "purchase") return false;
+      if (e.type !== "purchase") return 0;
       const all = await db
         .select({ createdAt: transactions.createdAt })
         .from(transactions)
@@ -489,7 +541,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       const distinctDays = [...new Set(all.map((r) => getBiFiDay(r.createdAt)))]
         .sort()
         .reverse();
-      if (distinctDays.length < 5) return false;
+      if (distinctDays.length === 0) return 0;
       let streak = 0;
       let current = getBiFiDay(e.now);
       for (let i = 0; i < distinctDays.length; i++) {
@@ -499,17 +551,34 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
           current = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
         } else break;
       }
-      return streak >= 5;
+      return streak;
     },
-  },
-  {
-    key: "monats_streak",
-    name: "Monats Streak",
-    description: "4 aufeinanderfolgende ISO-Wochen mit mind. einem Kauf",
+    tiers: [
+      {
+        tier: "bronze",
+        description: "3 Tage in Folge eingekauft",
+        threshold: 3,
+      },
+      {
+        tier: "silver",
+        description: "5 Tage in Folge eingekauft",
+        threshold: 5,
+      },
+      {
+        tier: "gold",
+        description: "10 Tage in Folge eingekauft",
+        threshold: 10,
+      },
+    ],
+  }),
+
+  ...defineTieredAchievement({
+    groupKey: "treue_seele",
+    name: "Treue Seele",
     icon: "🗓️",
     events: ["purchase"],
     check: async (e) => {
-      if (e.type !== "purchase") return false;
+      if (e.type !== "purchase") return 0;
       const all = await db
         .select({ createdAt: transactions.createdAt })
         .from(transactions)
@@ -524,7 +593,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       ]
         .sort()
         .reverse();
-      if (weekKeys.length < 4) return false;
+      if (weekKeys.length === 0) return 0;
       const { year, week } = getISOWeek(e.now);
       let streak = 0;
       let yr = year,
@@ -539,9 +608,27 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
           }
         } else break;
       }
-      return streak >= 4;
+      return streak;
     },
-  },
+    tiers: [
+      {
+        tier: "bronze",
+        description: "4 aufeinanderfolgende Wochen bestellt",
+        threshold: 4,
+      },
+      {
+        tier: "silver",
+        description: "12 aufeinanderfolgende Wochen bestellt",
+        threshold: 12,
+      },
+      {
+        tier: "gold",
+        description: "26 aufeinanderfolgende Wochen bestellt",
+        threshold: 26,
+      },
+    ],
+  }),
+
   {
     key: "weekend_warrior",
     name: "Weekend-Warrior",
@@ -609,16 +696,35 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     },
   },
 
-  // ── Sozial (standalone) ────────────────────────────────────────────────────
-  {
-    key: "die_runde_geht_auf_mich",
+  // ── Sozial (tiered & standalone) ───────────────────────────────────────────
+  ...defineTieredAchievement({
+    groupKey: "die_runde_geht_auf_mich",
     name: "Die Runde geht auf mich",
-    description: "5 Items in einer Transaktion",
     icon: "🥳",
     events: ["purchase"],
-    check: (e) =>
-      e.type === "purchase" && e.items.reduce((s, i) => s + i.quantity, 0) >= 5,
-  },
+    check: (e) => {
+      if (e.type !== "purchase") return 0;
+      return e.items.reduce((s, i) => s + i.quantity, 0);
+    },
+    tiers: [
+      {
+        tier: "bronze",
+        description: "3 Items in einer Transaktion",
+        threshold: 3,
+      },
+      {
+        tier: "silver",
+        description: "5 Items in einer Transaktion",
+        threshold: 5,
+      },
+      {
+        tier: "gold",
+        description: "10 Items in einer Transaktion",
+        threshold: 10,
+      },
+    ],
+  }),
+
   {
     key: "wein_buddy",
     name: "Wein-Buddy",
@@ -651,31 +757,61 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     check: async () => isAllSevens(await globalPurchaseCount()),
   },
 
-  // ── Jackpot (standalone) ───────────────────────────────────────────────────
-  {
-    key: "die_sonne_lacht",
+  // ── Jackpot (tiered) ───────────────────────────────────────────────────────
+  ...defineTieredAchievement({
+    groupKey: "jackpot_plays",
     name: "Die Sonne lacht",
-    description: "Am Jackpot gespielt",
     icon: "🎰",
     events: ["jackpot"],
-    check: () => true,
-  },
-  {
-    key: "gluckspilz",
+    progress: (userId) => jackpotPlayCount(userId),
+    tiers: [
+      { tier: "bronze", description: "1× am Jackpot gespielt", threshold: 1 },
+      { tier: "silver", description: "25× am Jackpot gespielt", threshold: 25 },
+      { tier: "gold", description: "100× am Jackpot gespielt", threshold: 100 },
+    ],
+  }),
+
+  ...defineTieredAchievement({
+    groupKey: "gluckspilz",
     name: "Glückspilz",
-    description: "Jackpot mit 0× — kostenlos!",
     icon: "🍀",
     hidden: true,
     events: ["jackpot"],
-    check: (e) => e.type === "jackpot" && e.multiplier === 0,
-  },
-  {
-    key: "pechvogel",
+    progress: (userId) => jackpotWinCount(userId),
+    tiers: [
+      {
+        tier: "bronze",
+        description: "1× den Jackpot geknackt (0×)",
+        threshold: 1,
+      },
+      {
+        tier: "silver",
+        description: "10× den Jackpot geknackt (0×)",
+        threshold: 10,
+      },
+      {
+        tier: "gold",
+        description: "50× den Jackpot geknackt (0×)",
+        threshold: 50,
+      },
+    ],
+  }),
+
+  ...defineTieredAchievement({
+    groupKey: "pechvogel",
     name: "Pechvogel",
-    description: "Jackpot mit 2× — doppelter Preis",
     icon: "🐦",
     hidden: true,
     events: ["jackpot"],
-    check: (e) => e.type === "jackpot" && e.multiplier === 2,
-  },
-];
+    progress: (userId) => jackpotLossCount(userId),
+    tiers: [
+      { tier: "bronze", description: "1× doppelt gezahlt (2×)", threshold: 1 },
+      {
+        tier: "silver",
+        description: "10× doppelt gezahlt (2×)",
+        threshold: 10,
+      },
+      { tier: "gold", description: "50× doppelt gezahlt (2×)", threshold: 50 },
+    ],
+  }),
+]; // Ende von ACHIEVEMENT_REGISTRY

@@ -1,14 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bell, UserCircle, ShieldCheck, LogOut } from 'lucide-react'
+import { Bell, UserCircle, ShieldCheck, LogOut, Check } from 'lucide-react'
 import { useLocation } from 'wouter'
 import { useAuth, useLogout } from '../../hooks/useAuth'
-import { useNotifications, useMarkRead, useMarkAllRead, useSSE } from '../../hooks/useNotifications'
+import { useNotifications, useMarkRead, useMarkAllRead, useSSE, type AppNotification } from '../../hooks/useNotifications'
 import { formatCents, formatRelative, balanceColor, cn } from '../../lib/utils'
+
+function notificationHref(n: AppNotification): string | null {
+  switch (n.type) {
+    case 'achievement': return '/achievements'
+    case 'friend_request': return n.relatedId ? `/profile/${n.relatedId}` : '/social'
+    case 'deposit': return '/history'
+    case 'balance_warning': return '/profile'
+    case 'goal_reached': return '/feed'
+    default: return null
+  }
+}
 
 function NotificationDropdown({ onClose }: { onClose: () => void }) {
   const { data: notifs } = useNotifications()
   const { mutate: markRead } = useMarkRead()
   const { mutate: markAll } = useMarkAllRead()
+  const [, navigate] = useLocation()
+
+  const handleNavigate = (n: AppNotification) => {
+    markRead(n.id)
+    const href = notificationHref(n)
+    if (href) { navigate(href); onClose() }
+  }
 
   if (!notifs || notifs.length === 0) {
     return (
@@ -30,17 +48,35 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
         </button>
       </div>
       <div className="max-h-80 overflow-y-auto">
-        {notifs.map((n) => (
-          <button
-            key={n.id}
-            onClick={() => markRead(n.id)}
-            className="w-full text-left px-4 py-3 hover:bg-accent transition-colors border-b border-border last:border-0"
-          >
-            <p className="text-sm font-medium leading-snug">{n.title}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">{formatRelative(n.createdAt)}</p>
-          </button>
-        ))}
+        {notifs.map((n) => {
+          const href = notificationHref(n)
+          return (
+            <div
+              key={n.id}
+              className="flex items-start border-b border-border last:border-0"
+            >
+              <button
+                onClick={() => handleNavigate(n)}
+                className={cn(
+                  'flex-1 text-left px-4 py-3 hover:bg-accent transition-colors min-w-0',
+                  href && 'cursor-pointer',
+                  !href && 'cursor-default',
+                )}
+              >
+                <p className="text-sm font-medium leading-snug">{n.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">{formatRelative(n.createdAt)}</p>
+              </button>
+              <button
+                onClick={() => markRead(n.id)}
+                title="Als gelesen markieren"
+                className="flex-shrink-0 p-3 pt-3.5 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Check size={14} />
+              </button>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -116,7 +152,10 @@ export function TopBar() {
 
       <div className="flex items-center gap-3">
         {user && (
-          <span className={cn('text-sm font-semibold tabular-nums', balanceColor(user.balance))}>
+          <span
+            title="Dein aktuelles Guthaben"
+            className={cn('text-sm font-semibold tabular-nums', balanceColor(user.balance))}
+          >
             {formatCents(user.balance)}
           </span>
         )}

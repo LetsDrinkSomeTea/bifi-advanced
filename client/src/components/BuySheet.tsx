@@ -85,7 +85,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div className="w-10 h-1 bg-border rounded-full mx-auto absolute left-0 right-0 top-3" />
           <h2 className="text-lg font-semibold">{buyable.name}</h2>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} title="Schließen" className="p-1 text-muted-foreground hover:text-foreground">
             <X size={20} />
           </button>
         </div>
@@ -139,6 +139,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                title="Menge verringern"
                 className="w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-accent transition-colors"
               >
                 <Minus size={16} />
@@ -146,6 +147,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
               <span className="w-6 text-center font-semibold">{quantity}</span>
               <button
                 onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+                title="Menge erhöhen"
                 className="w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-accent transition-colors"
               >
                 <Plus size={16} />

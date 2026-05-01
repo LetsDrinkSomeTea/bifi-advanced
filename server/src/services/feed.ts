@@ -85,6 +85,12 @@ export function emitFeedEvent(event: FeedEvent): void {
   }
   db.insert(activityFeed)
     .values(values)
-    .then(() => broadcastInvalidate(['feed']))
+    .then(() => {
+      const keys = ['feed']
+      if (['achievement', 'purchase', 'prost_sent', 'prost_received', 'jackpot_win'].includes(event.type)) {
+        keys.push('profile')
+      }
+      broadcastInvalidate(keys)
+    })
     .catch((err) => console.error('[feed] emit failed:', event.type, err))
 }

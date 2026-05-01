@@ -61,6 +61,32 @@ Key tables: `users`, `buyables`, `productVariants`, `transactions`, `transaction
 
 **API docs:** Auto-generated OpenAPI spec available at `/api/openapi.json`; Swagger UI at `/docs`.
 
+## Conventions & Decisions
+
+**TanStack Query invalidation:**
+- User balance is part of the `['auth', 'me']` query (not a separate `['balance']` key). Always invalidate `['auth', 'me']` after mutations that affect the balance (purchases, jackpot spins, etc.). Match the pattern in `usePurchase` in `hooks/useTransactions.ts`.
+- For delayed effects (e.g. after an animation), trigger invalidation in the `setTimeout` callback rather than in the mutation's `onSuccess`.
+
+**New server routes:**
+- Register in `server/src/index.ts` via `app.route('/api/<name>', ...)`
+- Always check both `JACKPOT_ENABLED` env flag (global) and `user.jackpotAllowed` (per-user) for jackpot-gated endpoints.
+
+**Adding a new feed event type:**
+1. Add the union member to `FeedEvent` in `server/src/services/feed.ts`
+2. Call `emitFeedEvent(...)` from the route/service
+3. Add a `case` to `feedText()` in `client/src/components/FeedItem.tsx`
+4. Add an entry to `TYPE_EMOJI` in the same file
+
+**Adding a new achievement:**
+1. Add the event type to `AchievementEvent` in `shared/src/achievements.ts`
+2. Add registry entries in `server/src/services/achievements/registry.ts`
+3. Call `checkAchievements({ type, userId, ... })` from the relevant route (fire-and-forget with `.catch(console.error)`)
+
+**Jackpot wheel (client):**
+- `MULTIPLIERS` array on the client defines segment *order* on the wheel (alternating low/high). The server picks randomly from its own pool of the same 20 values.
+- Rotation formula: `targetMod = (360 - segmentCenterDeg) % 360` — clockwise rotation θ brings the segment originally at `(360 - θ) % 360` to the top pointer.
+- Balance invalidation happens *after* the animation (`setTimeout` 4200 ms), not on `onSuccess`.
+
 ## Environment Variables
 
 See `.env.example`. Required:

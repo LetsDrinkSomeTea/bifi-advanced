@@ -133,7 +133,7 @@ function UserRow({
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 {user.hasSso && <Link2 size={11} />}
                 {user.hasPassword && <KeyRound size={11} />}
-                {user.jackpotAllowed && <Dices size={11} className="text-yellow-500" />}
+                {user.jackpotAllowed && <span title="Jackpot freigeschaltet"><Dices size={11} className="text-yellow-500" /></span>}
               </span>
             </div>
           </div>

@@ -5,7 +5,7 @@ import { and, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm'
 import { db } from '../db/index.ts'
 import { buyables, transactionItems, transactions, userAchievements, userFriendships, users } from '../db/schema.ts'
 import { requireAuth } from '../middleware/auth.ts'
-import { prostSentCount, prostReceivedCount, categoryItemCount } from '../services/achievements.ts'
+import { ACHIEVEMENT_REGISTRY } from '../services/achievements/registry.ts'
 
 const router = new Hono()
 
@@ -67,19 +67,25 @@ router.get('/:id/profile', requireAuth, async (c) => {
       )
     : Promise.resolve(null)
 
+  // ── Achievement Progress Calculation ─────────────────────────────────────────
+  // Find all unique groupKeys that have a progress function
+  const groupProgressFns = new Map<string, (userId: string) => Promise<number> | number>()
+  for (const def of ACHIEVEMENT_REGISTRY) {
+    if (def.groupKey && def.progress && !groupProgressFns.has(def.groupKey)) {
+      groupProgressFns.set(def.groupKey, def.progress)
+    }
+  }
+
+  const groupKeys = Array.from(groupProgressFns.keys())
+  const progressPromises = groupKeys.map((key) => groupProgressFns.get(key)!(id))
+
   const [
     [countRow],
     rankResult,
     [favProduct],
     achievementRows,
     friendshipRows,
-    prostSent,
-    prostReceived,
-    alcoholicCount,
-    softDrinkCount,
-    foodCount,
-    snackCount,
-    otherCount,
+    progressValues,
   ] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` })
       .from(transactions)
@@ -110,13 +116,7 @@ router.get('/:id/profile', requireAuth, async (c) => {
       .where(eq(userAchievements.userId, id))
       .orderBy(desc(userAchievements.unlockedAt)),
     friendshipQuery,
-    prostSentCount(id),
-    prostReceivedCount(id),
-    categoryItemCount(id, 'alcoholic'),
-    categoryItemCount(id, 'soft_drink'),
-    categoryItemCount(id, 'food'),
-    categoryItemCount(id, 'snack'),
-    categoryItemCount(id, 'other'),
+    Promise.all(progressPromises),
   ])
 
   const rank = (rankResult.rows[0] as { rank: number } | undefined)?.rank ?? null
@@ -135,17 +135,10 @@ router.get('/:id/profile', requireAuth, async (c) => {
     }
   }
 
-  const achievementProgress: Record<string, number> = {
-    purchases: countRow?.count ?? 0,
-    prost_sent: prostSent,
-    prost_received: prostReceived,
-    achievements_collected: achievementRows.length,
-    alcoholic_drinker: alcoholicCount,
-    softdrink_lover: softDrinkCount,
-    food_fan: foodCount,
-    snack_king: snackCount,
-    misc_collector: otherCount,
-  }
+  const achievementProgress: Record<string, number> = {}
+  groupKeys.forEach((key, i) => {
+    achievementProgress[key] = progressValues[i]!
+  })
 
   return c.json({
     ...user,
