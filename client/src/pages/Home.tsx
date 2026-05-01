@@ -10,6 +10,7 @@ import { usePurchase, useTransactionHistory } from '../hooks/useTransactions'
 import { useVoucherMap } from '../hooks/useProst'
 import type { Favorite } from '@shared/types'
 import { formatCents, cn } from '../lib/utils'
+import { CATEGORY_LABELS } from '@shared/schemas'
 
 type CardState = { variantId: string; status: 'buying' | 'done' | 'error' } | null
 
@@ -98,7 +99,7 @@ export function Home() {
                     )}
                   >
                     {fav.category && (
-                      <span className="text-xs text-muted-foreground">{fav.category}</span>
+                      <span className="text-xs text-muted-foreground">{CATEGORY_LABELS[fav.category]}</span>
                     )}
                     <span className="font-semibold text-sm leading-tight">
                       {fav.buyableName}
