@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
+import { ChevronDown, ChevronRight, Plus, Edit2, Check, X, Eye, EyeOff } from 'lucide-react'
 import { AdminLayout } from './AdminLayout'
 import { Modal } from '../../components/Modal'
-import { useAllBuyables } from '../../hooks/useAdmin'
+import { useAllBuyables, useUpdateBuyable, useUpdateVariant } from '../../hooks/useAdmin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import type { BuyableWithVariants } from '@shared/types'
@@ -120,66 +120,177 @@ function AddVariantModal({ buyable, onClose }: { buyable: BuyableWithVariants | 
   )
 }
 
+// ─── Variant Row ──────────────────────────────────────────────────────────────
+
+function VariantRow({ buyableId, variant, parentActive }: { buyableId: string; variant: BuyableWithVariants['variants'][0]; parentActive: boolean }) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [name, setName] = useState(variant.name)
+  const [price, setPrice] = useState((variant.price / 100).toString())
+  const { mutate: update, isPending } = useUpdateVariant()
+  const { mutate: toggleActive } = useUpdateVariant()
+
+  const handleSave = () => {
+    const p = Math.round(parseFloat(price) * 100)
+    if (!name || isNaN(p) || p < 0) return
+    update({ buyableId, variantId: variant.id, name, price: p }, {
+      onSuccess: () => setIsEditing(false)
+    })
+  }
+
+  const effectiveActive = parentActive && variant.isActive
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border/50 bg-accent/30">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="flex-1 min-w-0 px-2 py-1 rounded border border-input bg-background text-sm"
+          autoFocus
+        />
+        <div className="relative w-20">
+          <input
+            type="number"
+            step="0.01"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="w-full px-2 py-1 rounded border border-input bg-background text-sm pr-4"
+          />
+          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">€</span>
+        </div>
+        <button onClick={handleSave} disabled={isPending} className="p-1.5 text-green-500 hover:bg-green-500/10 rounded">
+          <Check size={16} />
+        </button>
+        <button onClick={() => setIsEditing(false)} className="p-1.5 text-red-500 hover:bg-red-500/10rounded">
+          <X size={16} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className={cn('flex items-center gap-3 px-4 py-2.5 border-b border-border/50 last:border-0', !effectiveActive && 'opacity-50')}>
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <span className="text-sm">{variant.name}</span>
+          <span className="ml-2 text-xs text-muted-foreground">{formatCents(variant.price)}</span>
+          {!effectiveActive && <span className="ml-2 text-xs text-muted-foreground">(inaktiv)</span>}
+        </div>
+        <button
+          onClick={() => setIsEditing(true)}
+          disabled={!parentActive}
+          className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-all ml-1 disabled:opacity-0"
+        >
+          <Edit2 size={14} />
+        </button>
+      </div>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => toggleActive({ buyableId, variantId: variant.id, isActive: !variant.isActive })}
+          disabled={!parentActive}
+          className={cn('p-2 rounded-lg border transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed',
+            variant.isActive ? 'border-border text-muted-foreground hover:bg-muted' : 'border-red-500/30 text-red-600 hover:bg-red-500/10')}
+          title={!parentActive ? 'Produkt ist inaktiv' : (variant.isActive ? 'Deaktivieren' : 'Aktivieren')}
+        >
+          {variant.isActive ? <Eye size={16} /> : <EyeOff size={16} />}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Product Row ──────────────────────────────────────────────────────────────
 
 function ProductRow({ item, onAddVariant }: { item: BuyableWithVariants; onAddVariant: () => void }) {
   const [expanded, setExpanded] = useState(false)
-  const qc = useQueryClient()
+  const [isEditing, setIsEditing] = useState(false)
+  const [name, setName] = useState(item.name)
+  const [category, setCategory] = useState(item.category ?? '')
+  const { mutate: update, isPending } = useUpdateBuyable()
+  const { mutate: toggleActive } = useUpdateBuyable()
 
-  const { mutate: toggleProduct } = useMutation({
-    mutationFn: () => api.put(`/api/buyables/${item.id}`, { isActive: !item.isActive }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['buyables'] }),
-  })
-
-  const { mutate: toggleVariant } = useMutation({
-    mutationFn: ({ variantId, isActive }: { variantId: string; isActive: boolean }) =>
-      api.put(`/api/buyables/${item.id}/variants/${variantId}`, { isActive }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['buyables'] }),
-  })
+  const handleSave = () => {
+    if (!name) return
+    update({ id: item.id, name, category: category || null }, {
+      onSuccess: () => setIsEditing(false)
+    })
+  }
 
   return (
     <div className={cn('rounded-xl border border-border bg-card overflow-hidden', !item.isActive && 'opacity-60')}>
       {/* Product header */}
-      <div className="flex items-center gap-2 px-4 py-3">
+      <div className="flex items-center gap-2 px-4 py-3 group">
         <button onClick={() => setExpanded((e) => !e)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
           {expanded ? <ChevronDown size={16} className="flex-shrink-0 text-muted-foreground" /> : <ChevronRight size={16} className="flex-shrink-0 text-muted-foreground" />}
-          <div className="min-w-0">
-            <span className="font-semibold text-sm">{item.name}</span>
-            {item.category && <span className="ml-2 text-xs text-muted-foreground">{CATEGORY_LABELS[item.category as BuyableCategory] ?? item.category}</span>}
-            {!item.isActive && <span className="ml-2 text-xs text-muted-foreground">(inaktiv)</span>}
-          </div>
+
+          {isEditing ? (
+            <div className="flex flex-col gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2">
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="flex-1 min-w-0 px-2 py-1 rounded border border-input bg-background text-sm"
+                  autoFocus
+                />
+                <button onClick={handleSave} disabled={isPending} className="p-1.5 text-red-500 hover:bg-red-500/10 rounded">
+                  <Check size={16} />
+                </button>
+                <button onClick={() => setIsEditing(false)} className="p-1.5 text-muted-foreground hover:bg-muted rounded">
+                  <X size={16} />
+                </button>
+              </div>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="px-2 py-1 rounded border border-input bg-background text-xs w-full"
+              >
+                <option value="">Keine Kategorie</option>
+                {BUYABLE_CATEGORIES.map(cat => (
+                  <option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="min-w-0 flex-1 flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm truncate">{item.name}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setIsEditing(true) }}
+                  className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-all"
+                >
+                  <Edit2 size={14} />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                {item.category && <span className="text-xs text-muted-foreground">{CATEGORY_LABELS[item.category as BuyableCategory] ?? item.category}</span>}
+                {!item.isActive && <span className="text-xs text-muted-foreground">(inaktiv)</span>}
+              </div>
+            </div>
+          )}
         </button>
-        <button
-          onClick={() => toggleProduct()}
-          className={cn('text-xs px-2 py-1 rounded-lg border transition-colors flex-shrink-0',
-            item.isActive ? 'border-border text-muted-foreground hover:bg-muted' : 'border-green-500/30 text-green-600 hover:bg-green-500/10')}
-        >
-          {item.isActive ? 'Deakt.' : 'Aktiv.'}
-        </button>
+
+        {!isEditing && (
+          <button
+            onClick={() => toggleActive({ id: item.id, isActive: !item.isActive })}
+            className={cn('p-2 rounded-lg border transition-colors flex-shrink-0',
+              item.isActive ? 'border-border text-muted-foreground hover:bg-muted' : 'border-red-500/30 text-red-600 hover:bg-red-500/10')}
+            title={item.isActive ? 'Deaktivieren' : 'Aktivieren'}
+          >
+            {item.isActive ? <Eye size={18} /> : <EyeOff size={18} />}
+          </button>
+        )}
       </div>
 
       {/* Variants */}
       {expanded && (
         <div className="border-t border-border">
           {item.variants.map((v) => (
-            <div key={v.id} className={cn('flex items-center gap-3 px-4 py-2.5 border-b border-border/50 last:border-0', !v.isActive && 'opacity-50')}>
-              <div className="flex-1 min-w-0">
-                <span className="text-sm">{v.name}</span>
-                <span className="ml-2 text-xs text-muted-foreground">{formatCents(v.price)}</span>
-                {!v.isActive && <span className="ml-2 text-xs text-muted-foreground">(inaktiv)</span>}
-              </div>
-              <button
-                onClick={() => toggleVariant({ variantId: v.id, isActive: !v.isActive })}
-                className={cn('text-xs px-2 py-1 rounded-lg border transition-colors flex-shrink-0',
-                  v.isActive ? 'border-border text-muted-foreground hover:bg-muted' : 'border-green-500/30 text-green-600 hover:bg-green-500/10')}
-              >
-                {v.isActive ? 'Deakt.' : 'Aktiv.'}
-              </button>
-            </div>
+            <VariantRow key={v.id} buyableId={item.id} variant={v} parentActive={item.isActive} />
           ))}
           <button
             onClick={onAddVariant}
-            className="flex items-center gap-1.5 w-full px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            disabled={!item.isActive}
+            className="flex items-center gap-1.5 w-full px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <Plus size={14} />
             Variante hinzufügen

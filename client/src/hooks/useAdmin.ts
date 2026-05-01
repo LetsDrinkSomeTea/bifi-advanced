@@ -55,10 +55,36 @@ export function useResetPassword() {
   })
 }
 
+export function useDeleteUser() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/admin/users/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
 export function useAllBuyables() {
   return useQuery<BuyableWithVariants[]>({
     queryKey: ['buyables', { all: true }],
     queryFn: () => api.get<BuyableWithVariants[]>('/api/buyables?all=true'),
     staleTime: 60_000,
+  })
+}
+
+export function useUpdateBuyable() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string; name?: string; imageUrl?: string | null; category?: string | null; isActive?: boolean; sortOrder?: number }) =>
+      api.put(`/api/buyables/${id}`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['buyables'] }),
+  })
+}
+
+export function useUpdateVariant() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ buyableId, variantId, ...body }: { buyableId: string; variantId: string; name?: string; price?: number; isActive?: boolean; sortOrder?: number }) =>
+      api.put(`/api/buyables/${buyableId}/variants/${variantId}`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['buyables'] }),
   })
 }

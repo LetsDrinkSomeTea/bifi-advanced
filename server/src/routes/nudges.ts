@@ -18,10 +18,11 @@ const PRESETS: Record<string, string> = {
   thirsty: 'Hast du Durst? 🤔',
   cheers: 'Prost! 🥂',
   hurry: 'Beeil dich! ⚡',
+  remind: 'Denk dran, dein Konto mal wieder aufzuladen! 💸',
 }
 
 const NudgeSchema = z.object({
-  preset: z.enum(['bring', 'thirsty', 'cheers', 'hurry']).optional(),
+  preset: z.enum(['bring', 'thirsty', 'cheers', 'hurry', 'remind']).optional(),
   message: z.string().min(1).max(200).optional(),
 }).refine((d) => d.preset || d.message, { message: 'preset or message required' })
 

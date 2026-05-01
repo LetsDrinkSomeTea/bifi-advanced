@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { Bell } from 'lucide-react'
 import { AdminLayout } from './AdminLayout'
 import { Modal } from '../../components/Modal'
 import { useSettlement, useDeposit } from '../../hooks/useAdmin'
+import { useSendNudge } from '../../hooks/useNudge'
 import type { SettlementEntry } from '@shared/types'
-import { formatCents } from '../../lib/utils'
+import { formatCents, cn } from '../../lib/utils'
 
 function DepositModal({ user, onClose }: { user: SettlementEntry | null; onClose: () => void }) {
   const [euros, setEuros] = useState('')
@@ -66,8 +68,19 @@ function DepositModal({ user, onClose }: { user: SettlementEntry | null; onClose
 export function AdminSettlement() {
   const { data: debtors, isLoading } = useSettlement()
   const [depositTarget, setDepositTarget] = useState<SettlementEntry | null>(null)
+  const { mutate: sendNudge, isPending: isNudging } = useSendNudge()
+  const [lastNudgeId, setLastNudgeId] = useState<string | null>(null)
 
   const total = debtors?.reduce((sum, u) => sum + u.balance, 0) ?? 0
+
+  const handleNudge = (userId: string) => {
+    sendNudge({ recipientId: userId, preset: 'remind' }, {
+      onSuccess: () => {
+        setLastNudgeId(userId)
+        setTimeout(() => setLastNudgeId(null), 3000)
+      }
+    })
+  }
 
   return (
     <AdminLayout>
@@ -102,8 +115,21 @@ export function AdminSettlement() {
               <p className="font-medium text-sm truncate">{u.displayName}</p>
               <p className="text-xs text-muted-foreground truncate">{u.email}</p>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="font-bold text-sm text-red-500 tabular-nums">{formatCents(u.balance)}</span>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="font-bold text-sm text-red-500 tabular-nums mr-1">{formatCents(u.balance)}</span>
+              <button
+                onClick={() => handleNudge(u.id)}
+                disabled={isNudging || lastNudgeId === u.id}
+                className={cn(
+                  "p-2 rounded-lg border transition-all",
+                  lastNudgeId === u.id 
+                    ? "bg-green-500/10 border-green-500/50 text-green-600" 
+                    : "border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
+                title="Erinnerung senden"
+              >
+                <Bell size={15} className={lastNudgeId === u.id ? "fill-current" : ""} />
+              </button>
               <button
                 onClick={() => setDepositTarget(u)}
                 className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent transition-colors"

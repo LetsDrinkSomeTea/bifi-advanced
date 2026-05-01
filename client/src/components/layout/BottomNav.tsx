@@ -1,4 +1,4 @@
-import { Home, ShoppingBag, Users, Zap, User } from 'lucide-react'
+import { Home, ShoppingBag, Users, Dices, User } from 'lucide-react'
 import { useLocation, Link } from 'wouter'
 import { useFriendRequests } from '../../hooks/useFriends'
 import { cn } from '../../lib/utils'
@@ -6,8 +6,8 @@ import { cn } from '../../lib/utils'
 const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/shop', label: 'Shop', icon: ShoppingBag },
+  { href: '/jackpot', label: 'Jackpot', icon: Dices },
   { href: '/social', label: 'Sozial', icon: Users },
-  { href: '/jackpot', label: 'Jackpot', icon: Zap },
   { href: '/profile', label: 'Profil', icon: User },
 ]
 

@@ -12,15 +12,15 @@ import { useAuth } from '../hooks/useAuth'
 import { formatCents, cn } from '../lib/utils'
 import type { FriendshipStatus } from '@shared/types'
 
-const ROLE_LABEL: Record<string, string> = {
+export const ROLE_LABEL: Record<string, string> = {
   admin: 'Admin',
   moderator: 'Moderator',
   member: 'Mitglied',
 }
 
-const ROLE_STYLE: Record<string, string> = {
+export const ROLE_STYLE: Record<string, string> = {
   admin: 'bg-primary/10 text-primary',
-  moderator: 'bg-orange-500/10 text-orange-500',
+  moderator: 'bg-purple-500/10 text-purple-500',
   member: 'bg-muted text-muted-foreground',
 }
 
@@ -316,7 +316,7 @@ export function ProfileDetail() {
         {/* Achievements */}
         <AchievementGrid
           achievements={profile.achievements}
-          limit={5}
+          limit={4}
           allLink={`/achievements/${profile.id}`}
         />
       </div>

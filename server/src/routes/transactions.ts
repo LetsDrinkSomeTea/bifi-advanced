@@ -294,7 +294,7 @@ router.post(
 
       // resolveItems runs inside the same transaction as balance deduction (fixes TOCTOU)
       const primaryTxn = await db.transaction(async (tx) => {
-        const { toInsert, feedItems, cost } = await resolveItems(
+        const { toInsert, feedItems, achievementItems, cost } = await resolveItems(
           tx,
           body.items,
         );

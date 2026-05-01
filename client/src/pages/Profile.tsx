@@ -248,7 +248,7 @@ export function Profile() {
         {/* Achievements */}
         <AchievementGrid
           achievements={profile?.achievements ?? []}
-          limit={5}
+          limit={4}
           allLink="/achievements"
         />
 

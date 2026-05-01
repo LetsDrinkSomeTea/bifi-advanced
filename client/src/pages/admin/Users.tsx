@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { KeyRound, Link2, Plus, UserCog, Dices } from 'lucide-react'
+import { KeyRound, Link2, Plus, UserCog, Dices, ChevronDown, ChevronUp, Trash2, Eye, EyeOff, Check } from 'lucide-react'
 import { AdminLayout } from './AdminLayout'
 import { Modal } from '../../components/Modal'
-import { useAdminUsers, useCreateUser, useDeposit, useResetPassword, useUpdateUser } from '../../hooks/useAdmin'
+import { useAdminUsers, useCreateUser, useDeposit, useResetPassword, useUpdateUser, useDeleteUser } from '../../hooks/useAdmin'
 import { useAuth, useAuthConfig } from '../../hooks/useAuth'
 import type { AdminUser } from '@shared/types'
 import { cn, formatCents } from '../../lib/utils'
+import { ROLE_LABEL, ROLE_STYLE } from '../ProfileDetail'
 
 // ─── Deposit Modal ────────────────────────────────────────────────────────────
 
@@ -64,58 +65,186 @@ function DepositModal({ user, onClose }: { user: AdminUser | null; onClose: () =
   )
 }
 
-// ─── Edit User Modal ──────────────────────────────────────────────────────────
+// ─── User Row ─────────────────────────────────────────────────────────────────
 
-function EditUserModal({ user, onClose, canChangeRole }: { user: AdminUser | null; onClose: () => void; canChangeRole: boolean }) {
-  const [role, setRole] = useState(user?.role ?? 'member')
-  const [isActive, setIsActive] = useState(user?.isActive ?? true)
-  const [jackpotAllowed, setJackpotAllowed] = useState(user?.jackpotAllowed ?? false)
-  const [error, setError] = useState('')
-  const { mutate: update, isPending } = useUpdateUser()
+function UserRow({
+  user,
+  canChangeRole,
+  isModerator,
+  isAdmin,
+  onDeposit,
+  onResetPassword,
+}: {
+  user: AdminUser;
+  canChangeRole: boolean;
+  isModerator: boolean;
+  isAdmin: boolean;
+  onDeposit: () => void;
+  onResetPassword: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const { mutate: update, isPending: isUpdating } = useUpdateUser()
+  const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser()
+  const [deleteError, setDeleteError] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    update(
-      { id: user!.id, role: role as AdminUser['role'], isActive, jackpotAllowed },
-      { onSuccess: onClose, onError: (err) => setError(err instanceof Error ? err.message : 'Fehler') },
-    )
+  const handleUpdate = (patch: Partial<AdminUser>) => {
+    update({ id: user.id, ...patch })
+  }
+
+  const handleDelete = () => {
+    if (!window.confirm(`Möchtest du ${user.displayName} wirklich löschen?`)) return
+    deleteUser(user.id, {
+      onError: (err) => setDeleteError(err instanceof Error ? err.message : 'Löschen fehlgeschlagen. Nutzer hat evtl. Historie.')
+    })
   }
 
   return (
-    <Modal open={!!user} onClose={onClose} title={`Bearbeiten – ${user?.displayName}`}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {canChangeRole && (
-          <div>
-            <label className="block text-sm font-medium mb-1">Rolle</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as 'admin' | 'moderator' | 'member')}
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="member">Member</option>
-              <option value="moderator">Moderator</option>
-              <option value="admin">Admin</option>
-            </select>
+    <div className={cn('rounded-xl border border-border bg-card overflow-hidden')}>
+      <div className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => setExpanded(!expanded)}>
+        {/* Avatar & Info with conditional opacity */}
+        <div className={cn('flex flex-1 items-center gap-3 min-w-0', !user.isActive && 'opacity-60')}>
+          <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold flex-shrink-0 overflow-hidden">
+            {user.avatarUrl
+              ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+              : user.displayName[0]?.toUpperCase()}
           </div>
-        )}
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4 rounded" />
-          <span className="text-sm">Account aktiv</span>
-        </label>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input type="checkbox" checked={jackpotAllowed} onChange={(e) => setJackpotAllowed(e.target.checked)} className="w-4 h-4 rounded" />
-          <span className="text-sm">Jackpot erlaubt</span>
-        </label>
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <button
-          type="submit"
-          disabled={isPending}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
-        >
-          {isPending ? 'Speichern…' : 'Speichern'}
-        </button>
-      </form>
-    </Modal>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-medium text-sm truncate">{user.displayName}</span>
+              <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium', ROLE_STYLE[user.role])}>
+                {ROLE_LABEL[user.role]}
+              </span>
+              {!user.isActive && (
+                <span className="text-destructive" title="Account inaktiv">
+                  <EyeOff size={14} />
+                </span>
+              )}
+              {user.isActive && (
+                <span className="text-green-600" title="Account aktiv">
+                  <Eye size={14} />
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className={cn('text-xs font-semibold tabular-nums', user.balance < 0 ? 'text-red-500' : 'text-muted-foreground')}>
+                {formatCents(user.balance)}
+              </span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                {user.hasSso && <Link2 size={11} />}
+                {user.hasPassword && <KeyRound size={11} />}
+                {user.jackpotAllowed && <Dices size={11} className="text-yellow-500" />}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions (always full opacity) */}
+        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          {isModerator && (
+            <button
+              onClick={onDeposit}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent transition-colors"
+            >
+              + €
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={onResetPassword}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Passwort setzen"
+            >
+              <KeyRound size={15} />
+            </button>
+          )}
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="p-1.5 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+            title={expanded ? 'Einklappen' : 'Ausklappen'}
+          >
+            {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </button>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="px-4 py-4 border-t border-border bg-accent/20 space-y-4">
+          <div className="flex flex-col gap-4">
+            {(
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rolle{!canChangeRole && <span className="text-xs font-medium normal-case"> (wird von SSO verwaltet)</span>}</label>
+                <select
+                  value={user.role}
+                  onChange={(e) => handleUpdate({ role: e.target.value as any })}
+                  disabled={isUpdating || !canChangeRole}
+                  className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="member">Member</option>
+                  <option value="moderator">Moderator</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Status & Features</label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => handleUpdate({ jackpotAllowed: !user.jackpotAllowed })}
+                  disabled={isUpdating}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold',
+                    user.jackpotAllowed
+                      ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/20'
+                      : 'bg-muted border-border text-muted-foreground hover:bg-muted/80'
+                  )}
+                >
+                  <Dices size={14} className={user.jackpotAllowed ? 'text-yellow-500' : ''} />
+                  Jackpot
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-border/50 flex flex-col justify-between gap-3">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+              ID: {user.id}
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                onClick={() => handleUpdate({ isActive: !user.isActive })}
+                disabled={isUpdating}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold',
+                  user.isActive
+                    ? 'bg-orange-500/10 border-orange-500/50 text-orange-600 hover:bg-orange-500/20'
+                    : 'bg-green-500/10 border-green-500/50 text-green-600 hover:bg-green-500/20'
+                )}
+              >
+                {user.isActive ? <EyeOff size={14} /> : <Eye size={14} />}
+                {user.isActive ? 'Deaktivieren' : 'Aktivieren'}
+              </button>
+
+              {isAdmin && (
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all text-xs font-semibold"
+                  >
+                    <Trash2 size={14} />
+                    Nutzer löschen
+                  </button>
+                  {deleteError && <p className="text-[10px] text-destructive max-w-[200px] text-right">{deleteError}</p>}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )
+      }
+    </div >
   )
 }
 
@@ -245,14 +374,6 @@ function ResetPasswordModal({ user, onClose }: { user: AdminUser | null; onClose
   )
 }
 
-// ─── Role Badge ───────────────────────────────────────────────────────────────
-
-const ROLE_STYLE: Record<string, string> = {
-  admin: 'bg-primary/10 text-primary',
-  moderator: 'bg-orange-500/10 text-orange-500',
-  member: 'bg-muted text-muted-foreground',
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function AdminUsers() {
@@ -260,7 +381,6 @@ export function AdminUsers() {
   const { isAdmin, isModerator } = useAuth()
   const { data: config } = useAuthConfig()
   const [depositTarget, setDepositTarget] = useState<AdminUser | null>(null)
-  const [editTarget, setEditTarget] = useState<AdminUser | null>(null)
   const [resetTarget, setResetTarget] = useState<AdminUser | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -300,71 +420,15 @@ export function AdminUsers() {
         )}
 
         {filtered.map((u) => (
-          <div
+          <UserRow
             key={u.id}
-            className={cn(
-              'flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card',
-              !u.isActive && 'opacity-50',
-            )}
-          >
-            {/* Avatar */}
-            <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold flex-shrink-0 overflow-hidden">
-              {u.avatarUrl
-                ? <img src={u.avatarUrl} alt="" className="w-full h-full object-cover" />
-                : u.displayName[0]?.toUpperCase()}
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="font-medium text-sm truncate">{u.displayName}</span>
-                <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium', ROLE_STYLE[u.role])}>
-                  {u.role}
-                </span>
-                {!u.isActive && <span className="text-xs px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive">inaktiv</span>}
-              </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className={cn('text-xs font-semibold tabular-nums', u.balance < 0 ? 'text-red-500' : 'text-muted-foreground')}>
-                  {formatCents(u.balance)}
-                </span>
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  {u.hasSso && <Link2 size={11} />}
-                  {u.hasPassword && <KeyRound size={11} />}
-                  {u.jackpotAllowed && <Dices size={11} className="text-yellow-500" />}
-                </span>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-1 flex-shrink-0">
-              {isModerator && (
-                <button
-                  onClick={() => setDepositTarget(u)}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent transition-colors"
-                >
-                  + €
-                </button>
-              )}
-              {isAdmin && (
-                <button
-                  onClick={() => setResetTarget(u)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  title="Passwort setzen"
-                >
-                  <KeyRound size={15} />
-                </button>
-              )}
-              {isModerator && (
-                <button
-                  onClick={() => setEditTarget(u)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  title="Bearbeiten"
-                >
-                  <UserCog size={15} />
-                </button>
-              )}
-            </div>
-          </div>
+            user={u}
+            canChangeRole={canChangeRole(u)}
+            isModerator={isModerator}
+            isAdmin={isAdmin}
+            onDeposit={() => setDepositTarget(u)}
+            onResetPassword={() => setResetTarget(u)}
+          />
         ))}
 
         {!isLoading && filtered.length === 0 && (
@@ -374,7 +438,6 @@ export function AdminUsers() {
 
       <DepositModal user={depositTarget} onClose={() => setDepositTarget(null)} />
       <ResetPasswordModal user={resetTarget} onClose={() => setResetTarget(null)} />
-      <EditUserModal user={editTarget} onClose={() => setEditTarget(null)} canChangeRole={editTarget ? canChangeRole(editTarget) : false} />
       <CreateUserModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </AdminLayout>
   )

@@ -4,7 +4,19 @@ import { z } from 'zod'
 import { and, asc, desc, eq, lt, or, sql } from 'drizzle-orm'
 import * as argon2 from 'argon2'
 import { db } from '../db/index.ts'
-import { transactions, users } from '../db/schema.ts'
+import {
+  activityFeed,
+  donationContributions,
+  groupMembers,
+  notifications,
+  nudges,
+  prostVouchers,
+  transactions,
+  userAchievements,
+  userFavorites,
+  userFriendships,
+  users,
+} from '../db/schema.ts'
 import { requireAuth, requireRole } from '../middleware/auth.ts'
 import { invalidateUserSessions } from '../middleware/session.ts'
 import { writeAuditLog } from '../services/audit.ts'
@@ -241,6 +253,58 @@ router.get('/transactions', zValidator('query', TxnQuerySchema), async (c) => {
   const nextCursor = hasMore ? encodeCursor(page[page.length - 1]!.createdAt, page[page.length - 1]!.id) : null
 
   return c.json({ data: page, nextCursor })
+})
+
+// ─── DELETE /api/admin/users/:id ──────────────────────────────────────────────
+
+router.delete('/users/:id', requireRole('admin'), async (c) => {
+  const { id } = c.req.param()
+  const actor = c.get('user')
+
+  const [target] = await db.select().from(users).where(eq(users.id, id))
+  if (!target) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404)
+
+  // Check for transactions
+  const [txn] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(transactions)
+    .where(or(eq(transactions.userId, id), eq(transactions.initiatedBy, id)))
+  
+  if (Number(txn?.count) > 0) {
+    return c.json({
+      error: 'User has transaction history and cannot be deleted. Please deactivate the account instead.',
+      code: 'HAS_HISTORY',
+    }, 400)
+  }
+
+  await db.transaction(async (tx) => {
+    // Clean up safe references
+    await tx.delete(userFavorites).where(eq(userFavorites.userId, id))
+    await tx.delete(userAchievements).where(eq(userAchievements.userId, id))
+    await tx.delete(groupMembers).where(eq(groupMembers.userId, id))
+    await tx.delete(notifications).where(eq(notifications.userId, id))
+    await tx.delete(activityFeed).where(or(eq(activityFeed.userId, id), eq(activityFeed.targetUserId, id)))
+    await tx.delete(donationContributions).where(eq(donationContributions.userId, id))
+    await tx.delete(userFriendships).where(or(eq(userFriendships.requesterId, id), eq(userFriendships.addresseeId, id)))
+    await tx.delete(nudges).where(or(eq(nudges.senderId, id), eq(nudges.recipientId, id)))
+    await tx.delete(prostVouchers).where(or(eq(prostVouchers.fromUserId, id), eq(prostVouchers.toUserId, id)))
+    
+    // Finally delete user
+    await tx.delete(users).where(eq(users.id, id))
+  })
+
+  await writeAuditLog({
+    actorId: actor.id,
+    action: 'user.deleted',
+    resourceType: 'user',
+    resourceId: id,
+    changes: { before: target },
+    ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+  })
+
+  await invalidateUserSessions(id)
+
+  return c.body(null, 204)
 })
 
 export default router
