@@ -26,6 +26,7 @@ import feedRoutes from './routes/feed.ts'
 import leaderboardRoutes from './routes/leaderboard.ts'
 import achievementsRoutes from './routes/achievements.ts'
 import jackpotRoutes from './routes/jackpot.ts'
+import statsRoutes from './routes/stats.ts'
 
 const app = new Hono()
 
@@ -66,6 +67,7 @@ app.route('/api/feed', feedRoutes)
 app.route('/api/leaderboard', leaderboardRoutes)
 app.route('/api/achievements', achievementsRoutes)
 app.route('/api/jackpot', jackpotRoutes)
+app.route('/api/stats', statsRoutes)
 
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }))
 

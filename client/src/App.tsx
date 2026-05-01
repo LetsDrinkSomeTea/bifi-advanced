@@ -13,6 +13,7 @@ import { Social } from './pages/Social'
 import { GroupDetail } from './pages/GroupDetail'
 import { Jackpot } from './pages/Jackpot'
 import { AllAchievements } from './pages/AllAchievements'
+import { ProfileStats } from './pages/ProfileStats'
 import { AdminUsers } from './pages/admin/Users'
 import { AdminProducts } from './pages/admin/Products'
 import { AdminSettlement } from './pages/admin/Settlement'
@@ -45,8 +46,14 @@ export function App() {
         <Route path="/profile">
           <ProtectedRoute><Profile /></ProtectedRoute>
         </Route>
+        <Route path="/profile/stats">
+          <ProtectedRoute><ProfileStats /></ProtectedRoute>
+        </Route>
         <Route path="/profile/:userId">
           {(params) => <ProtectedRoute><ProfileDetail /></ProtectedRoute>}
+        </Route>
+        <Route path="/profile/:userId/stats">
+          {(params) => <ProtectedRoute><ProfileStats /></ProtectedRoute>}
         </Route>
 
         <Route path="/feed">

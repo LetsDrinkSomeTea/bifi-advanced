@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useParams } from 'wouter'
-import { UserPlus, UserCheck, UserX, Clock, Bell, X, Beer } from 'lucide-react'
+import { useParams, Link } from 'wouter'
+import { UserPlus, UserCheck, UserX, Clock, Bell, X, Beer, BarChart2 } from 'lucide-react'
 import { Layout } from '../components/layout/Layout'
 import { AchievementGrid } from '@/components/AchievementGrid'
 import { usePublicProfile } from '../hooks/useProfile'
@@ -298,15 +298,22 @@ export function ProfileDetail() {
 
         {/* Stats */}
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Statistiken</h2>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Statistiken</h2>
+            <Link href={`/profile/${profile.id}/stats`} className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline">
+              <BarChart2 size={12} />
+              Details
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <StatCard label="Käufe" value={String(profile.stats.purchaseCount)} />
             <StatCard
               label="Rang"
               value={profile.stats.leaderboardRank != null ? `#${profile.stats.leaderboardRank}` : '–'}
             />
+            <StatCard label="Freunde" value={String(profile.stats.friendCount)} />
             <StatCard
-              label="Lieblingsprodukt"
+              label="Liebling"
               value={profile.stats.favoriteProduct?.name ?? '–'}
               small
             />

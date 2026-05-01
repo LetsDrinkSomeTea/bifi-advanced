@@ -67,6 +67,10 @@ router.get('/:id/profile', requireAuth, async (c) => {
       )
     : Promise.resolve(null)
 
+  const friendCountQuery = db.select({ count: sql<number>`count(*)::int` })
+    .from(userFriendships)
+    .where(and(eq(userFriendships.status, 'accepted'), or(eq(userFriendships.requesterId, id), eq(userFriendships.addresseeId, id))))
+
   // ── Achievement Progress Calculation ─────────────────────────────────────────
   // Find all unique groupKeys that have a progress function
   const groupProgressFns = new Map<string, (userId: string) => Promise<number> | number>()
@@ -85,6 +89,7 @@ router.get('/:id/profile', requireAuth, async (c) => {
     [favProduct],
     achievementRows,
     friendshipRows,
+    [friendCountRow],
     progressValues,
   ] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` })
@@ -116,6 +121,7 @@ router.get('/:id/profile', requireAuth, async (c) => {
       .where(eq(userAchievements.userId, id))
       .orderBy(desc(userAchievements.unlockedAt)),
     friendshipQuery,
+    friendCountQuery,
     Promise.all(progressPromises),
   ])
 
@@ -147,6 +153,7 @@ router.get('/:id/profile', requireAuth, async (c) => {
       purchaseCount: countRow?.count ?? 0,
       leaderboardRank: rank,
       favoriteProduct: favProduct ?? null,
+      friendCount: friendCountRow?.count ?? 0,
     },
     achievements: achievementRows,
     achievementProgress,
