@@ -6,6 +6,7 @@ import { db } from '../db/index.ts'
 import { buyables, buyableCategoryEnum, productVariants } from '../db/schema.ts'
 import { requireAuth, requireRole } from '../middleware/auth.ts'
 import { writeAuditLog } from '../services/audit.ts'
+import { getActiveDiscount, calculateDiscountedPrice } from '../services/promotions.ts'
 
 const router = new Hono()
 
@@ -27,16 +28,21 @@ router.get('/', requireAuth, async (c) => {
     .where(showAll ? undefined : eq(productVariants.isActive, true))
     .orderBy(productVariants.sortOrder, productVariants.name)
 
-  const variantsByBuyable = new Map<string, typeof allVariants>()
-  for (const v of allVariants) {
-    const list = variantsByBuyable.get(v.buyableId) ?? []
-    list.push(v)
-    variantsByBuyable.set(v.buyableId, list)
-  }
+  const result = await Promise.all(allBuyables.map(async (b) => {
+    const variants = allVariants.filter(v => v.buyableId === b.id)
+    const variantsWithDiscounts = await Promise.all(variants.map(async (v) => {
+      const discount = await getActiveDiscount(b.id, v.id, b.category)
+      return {
+        ...v,
+        activeDiscount: discount,
+        discountedPrice: calculateDiscountedPrice(v.price, discount)
+      }
+    }))
 
-  const result = allBuyables.map((b) => ({
-    ...b,
-    variants: variantsByBuyable.get(b.id) ?? [],
+    return {
+      ...b,
+      variants: variantsWithDiscounts,
+    }
   }))
 
   return c.json(result)

@@ -17,7 +17,7 @@ import {
 import { emitFeedEvent } from "../services/feed.ts";
 import { requireAuth } from "../middleware/auth.ts";
 import { purchaseRateLimit } from "../middleware/rateLimit.ts";
-import { getActiveDiscount } from "../services/promotions.ts";
+import { getActiveDiscount, calculateDiscountedPrice } from "../services/promotions.ts";
 import { writeAuditLog } from "../services/audit.ts";
 import {
   createNotification,
@@ -192,8 +192,8 @@ async function resolveItems(
     }
 
     let unitPrice = variant.price;
-    const discount = await getActiveDiscount(buyable.id, buyable.category);
-    if (discount > 0) unitPrice = Math.round(unitPrice * (1 - discount / 100));
+    const discount = await getActiveDiscount(buyable.id, variant.id, buyable.category);
+    unitPrice = calculateDiscountedPrice(unitPrice, discount);
 
     const totalPrice = unitPrice * item.quantity;
     cost += totalPrice;

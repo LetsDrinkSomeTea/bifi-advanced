@@ -8,6 +8,7 @@ import { buyables, productVariants, transactions, transactionItems, users } from
 import { requireAuth } from '../middleware/auth.ts'
 import { emitFeedEvent } from '../services/feed.ts'
 import { checkAchievements } from '../services/achievements.ts'
+import { getActiveDiscount, calculateDiscountedPrice } from '../services/promotions.ts'
 
 const router = new Hono()
 
@@ -65,10 +66,13 @@ router.post('/spin', requireAuth, zValidator('json', JackpotSpinSchema), async (
 
   if (!variant) return c.json({ error: 'Variant not found', code: 'VARIANT_NOT_FOUND' }, 404)
 
+  const discount = await getActiveDiscount(buyable.id, variant.id, buyable.category)
+  const basePrice = calculateDiscountedPrice(variant.price, discount)
+
   // Server-side multiplier: client never influences the outcome
   const multiplierPct = pickMultiplierPct()
   const multiplierDecimal = multiplierPct / 100
-  const pricePaid = Math.round(variant.price * multiplierDecimal)
+  const pricePaid = Math.round(basePrice * multiplierDecimal)
 
   const txn = await db.transaction(async (tx) => {
     const [created] = await tx
@@ -88,7 +92,7 @@ router.post('/spin', requireAuth, zValidator('json', JackpotSpinSchema), async (
       buyableId: buyable.id,
       variantId: variant.id,
       quantity: 1,
-      unitPrice: variant.price,
+      unitPrice: basePrice,
       totalPrice: pricePaid,
     })
 

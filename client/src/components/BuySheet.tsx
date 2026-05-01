@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Minus, Plus, X, Users2 } from 'lucide-react'
+import { Minus, Plus, X, Users2, Dices } from 'lucide-react'
 import type { BuyableWithVariants } from '@shared/types'
 import { usePurchase } from '../hooks/useTransactions'
 import { useVoucherMap } from '../hooks/useProst'
 import { useGroups } from '../hooks/useGroups'
+import { useJackpotEligibility } from '../hooks/useJackpot'
 import { cn, formatCents } from '../lib/utils'
+import { JackpotModal } from './JackpotModal'
 
 interface Props {
   buyable: BuyableWithVariants | null
@@ -17,8 +19,11 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
   const [quantity, setQuantity] = useState(1)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [groupId, setGroupId] = useState<string | null>(null)
+  const [jackpotOpen, setJackpotOpen] = useState(false)
+
   const { mutate, isPending } = usePurchase()
   const { data: groups } = useGroups()
+  const { data: jackpotEligibility } = useJackpotEligibility()
   const voucherMap = useVoucherMap()
 
   const open = buyable !== null
@@ -38,6 +43,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
       setQuantity(1)
       setFeedback(null)
       setGroupId(null)
+      setJackpotOpen(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buyable?.id, initialVariantId])
@@ -45,18 +51,28 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
   if (!open || !buyable) return null
 
   const selectedVariant = variants.find((v) => v.id === variantId)
-  const unitPrice = selectedVariant?.price ?? 0
-  const totalPrice = unitPrice * quantity
+  const originalUnitPrice = selectedVariant?.price ?? 0
+  const discountedUnitPrice = selectedVariant?.discountedPrice ?? originalUnitPrice
+  const isDiscounted = discountedUnitPrice < originalUnitPrice
+
+  const totalPrice = discountedUnitPrice * quantity
   const canBuy = !!variantId
 
   const voucherCount = !groupId && variantId ? (voucherMap.get(variantId) ?? 0) : 0
   const vouchersApplied = Math.min(voucherCount, quantity)
   const hasVoucher = vouchersApplied > 0
-  const effectiveTotal = totalPrice - unitPrice * vouchersApplied
+  const effectiveTotal = totalPrice - discountedUnitPrice * vouchersApplied
 
   const selectedGroup = groups?.find((g) => g.id === groupId)
   const memberCount = selectedGroup?.memberCount ?? 1
   const pricePerPerson = groupId && memberCount > 1 ? Math.ceil(effectiveTotal / memberCount) : effectiveTotal
+
+  const showJackpot =
+    jackpotEligibility?.eligible &&
+    !groupId &&
+    quantity === 1 &&
+    discountedUnitPrice > 0 &&
+    !hasVoucher
 
   const handleBuy = () => {
     if (!variantId) return
@@ -64,7 +80,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
       { items: [{ buyableId: buyable.id, variantId, quantity }], groupId: groupId ?? undefined },
       {
         onSuccess: (data) => {
-          setFeedback(data?.voucherRedeemed ? 'Ausgegeben eingelöst! 🎁' : 'Gekauft! ✓')
+          setFeedback(data?.voucherRedeemed ? 'Gutschein eingelöst! 🎁' : 'Gekauft! ✓')
           setTimeout(onClose, 1000)
         },
         onError: (err) => {
@@ -74,6 +90,10 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
     )
   }
 
+  const handleJackpot = () => {
+    setJackpotOpen(true)
+  }
+
   const priceLabel = groupId && memberCount > 1
     ? `${formatCents(pricePerPerson)} / Person · ${memberCount} Personen`
     : formatCents(effectiveTotal)
@@ -81,7 +101,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl shadow-2xl">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div className="w-10 h-1 bg-border rounded-full mx-auto absolute left-0 right-0 top-3" />
           <h2 className="text-lg font-semibold">{buyable.name}</h2>
@@ -91,56 +111,104 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
         </div>
 
         <div className="px-5 pb-8 space-y-5">
-          {/* Auto-selected variant label */}
-          {autoSelected && selectedVariant && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Variante:</span>
-              <span className="text-sm font-medium px-2.5 py-0.5 bg-muted rounded-full">
-                {selectedVariant.name}
-              </span>
-              {voucherMap.has(selectedVariant.id) && (
-                <span className="text-sm font-medium px-2.5 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-full">
-                  {voucherMap.get(selectedVariant.id)}x 🎁
-                </span>
+          {/* Variant Selection (only if multiple) */}
+          {!isSingleVariant && (
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Variante wählen</span>
+              <div className="flex flex-wrap gap-2">
+                {variants.map(v => (
+                  <button
+                    key={v.id}
+                    onClick={() => setVariantId(v.id)}
+                    className={cn(
+                      "px-4 py-2 rounded-xl border text-sm transition-all relative overflow-hidden",
+                      variantId === v.id
+                        ? "bg-primary border-primary text-primary-foreground font-bold shadow-md shadow-primary/20"
+                        : "bg-background border-border text-muted-foreground hover:border-muted-foreground"
+                    )}
+                  >
+                    {v.name}
+                    {v.activeDiscount && (
+                      <div className="absolute top-0 right-0 w-2 h-2 bg-orange-500 rounded-bl-full" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pricing Details */}
+          {selectedVariant && (
+            <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-3">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Einzelpreis</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-black">{formatCents(discountedUnitPrice)}</span>
+                    {isDiscounted && (
+                      <span className="text-sm text-muted-foreground line-through decoration-orange-500/40">{formatCents(originalUnitPrice)}</span>
+                    )}
+                  </div>
+                </div>
+                {selectedVariant.activeDiscount && (
+                  <span className="px-2 py-1 rounded-lg bg-orange-500 text-white text-[10px] font-black uppercase tracking-tighter shadow-sm shadow-orange-500/20">
+                    {selectedVariant.activeDiscount.type === 'percent' ? `-${selectedVariant.activeDiscount.value}% Rabatt` : 'Sonderpreis'}
+                  </span>
+                )}
+              </div>
+
+              {/* Vouchers Info */}
+              {voucherCount > 0 && (
+                <div className="pt-3 border-t border-border/50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-lg">🎁</div>
+                    <div>
+                      <p className="text-xs font-bold text-amber-600 dark:text-amber-400">Gutscheine verfügbar</p>
+                      <p className="text-[10px] text-muted-foreground">{voucherCount} Stück in deinem Inventar</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-black text-amber-600 dark:text-amber-400">{vouchersApplied}x genutzt</span>
+                </div>
               )}
             </div>
           )}
 
-          {/* Quantity */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Menge</span>
-            <div className="flex items-center gap-3">
+          {/* Quantity Selection */}
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="text-sm font-bold">Anzahl</p>
+              <p className="text-[10px] text-muted-foreground">Wie viele möchtest du?</p>
+            </div>
+            <div className="flex items-center gap-4 bg-muted/50 p-1 rounded-2xl border border-border">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                title="Menge verringern"
-                className="w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
               >
-                <Minus size={16} />
+                <Minus size={18} />
               </button>
-              <span className="w-6 text-center font-semibold">{quantity}</span>
+              <span className="w-8 text-center font-black text-lg">{quantity}</span>
               <button
                 onClick={() => setQuantity((q) => Math.min(99, q + 1))}
-                title="Menge erhöhen"
-                className="w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
               >
-                <Plus size={16} />
+                <Plus size={18} />
               </button>
             </div>
           </div>
 
           {/* Group split */}
           {groups && groups.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-2 pt-2">
               <div className="flex items-center gap-2">
-                <Users2 size={15} className="text-muted-foreground" />
-                <span className="text-sm font-medium">Mit Gruppe teilen</span>
+                <Users2 size={14} className="text-muted-foreground" />
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Gruppenzahlung</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setGroupId(null)}
                   className={cn(
-                    'px-3 py-1.5 rounded-full text-xs font-medium transition-colors border',
-                    !groupId ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground',
+                    'px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm',
+                    !groupId ? 'bg-foreground text-background border-foreground' : 'bg-background border-border text-muted-foreground hover:border-muted-foreground',
                   )}
                 >
                   Nur ich
@@ -150,17 +218,17 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                     key={g.id}
                     onClick={() => setGroupId(g.id === groupId ? null : g.id)}
                     className={cn(
-                      'px-3 py-1.5 rounded-full text-xs font-medium transition-colors border',
-                      groupId === g.id ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground',
+                      'px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm',
+                      groupId === g.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-muted-foreground hover:border-muted-foreground',
                     )}
                   >
-                    {g.name} ({g.memberCount})
+                    {g.name}
                   </button>
                 ))}
               </div>
               {groupId && memberCount > 1 && (
-                <p className="text-xs text-muted-foreground">
-                  Kosten werden auf {memberCount} Personen aufgeteilt
+                <p className="text-[10px] font-medium text-primary bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10">
+                  Fair-Share: {formatCents(pricePerPerson)} pro Person ({memberCount} Mitglieder)
                 </p>
               )}
             </div>
@@ -168,39 +236,65 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
 
           {/* Feedback */}
           {feedback && (
-            <p className={cn('text-sm text-center', feedback.includes('✓') ? 'text-green-500' : 'text-destructive')}>
+            <div className={cn(
+              'p-3 rounded-xl text-sm font-bold text-center animate-in fade-in slide-in-from-bottom-2',
+              feedback.includes('✓') || feedback.includes('🎁') ? 'bg-green-500/10 text-green-600' : 'bg-destructive/10 text-destructive'
+            )}>
               {feedback}
-            </p>
+            </div>
           )}
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-1 gap-3 pt-2">
+            <button
+              disabled={!canBuy || isPending}
+              onClick={handleBuy}
+              className={cn(
+                'w-full py-4 rounded-xl font-black text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3',
+                canBuy ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/30' : 'bg-muted text-muted-foreground cursor-not-allowed',
+                'disabled:opacity-60',
+              )}
+            >
+              {isPending ? (
+                'Wird gebucht...'
+              ) : effectiveTotal === 0 ? (
+                <><span>🎁</span> Gratis bestellen</>
+              ) : (
+                <>Kaufen · {priceLabel}</>
+              )}
+            </button>
+
+            {showJackpot && (
+              <button
+                onClick={handleJackpot}
+                className="w-full py-3.5 rounded-2xl border-2 border-dashed border-amber-500/50 text-amber-600 dark:text-amber-400 font-black text-sm flex items-center justify-center gap-2 hover:bg-amber-500/5 transition-all active:scale-[0.98]"
+              >
+                <Dices size={18} />
+                Jackpot-Zock ({formatCents(discountedUnitPrice)})
+              </button>
+            )}
+          </div>
 
           {/* Voucher savings note */}
           {hasVoucher && effectiveTotal > 0 && (
             <p className="text-xs text-center text-amber-600 dark:text-amber-400">
-              🎁 {vouchersApplied} Gutschein{vouchersApplied > 1 ? 'e' : ''} angewendet · du sparst {formatCents(unitPrice * vouchersApplied)}
+              🎁 {vouchersApplied} Gutschein{vouchersApplied > 1 ? 'e' : ''} angewendet · du sparst {formatCents(discountedUnitPrice * vouchersApplied)}
             </p>
           )}
-
-          {/* Buy button */}
-          <button
-            disabled={!canBuy || isPending}
-            onClick={handleBuy}
-            className={cn(
-              'w-full py-3.5 rounded-xl font-semibold text-base transition-colors',
-              canBuy ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed',
-              'disabled:opacity-60',
-            )}
-          >
-            {isPending
-              ? 'Kaufen…'
-              : effectiveTotal === 0
-                ? <span className="inline-flex items-center gap-1.5">
-                  Wurde dir ausgegeben ·
-                  <span className="line-through opacity-70">{formatCents(totalPrice)}</span>
-                </span>
-                : `Kaufen · ${priceLabel}`}
-          </button>
         </div>
       </div>
+
+      {variantId && selectedVariant && (
+        <JackpotModal
+          open={jackpotOpen}
+          onClose={() => { setJackpotOpen(false); onClose() }}
+          buyableId={buyable.id}
+          variantId={variantId}
+          basePrice={discountedUnitPrice}
+          productName={buyable.name}
+          variantName={selectedVariant.name}
+        />
+      )}
     </>
   )
 }

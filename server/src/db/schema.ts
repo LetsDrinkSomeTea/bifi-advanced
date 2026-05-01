@@ -216,7 +216,8 @@ export const userAchievements = pgTable(
 export const promotions = pgTable('promotions', {
   id: id(),
   name: text('name').notNull(),
-  discountPercent: integer('discount_percent').notNull(),
+  discountPercent: integer('discount_percent'),
+  discountFixedCents: integer('discount_fixed_cents'),
   startTime: timestamp('start_time'),
   endTime: timestamp('end_time'),
   appliesTo: jsonb('applies_to'),

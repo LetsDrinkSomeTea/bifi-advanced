@@ -16,6 +16,7 @@ import buyablesRoutes from './routes/buyables.ts'
 import transactionsRoutes from './routes/transactions.ts'
 import favoritesRoutes from './routes/favorites.ts'
 import adminRoutes from './routes/admin.ts'
+import adminPromotionsRoutes from './routes/admin.promotions.ts'
 import usersRoutes from './routes/users.ts'
 import friendsRoutes from './routes/friends.ts'
 import nudgesRoutes from './routes/nudges.ts'
@@ -57,6 +58,7 @@ app.route('/api/buyables', buyablesRoutes)
 app.route('/api/transactions', transactionsRoutes)
 app.route('/api/favorites', favoritesRoutes)
 app.route('/api/admin', adminRoutes)
+app.route('/api/admin/promotions', adminPromotionsRoutes)
 app.route('/api/users', usersRoutes)
 app.route('/api/friends', friendsRoutes)
 app.route('/api/nudges', nudgesRoutes)

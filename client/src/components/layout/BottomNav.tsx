@@ -4,12 +4,9 @@ import { useFriendRequests } from '../../hooks/useFriends'
 import { useJackpotEligibility } from '../../hooks/useJackpot'
 import { cn } from '../../lib/utils'
 
-const BASE_NAV = [
+const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/shop', label: 'Shop', icon: ShoppingBag },
-]
-const JACKPOT_NAV = { href: '/jackpot', label: 'Jackpot', icon: Dices }
-const TAIL_NAV = [
   { href: '/social', label: 'Sozial', icon: Users },
   { href: '/profile', label: 'Profil', icon: User },
 ]
@@ -17,20 +14,11 @@ const TAIL_NAV = [
 export function BottomNav() {
   const [location] = useLocation()
   const { data: requests } = useFriendRequests()
-  const { data: eligibility } = useJackpotEligibility()
   const requestCount = requests?.length ?? 0
-
-  // Show jackpot item while eligibility is still loading (undefined) to avoid layout shift.
-  // Hide it only once the server confirms the user is ineligible.
-  const navItems = [
-    ...BASE_NAV,
-    ...(eligibility?.eligible !== false ? [JACKPOT_NAV] : []),
-    ...TAIL_NAV,
-  ]
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-10 flex items-center justify-around h-16 border-t border-border bg-background/95 backdrop-blur-sm safe-area-bottom">
-      {navItems.map(({ href, label, icon: Icon }) => {
+      {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
         const active = href === '/' ? location === '/' : location.startsWith(href)
         const badge = href === '/social' && requestCount > 0 ? requestCount : 0
         return (

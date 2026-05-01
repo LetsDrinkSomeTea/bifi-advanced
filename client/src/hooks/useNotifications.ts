@@ -82,6 +82,7 @@ export function useSSE() {
           else if (key === 'vouchers') qc.invalidateQueries({ queryKey: ['prost', 'vouchers'] })
           else if (key === 'leaderboard') qc.invalidateQueries({ queryKey: ['leaderboard'] })
           else if (key === 'profile') qc.invalidateQueries({ queryKey: ['profile'] })
+          else if (key === 'buyables') qc.invalidateQueries({ queryKey: ['buyables'] })
         }
       })
 

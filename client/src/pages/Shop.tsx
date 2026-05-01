@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Search, Star } from 'lucide-react'
+import { Search, Star, Dices, Tag, Plus } from 'lucide-react'
 import { Layout } from '../components/layout/Layout'
 import { BuySheet } from '../components/BuySheet'
 import { useBuyables } from '../hooks/useBuyables'
@@ -8,6 +8,42 @@ import type { BuyableWithVariants } from '@shared/types'
 import { formatCents, cn } from '../lib/utils'
 import { BUYABLE_CATEGORIES, CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas'
 import { useVoucherMap } from '@/hooks/useProst'
+import type { ActiveDiscount } from '@shared/types'
+
+function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
+  const activePromosCount = useMemo(() => {
+    const promoTypes = new Set<string>()
+    items.forEach(item => {
+      item.variants.forEach(v => {
+        if (v.activeDiscount) {
+          promoTypes.add(`${v.activeDiscount.type}-${v.activeDiscount.value}`)
+        }
+      })
+    })
+    return promoTypes.size
+  }, [items])
+
+  if (activePromosCount === 0) return null
+
+  return (
+    <div className="bg-orange-500 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/20 flex items-center gap-4 overflow-hidden relative group">
+      <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
+        <Dices size={100} />
+      </div>
+      <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 animate-pulse">
+        <Tag size={24} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-black text-lg leading-tight uppercase tracking-tighter italic">Happy Hour & Deals!</h3>
+        <p className="text-sm font-medium opacity-90 truncate">
+          {activePromosCount === 1
+            ? 'Aktuell sind Sonderpreise verfügbar. Schlag jetzt zu!'
+            : `Es gibt verschiedene Aktionen im Shop. Schlag jetzt zu!`}
+        </p>
+      </div>
+    </div>
+  )
+}
 
 export function Shop() {
   const { data: items, isLoading } = useBuyables()
@@ -84,6 +120,9 @@ export function Shop() {
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto space-y-4">
 
+        {/* Promo Banner */}
+        {!isLoading && items && <PromoBanner items={items} />}
+
         {/* Search */}
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -157,48 +196,92 @@ export function Shop() {
               {products.map((item) => {
                 const activeVariants = item.variants.filter((v) => v.isActive)
                 return (
-                  <div key={item.id} className="rounded-xl border border-border bg-card px-4 py-3 space-y-2">
-                    <div className="flex items-center gap-2">
+                  <div key={item.id} className="rounded-2xl border border-border bg-card overflow-hidden">
+                    {/* Product Header */}
+                    <div className="px-4 py-3 bg-muted/30 border-b border-border flex items-center gap-3">
                       {item.imageUrl ? (
                         <img
                           src={item.imageUrl}
                           alt={item.name}
-                          className="w-8 h-8 rounded-lg object-cover bg-muted flex-shrink-0"
+                          className="w-10 h-10 rounded-xl object-cover bg-muted flex-shrink-0 shadow-sm"
                         />
-                      ) : null}
-                      <p className="font-semibold text-sm">{item.name}</p>
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl shadow-sm">
+                          {CATEGORY_LABELS[item.category as BuyableCategory]?.[0] ?? '📦'}
+                        </div>
+                      )}
+                      <h3 className="font-bold text-base">{item.name}</h3>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    {/* Variants List */}
+                    <div className="divide-y divide-border/50">
                       {activeVariants.map((v) => {
                         const isFav = favoriteIds.has(v.id)
-                        const hasVoucher = voucherMap.has(v.id)
+                        const voucherCount = voucherMap.get(v.id) ?? 0
+                        const hasVoucher = voucherCount > 0
+                        const hasDiscount = v.activeDiscount != null
+
                         return (
                           <div
                             key={v.id}
-                            className="flex items-center gap-1 rounded-lg border border-border bg-background"
+                            className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group"
                           >
                             <button
                               onClick={() => openSheet(item, v.id)}
-                              className="pl-3 pr-2 py-1.5 text-sm text-left"
+                              className="flex-1 min-w-0 flex items-center gap-3 text-left"
                             >
-                              {hasVoucher && <span>🎁</span>}
-                              <span className="ml-1.5 font-medium">{v.name}</span>
-                              <span className={hasVoucher ? "ml-1.5 text-muted-foreground line-through" : "ml-1.5 text-muted-foreground"}>{formatCents(v.price)}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-sm truncate">{v.name}</span>
+                                  {hasVoucher && (
+                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
+                                      {voucherCount}x 🎁
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  {hasDiscount ? (
+                                    <>
+                                      <span className="text-sm font-bold text-orange-500">
+                                        {formatCents(v.discountedPrice)}
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground line-through decoration-muted-foreground/50">
+                                        {formatCents(v.price)}
+                                      </span>
+                                      <span className="text-[10px] font-black text-orange-500 uppercase tracking-tighter">
+                                        {v.activeDiscount!.type === 'percent' ? `-${v.activeDiscount!.value}%` : 'Aktion'}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="text-sm font-medium text-foreground/80">
+                                      {formatCents(v.price)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                toggleFav({ variantId: v.id, isFav })
-                              }}
-                              className={cn(
-                                'pr-2.5 py-1.5 transition-colors',
-                                isFav ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500',
-                              )}
-                              title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
-                            >
-                              <Star size={14} fill={isFav ? 'currentColor' : 'none'} />
-                            </button>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleFav({ variantId: v.id, isFav })
+                                }}
+                                className={cn(
+                                  'p-2 rounded-lg transition-all active:scale-90',
+                                  isFav ? 'text-yellow-500 bg-yellow-500/10' : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/5',
+                                )}
+                                title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+                              >
+                                <Star size={16} fill={isFav ? 'currentColor' : 'none'} strokeWidth={isFav ? 1.5 : 2} />
+                              </button>
+                              <button
+                                onClick={() => openSheet(item, v.id)}
+                                className="p-2 rounded-lg text-muted-foreground group-hover:text-primary group-hover:bg-primary/5 transition-all"
+                              >
+                                <Plus size={20} />
+                              </button>
+                            </div>
                           </div>
                         )
                       })}

@@ -11,11 +11,11 @@ import { Profile } from './pages/Profile'
 import { ProfileDetail } from './pages/ProfileDetail'
 import { Social } from './pages/Social'
 import { GroupDetail } from './pages/GroupDetail'
-import { Jackpot } from './pages/Jackpot'
 import { AllAchievements } from './pages/AllAchievements'
 import { ProfileStats } from './pages/ProfileStats'
 import { AdminUsers } from './pages/admin/Users'
 import { AdminProducts } from './pages/admin/Products'
+import { AdminPromotions } from './pages/admin/Promotions'
 import { AdminSettlement } from './pages/admin/Settlement'
 import { JoinGroup } from './pages/JoinGroup'
 
@@ -33,9 +33,6 @@ export function App() {
       <Switch>
         <Route path="/login" component={Login} />
 
-        <Route path="/">
-          <ProtectedRoute><Home /></ProtectedRoute>
-        </Route>
         <Route path="/shop">
           <ProtectedRoute><Shop /></ProtectedRoute>
         </Route>
@@ -71,9 +68,6 @@ export function App() {
         <Route path="/leaderboard">
           <Redirect to="/social" />
         </Route>
-        <Route path="/jackpot">
-          <ProtectedRoute><Jackpot /></ProtectedRoute>
-        </Route>
         <Route path="/achievements">
           <ProtectedRoute><AllAchievements /></ProtectedRoute>
         </Route>
@@ -90,6 +84,9 @@ export function App() {
         </Route>
         <Route path="/admin/products">
           <ProtectedRoute requireRole="moderator"><AdminProducts /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/promotions">
+          <ProtectedRoute requireRole="moderator"><AdminPromotions /></ProtectedRoute>
         </Route>
         <Route path="/admin/settlement">
           <ProtectedRoute requireRole="moderator"><AdminSettlement /></ProtectedRoute>

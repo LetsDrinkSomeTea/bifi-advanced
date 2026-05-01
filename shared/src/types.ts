@@ -16,6 +16,11 @@ export interface PaginatedResponse<T> {
   nextCursor: string | null
 }
 
+export interface ActiveDiscount {
+  type: 'percent' | 'fixed'
+  value: number
+}
+
 export interface BuyableWithVariants {
   id: string
   name: string
@@ -32,6 +37,8 @@ export interface BuyableWithVariants {
     price: number
     isActive: boolean
     sortOrder: number
+    activeDiscount: ActiveDiscount | null
+    discountedPrice: number
   }>
 }
 
