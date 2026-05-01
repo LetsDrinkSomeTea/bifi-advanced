@@ -385,7 +385,6 @@ export function AdminUsers() {
   const [createOpen, setCreateOpen] = useState(false)
   const [search, setSearch] = useState('')
 
-  // Role can be changed if the user has no SSO (local-only) or role sync is not 'always'
   const canChangeRole = (u: AdminUser) =>
     !u.hasSso || (config?.roleSync ?? 'always') !== 'always'
 

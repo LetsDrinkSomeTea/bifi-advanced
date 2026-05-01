@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { Bell } from 'lucide-react'
 import { AdminLayout } from './AdminLayout'
 import { Modal } from '../../components/Modal'
-import { useSettlement, useDeposit } from '../../hooks/useAdmin'
-import { useSendNudge } from '../../hooks/useNudge'
+import { useSettlement, useDeposit, useSendReminder } from '../../hooks/useAdmin'
 import type { SettlementEntry } from '@shared/types'
 import { formatCents, cn } from '../../lib/utils'
 
@@ -68,13 +67,13 @@ function DepositModal({ user, onClose }: { user: SettlementEntry | null; onClose
 export function AdminSettlement() {
   const { data: debtors, isLoading } = useSettlement()
   const [depositTarget, setDepositTarget] = useState<SettlementEntry | null>(null)
-  const { mutate: sendNudge, isPending: isNudging } = useSendNudge()
+  const { mutate: sendReminder, isPending: isReminding } = useSendReminder()
   const [lastNudgeId, setLastNudgeId] = useState<string | null>(null)
 
   const total = debtors?.reduce((sum, u) => sum + u.balance, 0) ?? 0
 
   const handleNudge = (userId: string) => {
-    sendNudge({ recipientId: userId, preset: 'remind' }, {
+    sendReminder(userId, {
       onSuccess: () => {
         setLastNudgeId(userId)
         setTimeout(() => setLastNudgeId(null), 3000)
@@ -119,7 +118,7 @@ export function AdminSettlement() {
               <span className="font-bold text-sm text-red-500 tabular-nums mr-1">{formatCents(u.balance)}</span>
               <button
                 onClick={() => handleNudge(u.id)}
-                disabled={isNudging || lastNudgeId === u.id}
+                disabled={isReminding || lastNudgeId === u.id}
                 className={cn(
                   "p-2 rounded-lg border transition-all",
                   lastNudgeId === u.id 

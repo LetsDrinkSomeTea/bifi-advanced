@@ -71,6 +71,12 @@ export function useAllBuyables() {
   })
 }
 
+export function useSendReminder() {
+  return useMutation({
+    mutationFn: (userId: string) => api.post(`/api/admin/users/${userId}/remind`, {}),
+  })
+}
+
 export function useUpdateBuyable() {
   const qc = useQueryClient()
   return useMutation({
