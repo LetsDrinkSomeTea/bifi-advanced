@@ -130,16 +130,16 @@ function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }) {
         className='relative z-10 rounded-xl border border-border bg-background px-3 py-2 transition-transform duration-200'
       >
         <div className="flex-1 pr-1">
-          {isLoading ? (
-            <span className="font-semibold">...</span>
-          ) : (
-            <ProfileLink user={donor} />
-          )}{' '}
-          hat dir <span className="font-medium">{drink}</span> geschenkt (
+          <span className="font-medium">{drink}</span>
+          {' ('}
           <span className="font-semibold text-green-500">
             +{formatCents(voucher.amount)}
           </span>
-          )
+          ) von {isLoading ? (
+            <span className="font-semibold">...</span>
+          ) : (
+            <ProfileLink user={donor} />
+          )}
         </div>
         {/* Prominent, always-visible count badge */}
         {isStacked && (

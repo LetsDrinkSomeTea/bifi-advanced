@@ -100,36 +100,9 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
               </span>
               {voucherMap.has(selectedVariant.id) && (
                 <span className="text-sm font-medium px-2.5 py-0.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-full">
-                  🎁
+                  {voucherMap.get(selectedVariant.id)}x 🎁
                 </span>
               )}
-            </div>
-          )}
-
-          {/* Variant picker */}
-          {!autoSelected && variants.length > 1 && (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Variante wählen</p>
-              <div className="grid grid-cols-2 gap-2">
-                {variants.map((v) => (
-                  <button
-                    key={v.id}
-                    onClick={() => setVariantId(v.id)}
-                    className={cn(
-                      'py-2.5 px-3 rounded-xl border text-sm font-medium transition-colors text-left',
-                      variantId === v.id
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-muted-foreground',
-                    )}
-                  >
-                    <span className="block">{v.name}</span>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-xs opacity-75">{formatCents(v.price)}</span>
-                      {voucherMap.has(v.id) && <span className="text-xs">🎁</span>}
-                    </div>
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
@@ -221,9 +194,9 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
               ? 'Kaufen…'
               : effectiveTotal === 0
                 ? <span className="inline-flex items-center gap-1.5">
-                    Wurde dir ausgegeben ·
-                    <span className="line-through opacity-70">{formatCents(totalPrice)}</span>
-                  </span>
+                  Wurde dir ausgegeben ·
+                  <span className="line-through opacity-70">{formatCents(totalPrice)}</span>
+                </span>
                 : `Kaufen · ${priceLabel}`}
           </button>
         </div>
