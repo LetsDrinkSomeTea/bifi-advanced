@@ -130,10 +130,31 @@ function feedText(
       return <>Spendenziel <span className="font-medium">{title ?? 'Ziel'}</span> wurde erreicht! 🎯</>
     }
     case 'jackpot_win': {
-      const multiplier = metadata?.multiplier as number | undefined
-      return isMe
-        ? <>Du hast den Jackpot gewonnen{multiplier != null ? ` (${multiplier}×)` : ''} 🎰</>
-        : <><Actor user={user} currentUserId={currentUserId} /> hat den Jackpot gewonnen{multiplier != null ? ` (${multiplier}×)` : ''} 🎰</>
+      const pct = metadata?.multiplierPct as number | undefined
+      const productName = metadata?.productName as string | undefined
+      const variantName = metadata?.variantName as string | undefined
+      const product = productName ?? 'etwas'
+        ? <span className="font-medium">{productName}{variantName ? ` (${variantName})` : ''}</span>
+        : null
+      // 1. Klar lesbare Logik für den Preis-Text
+      let outcome = '🎰'; // Fallback
+      if (pct === 0) {
+        outcome = 'gratis';
+      } else if (pct != null && pct < 100) {
+        outcome = `für nur ${pct} % des Preises`;
+      } else if (pct === 100) {
+        outcome = 'zum Normalpreis'; // Ergänzt, falls jemand exakt 100 erwischt
+      } else if (pct === 200) {
+        outcome = 'für den doppelten Preis';
+      } else if (pct != null) {
+        outcome = `für ${pct} % des Preises`;
+      }
+
+      return isMe ? (
+        <>Du hast {product} im Jackpot {outcome} erspielt.</>
+      ) : (
+        <><Actor user={user} currentUserId={currentUserId} /> hat {product} im Jackpot {outcome} erspielt.</>
+      );
     }
     default:
       return isMe

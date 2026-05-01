@@ -70,7 +70,7 @@ export type FeedEvent =
   | {
       type: 'jackpot_win'
       userId: string
-      metadata: { multiplier: number }
+      metadata: { multiplier: number; multiplierPct: number; productName: string; variantName: string }
     }
 
 // ─── Emit ──────────────────────────────────────────────────────────────────────
