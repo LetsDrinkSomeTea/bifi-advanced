@@ -9,7 +9,7 @@ import { requireAuth } from '../middleware/auth.ts'
 const router = new Hono()
 
 const QuerySchema = z.object({
-  type: z.enum(['total_spent', 'total_purchases', 'achievements', 'prost_sent']).default('total_spent'),
+  type: z.enum(['total_spent', 'total_purchases', 'achievements', 'prost_sent', 'jackpot_spins']).default('total_spent'),
   period: z.enum(['week', 'month', 'alltime']).default('alltime'),
 })
 
@@ -102,8 +102,7 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
       .groupBy(users.id, users.displayName, users.avatarUrl)
       .orderBy(desc(sql`count(${userAchievements.id})`))
       .limit(50)
-  } else {
-    // prost_sent
+  } else if (type === 'prost_sent') {
     rows = await db
       .select({
         userId: users.id,
@@ -121,6 +120,28 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
       )
       .groupBy(users.id, users.displayName, users.avatarUrl)
       .orderBy(desc(sql`count(${prostVouchers.id})`))
+      .limit(50)
+  } else {
+    // jackpot_spins
+    rows = await db
+      .select({
+        userId: users.id,
+        displayName: users.displayName,
+        avatarUrl: users.avatarUrl,
+        value: sql<number>`count(${transactions.id})::int`,
+      })
+      .from(transactions)
+      .innerJoin(users, eq(transactions.userId, users.id))
+      .where(
+        and(
+          eq(transactions.type, 'jackpot'),
+          isNull(transactions.cancelledAt),
+          eq(users.isActive, true),
+          since ? gte(transactions.createdAt, since) : undefined,
+        ),
+      )
+      .groupBy(users.id, users.displayName, users.avatarUrl)
+      .orderBy(desc(sql`count(${transactions.id})`))
       .limit(50)
   }
 

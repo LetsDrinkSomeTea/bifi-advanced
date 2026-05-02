@@ -239,10 +239,7 @@ export function Profile() {
           ) : (
             <div className="grid grid-cols-2 gap-3">
               <StatCard label="Käufe" value={String(profile?.stats.purchaseCount ?? 0)} />
-              <StatCard
-                label="Rang"
-                value={profile?.stats.leaderboardRank != null ? `#${profile.stats.leaderboardRank}` : '–'}
-              />
+              <RankCard rank={profile?.stats.leaderboardRank ?? null} />
               <StatCard label="Freunde" value={String(profile?.stats.friendCount ?? 0)} />
               <StatCard
                 label="Liebling"
@@ -278,6 +275,28 @@ export function Profile() {
 
       <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} hasSso={profile?.hasSso ?? false} />
     </Layout>
+  )
+}
+
+const RANK_CATEGORY_LABELS: Record<string, string> = {
+  total_spent: 'Ausgaben',
+  total_purchases: 'Käufe',
+  achievements: 'Achievements',
+  prost_sent: 'Prost',
+  jackpot_spins: 'Spins',
+}
+
+function RankCard({ rank }: { rank: { rank: number; categories: string[] } | null }) {
+  return (
+    <div className="rounded-xl border border-border bg-card px-3 py-3 text-center">
+      <p className="text-xs text-muted-foreground mb-1">Rang</p>
+      <p className="text-xl font-bold leading-tight">{rank != null ? `#${rank.rank}` : '–'}</p>
+      {rank != null && (
+        <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+          {rank.categories.map((c) => RANK_CATEGORY_LABELS[c] ?? c).join(', ')}
+        </p>
+      )}
+    </div>
   )
 }
 

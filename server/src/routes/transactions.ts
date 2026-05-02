@@ -153,6 +153,7 @@ async function resolveItems(
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    discountSavedCents: number;
   };
   const toInsert: ItemRow[] = [];
   const feedItems: Array<{ name: string; variantName: string; count: number }> =
@@ -169,6 +170,7 @@ async function resolveItems(
     name: string;
     consumed: number;
     isNowExhausted: boolean;
+    wasFirst: boolean;
   }> = [];
   let cost = 0;
 
@@ -217,7 +219,7 @@ async function resolveItems(
 
     if (discount?.quantityRemaining !== null && discount != null) {
       // Quantity-based promotion: consume atomically inside the transaction
-      const { consumed, isNowExhausted } = await consumeQuantityPromotion(
+      const { consumed, isNowExhausted, wasFirst } = await consumeQuantityPromotion(
         tx,
         discount.promoId,
         item.quantity,
@@ -233,12 +235,14 @@ async function resolveItems(
           quantity: consumed,
           unitPrice: discountedPrice,
           totalPrice: discountedTotal,
+          discountSavedCents: (variant.price - discountedPrice) * consumed,
         });
         consumedQuantityPromos.push({
           promoId: discount.promoId,
           name: discount.name,
           consumed,
           isNowExhausted,
+          wasFirst,
         });
       }
 
@@ -252,6 +256,7 @@ async function resolveItems(
           quantity: fullQty,
           unitPrice: variant.price,
           totalPrice: fullTotal,
+          discountSavedCents: 0,
         });
       }
     } else {
@@ -265,6 +270,7 @@ async function resolveItems(
         quantity: item.quantity,
         unitPrice,
         totalPrice,
+        discountSavedCents: discount ? (variant.price - unitPrice) * item.quantity : 0,
       });
     }
 
@@ -541,13 +547,24 @@ router.post(
         },
       });
 
-      checkAchievements({
-        type: "purchase",
-        userId: user.id,
-        now: new Date(),
-        items: primaryTxn.achievementItems,
-        groupId: body.groupId,
-      }).catch(console.error);
+      for (const memberId of memberIds) {
+        checkAchievements({
+          type: "purchase",
+          userId: memberId,
+          now: new Date(),
+          items: primaryTxn.achievementItems,
+          groupId: body.groupId,
+        }).catch(console.error)
+
+        for (const cp of primaryTxn.consumedQuantityPromos) {
+          if (cp.wasFirst) {
+            checkAchievements({ type: 'promo_first_buyer', userId: memberId }).catch(console.error)
+          }
+          if (cp.isNowExhausted && cp.consumed > 0) {
+            checkAchievements({ type: 'promo_exhausted_buyer', userId: memberId }).catch(console.error)
+          }
+        }
+      }
 
       return c.json({ ...primaryTxn.txn, voucherRedeemed: false }, 201);
     }
@@ -635,6 +652,16 @@ router.post(
             metadata: { promoName: cp.name },
           });
         }
+      }
+    }
+
+    // Fire discount achievement events
+    for (const cp of consumedQuantityPromos) {
+      if (cp.isNowExhausted && cp.consumed > 0) {
+        checkAchievements({ type: 'promo_exhausted_buyer', userId: user.id }).catch(console.error)
+      }
+      if (cp.wasFirst) {
+        checkAchievements({ type: 'promo_first_buyer', userId: user.id }).catch(console.error)
       }
     }
 

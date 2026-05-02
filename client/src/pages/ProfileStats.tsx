@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useLocation } from 'wouter'
-import { ArrowLeft, TrendingUp, Users, Wallet, Beer, Dices, Clock, Bell, Target } from 'lucide-react'
+import { ArrowLeft, TrendingUp, Users, Wallet, Beer, Dices, Clock, Bell, Target, Tag } from 'lucide-react'
 import { Layout } from '../components/layout/Layout'
 import { useUserStats, useSystemStats } from '../hooks/useStats'
 import { useAuth } from '../hooks/useAuth'
@@ -142,16 +142,28 @@ export function ProfileStats() {
               <>
                 {/* Finances */}
                 {userStats?.finances && (
-                  <section>
-                    <SectionHeader icon={<Wallet size={16} />} title="Finanzen" />
-                    <div className="grid grid-cols-2 gap-3">
-                      <StatTile label="Gesamtausgaben" value={formatCents(userStats.finances.totalSpent)} />
-                      <StatTile label="Ø pro Monat" value={formatCents(userStats.finances.avgPerMonth)} />
-                      <StatTile label="Ø pro Kauf" value={formatCents(userStats.finances.avgPerTransaction)} />
-                      <StatTile label="Größter Kauf" value={formatCents(userStats.finances.biggestPurchase)} />
-                      <StatTile label="Guthaben aktuell" value={formatCents(userStats.finances.currentBalance)} className="col-span-2" />
-                    </div>
-                  </section>
+                  <>
+                    <section>
+                      <SectionHeader icon={<Wallet size={16} />} title="Finanzen" />
+                      <div className="grid grid-cols-2 gap-3">
+                        <StatTile label="Gesamtausgaben" value={formatCents(userStats.finances.totalSpent)} />
+                        <StatTile label="Ø pro Monat" value={formatCents(userStats.finances.avgPerMonth)} />
+                        <StatTile label="Ø pro Kauf" value={formatCents(userStats.finances.avgPerTransaction)} />
+                        <StatTile label="Größter Kauf" value={formatCents(userStats.finances.biggestPurchase)} />
+                        <StatTile label="Guthaben aktuell" value={formatCents(userStats.finances.currentBalance)} className="col-span-2" />
+                      </div>
+                    </section>
+
+                    {userStats.finances.discountedItemCount > 0 && (
+                      <section>
+                        <SectionHeader icon={<Tag size={16} />} title="Rabatte" />
+                        <div className="grid grid-cols-2 gap-3">
+                          <StatTile label="Rabattierte Artikel" value={String(userStats.finances.discountedItemCount)} />
+                          <StatTile label="Gespart gesamt" value={formatCents(userStats.finances.totalSaved)} valueClassName="text-green-500" />
+                        </div>
+                      </section>
+                    )}
+                  </>
                 )}
 
                 {/* Consumption */}
@@ -379,6 +391,16 @@ export function ProfileStats() {
                     />
                   </div>
                 </section>
+
+                {(systemStats?.totalDiscountedItems ?? 0) > 0 && (
+                  <section>
+                    <SectionHeader icon={<Tag size={16} />} title="Rabatte Systemweit" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <StatTile label="Rabattierte Artikel" value={String(systemStats?.totalDiscountedItems ?? 0)} />
+                      <StatTile label="Gespart systemweit" value={formatCents(systemStats?.totalSystemSaved ?? 0)} valueClassName="text-green-500" />
+                    </div>
+                  </section>
+                )}
               </>
             )}
           </div>

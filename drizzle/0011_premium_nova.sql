@@ -1,0 +1,1 @@
+ALTER TABLE "transaction_items" ADD COLUMN "discount_saved_cents" integer DEFAULT 0 NOT NULL;

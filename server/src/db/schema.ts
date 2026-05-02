@@ -145,6 +145,7 @@ export const transactionItems = pgTable('transaction_items', {
   quantity: integer('quantity').notNull().default(1),
   unitPrice: integer('unit_price').notNull(),
   totalPrice: integer('total_price').notNull(),
+  discountSavedCents: integer('discount_saved_cents').notNull().default(0),
 })
 
 export const groupMembers = pgTable(

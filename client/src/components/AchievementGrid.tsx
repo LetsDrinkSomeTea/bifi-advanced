@@ -3,7 +3,7 @@ import { Link } from 'wouter'
 import { ChevronRight } from 'lucide-react'
 import { TIER_META } from '@shared/achievements'
 import type { AchievementDef, AchievementTier } from '@shared/achievements'
-import { cn } from '../lib/utils'
+import { cn, formatCents } from '../lib/utils'
 import { useAchievementMeta } from '../hooks/useAchievements'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -126,7 +126,7 @@ function TierBadge({ tier, unlocked }: { tier: AchievementTier; unlocked: boolea
   )
 }
 
-function ProgressBar({ value, max }: { value: number; max: number }) {
+function ProgressBar({ value, max, format = 'count' }: { value: number; max: number; format?: 'count' | 'cents' }) {
   const [animWidth, setAnimWidth] = useState(0)
 
   useEffect(() => {
@@ -136,11 +136,13 @@ function ProgressBar({ value, max }: { value: number; max: number }) {
     return () => cancelAnimationFrame(id)
   }, [value, max])
 
+  const fmt = (v: number) => format === 'cents' ? formatCents(v) : v.toLocaleString('de-DE')
+
   return (
     <div className="w-full">
       <div className="flex justify-between text-[9px] text-muted-foreground leading-none mb-0.5">
-        <span>{value.toLocaleString('de-DE')}</span>
-        <span>{max.toLocaleString('de-DE')}</span>
+        <span>{fmt(value)}</span>
+        <span>{fmt(max)}</span>
       </div>
       <div className="h-1 bg-muted rounded-full overflow-hidden">
         <div
@@ -170,7 +172,7 @@ function GroupCardComponent({ card, progress, meta }: { card: GroupCard; progres
       const def = meta.find(m => m.key === nextTier.key)
       if (def?.threshold !== undefined) {
         const currentValue = progress[card.groupKey] ?? 0
-        progressBar = <ProgressBar value={currentValue} max={def.threshold} />
+        progressBar = <ProgressBar value={currentValue} max={def.threshold} format={def.progressFormat ?? 'count'} />
       }
     }
   }

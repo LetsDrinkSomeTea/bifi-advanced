@@ -367,7 +367,7 @@ function SearchResults({
 
 // ─── Leaderboard tab ──────────────────────────────────────────────────────────
 
-type LeaderboardType = 'total_spent' | 'total_purchases' | 'achievements' | 'prost_sent'
+type LeaderboardType = 'total_spent' | 'total_purchases' | 'achievements' | 'prost_sent' | 'jackpot_spins'
 type LeaderboardPeriod = 'week' | 'month' | 'alltime'
 
 const PERIOD_LABELS: Record<LeaderboardPeriod, string> = {
@@ -380,6 +380,7 @@ function formatValue(type: LeaderboardType, value: number): string {
   if (type === 'total_spent') return formatCents(value)
   if (type === 'achievements') return `${value} 🏆`
   if (type === 'prost_sent') return `${value} 🥂`
+  if (type === 'jackpot_spins') return `${value} 🎰`
   return String(value)
 }
 
@@ -484,6 +485,7 @@ function LeaderboardTab() {
       <LeaderboardSection type="total_purchases" title="Käufe" period={period} currentUserId={user?.id} />
       <LeaderboardSection type="achievements" title="Achievements" period={period} currentUserId={user?.id} />
       <LeaderboardSection type="prost_sent" title="Prost gesendet" period={period} currentUserId={user?.id} />
+      <LeaderboardSection type="jackpot_spins" title="Spins" period={period} currentUserId={user?.id} />
     </div>
   )
 }

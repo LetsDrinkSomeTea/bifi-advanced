@@ -116,7 +116,7 @@ export interface PublicProfile {
   friendshipStatus: FriendshipStatus | null
   stats: {
     purchaseCount: number
-    leaderboardRank: number | null
+    leaderboardRank: { rank: number; categories: string[] } | null
     favoriteProduct: { name: string; count: number } | null
     friendCount: number
   }

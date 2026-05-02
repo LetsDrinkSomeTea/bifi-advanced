@@ -327,6 +327,41 @@ export const jackpotLossCount = (userId: string) =>
       ),
   );
 
+export const discountedItemCount = (userId: string) =>
+  countQ(
+    db
+      .select({
+        n: sql<number>`coalesce(sum(${transactionItems.quantity}), 0)::int`,
+      })
+      .from(transactionItems)
+      .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, 'purchase'),
+          isNull(transactions.cancelledAt),
+          sql`${transactionItems.discountSavedCents} > 0`,
+        ),
+      ),
+  )
+
+export const totalSavedCents = (userId: string) =>
+  countQ(
+    db
+      .select({
+        n: sql<number>`coalesce(sum(${transactionItems.discountSavedCents}), 0)::int`,
+      })
+      .from(transactionItems)
+      .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, 'purchase'),
+          isNull(transactions.cancelledAt),
+        ),
+      ),
+  )
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export async function checkAchievements(

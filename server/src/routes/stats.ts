@@ -99,9 +99,25 @@ router.get('/user/:id', requireAuth, async (c) => {
         txnFilter ? txnFilter : sql`true`
       ))
 
+    const [discountData] = await db
+      .select({
+        totalSaved: sql<number>`coalesce(sum(${transactionItems.discountSavedCents}), 0)::int`,
+        discountedItemCount: sql<number>`coalesce(sum(case when ${transactionItems.discountSavedCents} > 0 then ${transactionItems.quantity} else 0 end), 0)::int`,
+      })
+      .from(transactionItems)
+      .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+      .where(and(
+        eq(transactions.userId, id),
+        eq(transactions.type, 'purchase'),
+        isNull(transactions.cancelledAt),
+        txnFilter ? txnFilter : sql`true`
+      ))
+
     stats.finances = {
       ...financeData,
       currentBalance: self.balance,
+      totalSaved: discountData?.totalSaved ?? 0,
+      discountedItemCount: discountData?.discountedItemCount ?? 0,
     }
   }
 
@@ -311,6 +327,18 @@ router.get('/system', requireAuth, async (c) => {
   const pvf = genericFilter(prostVouchers)
   const [totalProst] = await db.select({ count: sql<number>`count(*)::int` }).from(prostVouchers).where(pvf ? pvf : sql`true`)
 
+  const [systemDiscountData] = await db
+    .select({
+      totalSaved: sql<number>`coalesce(sum(${transactionItems.discountSavedCents}), 0)::int`,
+      discountedItemCount: sql<number>`coalesce(sum(case when ${transactionItems.discountSavedCents} > 0 then ${transactionItems.quantity} else 0 end), 0)::int`,
+    })
+    .from(transactionItems)
+    .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
+    .where(and(
+      isNull(transactions.cancelledAt),
+      txnFilter ? txnFilter : sql`true`
+    ))
+
   const revenue = financeStats?.totalRevenue ?? 0
   const usersActive = userCount?.count ?? 1
 
@@ -328,6 +356,8 @@ router.get('/system', requireAuth, async (c) => {
     allTimeJackpotSpins: jackpotStats?.count ?? 0,
     systemJackpotBalance: jackpotStats?.balance ?? 0,
     allTimeProstSent: totalProst?.count ?? 0,
+    totalSystemSaved: systemDiscountData?.totalSaved ?? 0,
+    totalDiscountedItems: systemDiscountData?.discountedItemCount ?? 0,
   })
 })
 

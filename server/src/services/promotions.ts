@@ -133,7 +133,7 @@ export async function consumeQuantityPromotion(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   promoId: string,
   requestedQty: number,
-): Promise<{ consumed: number; isNowExhausted: boolean }> {
+): Promise<{ consumed: number; isNowExhausted: boolean; wasFirst: boolean }> {
   const [promo] = await tx
     .select()
     .from(promotions)
@@ -141,11 +141,12 @@ export async function consumeQuantityPromotion(
     .for('update')
 
   if (!promo || promo.quantityLimit == null) {
-    return { consumed: requestedQty, isNowExhausted: false }
+    return { consumed: requestedQty, isNowExhausted: false, wasFirst: false }
   }
 
   const remaining = promo.quantityLimit - promo.quantityUsed
   const consumed = Math.min(requestedQty, Math.max(0, remaining))
+  const wasFirst = promo.quantityUsed === 0 && consumed > 0
   const newUsed = promo.quantityUsed + consumed
   const isNowExhausted = newUsed >= promo.quantityLimit
 
@@ -154,5 +155,5 @@ export async function consumeQuantityPromotion(
     .set({ quantityUsed: newUsed })
     .where(eq(promotions.id, promoId))
 
-  return { consumed, isNowExhausted }
+  return { consumed, isNowExhausted, wasFirst }
 }

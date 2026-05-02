@@ -8,6 +8,8 @@ export interface UserStats {
     avgPerTransaction: number
     biggestPurchase: number
     currentBalance: number
+    totalSaved: number
+    discountedItemCount: number
   } | null
   consumption: {
     topItems: Array<{ name: string; count: number }>
@@ -47,6 +49,8 @@ export interface SystemStats {
   allTimeJackpotSpins: number
   systemJackpotBalance: number
   allTimeProstSent: number
+  totalSystemSaved: number
+  totalDiscountedItems: number
 }
 
 export function useUserStats(userId: string | undefined, period?: string) {

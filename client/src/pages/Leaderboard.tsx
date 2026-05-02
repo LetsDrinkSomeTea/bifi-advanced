@@ -6,7 +6,7 @@ import { useLeaderboard } from '../hooks/useLeaderboard'
 import { useAuth } from '../hooks/useAuth'
 import { formatCents, cn } from '../lib/utils'
 
-type LeaderboardType = 'total_spent' | 'total_purchases' | 'achievements' | 'prost_sent'
+type LeaderboardType = 'total_spent' | 'total_purchases' | 'achievements' | 'prost_sent' | 'jackpot_spins'
 type LeaderboardPeriod = 'week' | 'month' | 'alltime'
 
 const TYPE_LABELS: Record<LeaderboardType, string> = {
@@ -14,6 +14,7 @@ const TYPE_LABELS: Record<LeaderboardType, string> = {
   total_purchases: 'Käufe',
   achievements: 'Achievements',
   prost_sent: 'Prost',
+  jackpot_spins: 'Spins',
 }
 
 const PERIOD_LABELS: Record<LeaderboardPeriod, string> = {
@@ -27,6 +28,7 @@ function formatValue(type: LeaderboardType, value: number | null): string {
   if (type === 'total_spent') return formatCents(value)
   if (type === 'achievements') return `${value} 🏆`
   if (type === 'prost_sent') return `${value} 🥂`
+  if (type === 'jackpot_spins') return `${value} 🎰`
   return String(value)
 }
 

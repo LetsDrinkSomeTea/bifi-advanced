@@ -55,7 +55,9 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
   const discountedUnitPrice = selectedVariant?.discountedPrice ?? originalUnitPrice
   const isDiscounted = discountedUnitPrice < originalUnitPrice
 
-  const totalPrice = discountedUnitPrice * quantity
+  const quantityRemaining = selectedVariant?.activeDiscount?.quantityRemaining ?? null
+  const discountedQty = quantityRemaining !== null ? Math.min(quantity, Math.max(0, quantityRemaining)) : quantity
+  const totalPrice = discountedUnitPrice * discountedQty + originalUnitPrice * (quantity - discountedQty)
   const canBuy = !!variantId
 
   const voucherCount = !groupId && variantId ? (voucherMap.get(variantId) ?? 0) : 0
@@ -252,34 +254,47 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
           )}
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-1 gap-3 pt-2">
+          <div className="flex pt-2">
+            <div
+              style={{
+                width: showJackpot ? '50%' : '0px',
+                paddingRight: showJackpot ? '12px' : '0px',
+                overflow: 'hidden',
+                flexShrink: 0,
+                transition: 'width 300ms ease, padding-right 300ms ease',
+              }}
+            >
+              <button
+                onClick={handleJackpot}
+                className="w-full h-16 rounded-2xl border-2 border-dashed border-amber-500/50 text-amber-600 dark:text-amber-400 font-black flex flex-col items-center justify-center gap-0.5 hover:bg-amber-500/5 transition-colors active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-1.5 text-sm">
+                  <Dices size={15} />
+                  <span>Jackpot</span>
+                </div>
+                <span className="text-[10px] font-semibold opacity-70 leading-tight">0 € – {formatCents(2 * discountedUnitPrice)}</span>
+              </button>
+            </div>
+
             <button
               disabled={!canBuy || isPending}
               onClick={handleBuy}
               className={cn(
-                'w-full py-4 rounded-xl font-black text-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3',
+                'flex-1 min-w-0 h-16 rounded-xl font-black transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-0.5 px-3',
                 canBuy ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/30' : 'bg-muted text-muted-foreground cursor-not-allowed',
                 'disabled:opacity-60',
               )}
             >
               {isPending ? (
-                'Wird gebucht...'
+                <span className="text-base">Wird gebucht…</span>
               ) : effectiveTotal === 0 ? (
-                <><span>🎁</span> Gratis bestellen</>
+                <span className="text-base">🎁 Wurde dir ausgegeben</span>
               ) : (
-                <>Kaufen · {priceLabel}</>
+                <>
+                  <span className="text-base leading-none">Kaufen</span>
+                  <span className="text-xs font-semibold opacity-80 leading-tight w-full text-center truncate">{priceLabel}</span>
+                </>
               )}
-            </button>
-
-            <button
-              onClick={showJackpot ? handleJackpot : undefined}
-              className={cn(
-                "w-full py-3.5 rounded-2xl border-2 border-dashed border-amber-500/50 text-amber-600 dark:text-amber-400 font-black text-sm flex items-center justify-center gap-2 hover:bg-amber-500/5 transition-all active:scale-[0.98]",
-                !showJackpot && "invisible pointer-events-none"
-              )}
-            >
-              <Dices size={18} />
-              Jackpot (0 € - {formatCents(2 * discountedUnitPrice)})
             </button>
           </div>
         </div>

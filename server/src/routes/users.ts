@@ -85,7 +85,7 @@ router.get('/:id/profile', requireAuth, async (c) => {
 
   const [
     [countRow],
-    rankResult,
+    allRankResults,
     [favProduct],
     achievementRows,
     friendshipRows,
@@ -96,17 +96,36 @@ router.get('/:id/profile', requireAuth, async (c) => {
       .from(transactions)
       .where(and(eq(transactions.userId, id), eq(transactions.type, 'purchase'), isNull(transactions.cancelledAt))),
     db.execute(sql`
-      WITH totals AS (
-        SELECT user_id, SUM(ABS(total_amount)) AS total
-        FROM transactions
-        WHERE type = 'purchase' AND cancelled_at IS NULL
-        GROUP BY user_id
-      ),
-      ranked AS (
-        SELECT user_id, RANK() OVER (ORDER BY total DESC)::int AS rank
-        FROM totals
-      )
-      SELECT rank FROM ranked WHERE user_id = ${id}
+      WITH
+        spent AS (
+          SELECT user_id, RANK() OVER (ORDER BY SUM(ABS(total_amount)) DESC)::int AS rank
+          FROM transactions WHERE type = 'purchase' AND cancelled_at IS NULL GROUP BY user_id
+        ),
+        purchases AS (
+          SELECT user_id, RANK() OVER (ORDER BY COUNT(*) DESC)::int AS rank
+          FROM transactions WHERE type = 'purchase' AND cancelled_at IS NULL GROUP BY user_id
+        ),
+        ach AS (
+          SELECT user_id, RANK() OVER (ORDER BY COUNT(*) DESC)::int AS rank
+          FROM user_achievements GROUP BY user_id
+        ),
+        prost AS (
+          SELECT from_user_id AS user_id, RANK() OVER (ORDER BY COUNT(*) DESC)::int AS rank
+          FROM prost_vouchers GROUP BY from_user_id
+        ),
+        spins AS (
+          SELECT user_id, RANK() OVER (ORDER BY COUNT(*) DESC)::int AS rank
+          FROM transactions WHERE type = 'jackpot' AND cancelled_at IS NULL GROUP BY user_id
+        )
+      SELECT 'total_spent'     AS category, rank FROM spent    WHERE user_id = ${id}
+      UNION ALL
+      SELECT 'total_purchases' AS category, rank FROM purchases WHERE user_id = ${id}
+      UNION ALL
+      SELECT 'achievements'    AS category, rank FROM ach       WHERE user_id = ${id}
+      UNION ALL
+      SELECT 'prost_sent'      AS category, rank FROM prost     WHERE user_id = ${id}
+      UNION ALL
+      SELECT 'jackpot_spins'   AS category, rank FROM spins     WHERE user_id = ${id}
     `),
     db.select({ name: buyables.name, count: sql<number>`count(*)::int` })
       .from(transactionItems)
@@ -125,7 +144,14 @@ router.get('/:id/profile', requireAuth, async (c) => {
     Promise.all(progressPromises),
   ])
 
-  const rank = (rankResult.rows[0] as { rank: number } | undefined)?.rank ?? null
+  type RankRow = { category: string; rank: number }
+  const rankRows = allRankResults.rows as RankRow[]
+  let leaderboardRank: { rank: number; categories: string[] } | null = null
+  if (rankRows.length > 0) {
+    const best = Math.min(...rankRows.map((r) => r.rank))
+    const bestCategories = rankRows.filter((r) => r.rank === best).map((r) => r.category)
+    leaderboardRank = { rank: best, categories: bestCategories }
+  }
 
   let friendshipStatus: 'none' | 'pending_sent' | 'pending_received' | 'friends' | null = null
   if (friendshipRows !== null) {
@@ -151,7 +177,7 @@ router.get('/:id/profile', requireAuth, async (c) => {
     friendshipStatus,
     stats: {
       purchaseCount: countRow?.count ?? 0,
-      leaderboardRank: rank,
+      leaderboardRank,
       favoriteProduct: favProduct ?? null,
       friendCount: friendCountRow?.count ?? 0,
     },

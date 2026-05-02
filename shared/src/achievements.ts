@@ -18,7 +18,8 @@ export interface AchievementDef {
   tier?: AchievementTier
   groupKey?: string    // ties tiers together in the UI
   hidden?: boolean     // true = show as ??? until any tier in the group is unlocked
-  threshold?: number   // numeric threshold for this tier (used for progress bars)
+  threshold?: number              // numeric threshold for this tier (used for progress bars)
+  progressFormat?: 'count' | 'cents'  // how to display the progress value (default: count)
 }
 
 // ─── Event types ──────────────────────────────────────────────────────────────
@@ -32,6 +33,8 @@ export type AchievementEventType =
   | 'contribution'
   | 'deposit'
   | 'friendship_accepted'
+  | 'promo_first_buyer'
+  | 'promo_exhausted_buyer'
 
 export type AchievementEvent =
   | {
@@ -48,5 +51,7 @@ export type AchievementEvent =
   | { type: 'contribution'; userId: string }
   | { type: 'deposit'; userId: string; amount: number; balanceBefore: number; balanceAfter: number }
   | { type: 'friendship_accepted'; userId: string }
+  | { type: 'promo_first_buyer'; userId: string }
+  | { type: 'promo_exhausted_buyer'; userId: string }
 
 export type AchievementKey = string

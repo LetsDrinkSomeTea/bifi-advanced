@@ -9,6 +9,7 @@ import {
 } from "../../../../shared/src/achievements.ts";
 import {
   categoryItemCount,
+  discountedItemCount,
   donationCount,
   getLocalHour,
   getLocalMinute,
@@ -26,6 +27,7 @@ import {
   purchaseCount,
   purchasesOnBiFiDay,
   toLocalTime,
+  totalSavedCents,
   unlockedAchievementCount,
 } from "../achievements.ts";
 
@@ -51,6 +53,7 @@ function defineTieredAchievement(config: {
   icon: string;
   events: AchievementEventType[];
   hidden?: boolean;
+  progressFormat?: 'count' | 'cents';
   tiers: Array<{
     tier: AchievementTier;
     description: string;
@@ -68,6 +71,7 @@ function defineTieredAchievement(config: {
     tier: t.tier,
     groupKey: config.groupKey,
     threshold: t.threshold,
+    progressFormat: config.progressFormat,
     hidden: t.hidden ?? config.hidden,
     events: config.events,
     progress: config.progress,
@@ -814,4 +818,51 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       { tier: "gold", description: "50× doppelt gezahlt (2×)", threshold: 50 },
     ],
   }),
+  // ── Rabatte (tiered) ────────────────────────────────────────────────────────
+  ...defineTieredAchievement({
+    groupKey: 'deal_hunter',
+    name: 'Schnäppchenjäger',
+    icon: '🏷️',
+    events: ['purchase'],
+    progress: (userId) => discountedItemCount(userId),
+    tiers: [
+      { tier: 'bronze', description: '1 rabattiertes Produkt gekauft', threshold: 1 },
+      { tier: 'silver', description: '15 rabattierte Produkte gekauft', threshold: 15 },
+      { tier: 'gold', description: '50 rabattierte Produkte gekauft', threshold: 50 },
+    ],
+  }),
+
+  ...defineTieredAchievement({
+    groupKey: 'savings_fox',
+    name: 'Sparfuchs',
+    icon: '🦊',
+    events: ['purchase'],
+    progressFormat: 'cents',
+    progress: (userId) => totalSavedCents(userId),
+    tiers: [
+      { tier: 'bronze', description: '1 € gespart', threshold: 100 },
+      { tier: 'silver', description: '10 € gespart', threshold: 1000 },
+      { tier: 'gold', description: '50 € gespart', threshold: 5000 },
+    ],
+  }),
+
+  // ── Kontingent-Aktionen (hidden standalone) ─────────────────────────────────
+  {
+    key: 'resteverwerter',
+    name: 'Resteverwerter',
+    description: 'Das letzte Stück einer Kontingent-Aktion gekauft',
+    icon: '🗑️',
+    hidden: true,
+    events: ['promo_exhausted_buyer'],
+    check: (e) => e.type === 'promo_exhausted_buyer',
+  },
+  {
+    key: 'erster',
+    name: 'Erster!',
+    description: 'Als erstes aus einer neuen Kontingent-Aktion gekauft',
+    icon: '🚀',
+    hidden: true,
+    events: ['promo_first_buyer'],
+    check: (e) => e.type === 'promo_first_buyer',
+  },
 ]; // Ende von ACHIEVEMENT_REGISTRY
