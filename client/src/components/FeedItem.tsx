@@ -3,8 +3,13 @@ import { useAuth } from '../hooks/useAuth';
 import type { AchievementDef } from '@shared/achievements';
 import { ActivityItem, type ActivityUser, ProfileLink } from './ActivityItem';
 import { useAchievementMeta } from '@/hooks/useAchievements';
+import { type FeedType } from '@shared/types';
 
-interface Item { name: string; variantName: string; count: number }
+interface Item {
+  name: string;
+  variantName: string;
+  count: number;
+}
 
 export interface GroupedFeedEntry extends FeedEntry {
   mergedItems?: Item[];
@@ -12,10 +17,11 @@ export interface GroupedFeedEntry extends FeedEntry {
 
 // ─── Type emoji map ────────────────────────────────────────────────────────────
 
-const TYPE_EMOJI: Record<string, string> = {
+const TYPE_EMOJI: Record<FeedType, string> = {
   purchase: '🛒',
   achievement: '🏆',
   prost_sent: '🍺',
+  prost_received: '🍻',
   nudge: '👋',
   group_join: '👥',
   group_created: '🏗️',
@@ -33,7 +39,13 @@ const TYPE_EMOJI: Record<string, string> = {
 type ActorUser = ActivityUser;
 type TargetUser = { id: string; displayName: string; avatarUrl: string | null } | null;
 
-function Actor({ user, currentUserId }: { user: ActorUser; currentUserId: string | undefined }) {
+function Actor({
+  user,
+  currentUserId,
+}: {
+  user: ActorUser;
+  currentUserId: string | undefined;
+}): React.JSX.Element {
   if (currentUserId && user.id === currentUserId) return <span className="font-semibold">Du</span>;
   return <ProfileLink user={user} />;
 }
@@ -56,14 +68,14 @@ function feedText(
   achievements: AchievementDef[] | undefined,
 ): React.ReactNode {
   const { type, user, targetUser, metadata, mergedItems } = entry;
-  const isMe = !!currentUserId && user.id === currentUserId;
+  const isMe = currentUserId !== undefined && user.id === currentUserId;
 
   switch (type) {
     case 'purchase': {
       const items = mergedItems ?? (metadata?.items as Item[] | undefined);
       const itemStr =
         items
-          ?.map((i) => `${i.count}× ${i.name}${i.variantName ? ` ${i.variantName}` : ''}`)
+          ?.map((i) => `${i.count}× ${i.name}${i.variantName !== '' ? ` ${i.variantName}` : ''}`)
           .join(', ') ?? 'etwas';
       const groupName = metadata?.groupName as string | undefined;
       if (groupName) {
@@ -209,8 +221,31 @@ function feedText(
         </>
       );
     }
+    case 'prost_received': {
+      const drink = metadata?.buyableName
+        ? `${metadata.buyableName as string}${metadata.variantName ? ` ${metadata.variantName as string}` : ''}`
+        : null;
+      const drinkNode = drink ? (
+        <>
+          1× <span className="font-medium">{drink}</span>
+        </>
+      ) : (
+        <>einen</>
+      );
+      return isMe ? (
+        <>
+          Du hast {drinkNode} von {targetName(targetUser, currentUserId, false)} ausgegeben bekommen
+          🍺
+        </>
+      ) : (
+        <>
+          <Actor user={user} currentUserId={currentUserId} /> hat {drinkNode} von{' '}
+          {targetName(targetUser, currentUserId, false)} ausgegeben bekommen 🍺
+        </>
+      );
+    }
     case 'friendship_started': {
-      const isTarget = !!currentUserId && targetUser?.id === currentUserId;
+      const isTarget = currentUserId !== undefined && targetUser?.id === currentUserId;
       if (isMe)
         return <>Du und {targetName(targetUser, currentUserId, true)} seid jetzt befreundet 🤝</>;
       if (isTarget)
@@ -316,10 +351,10 @@ interface Props {
   hasConnector?: boolean;
 }
 
-export function FeedItem({ entry, hasConnector = false }: Props) {
+export function FeedItem({ entry, hasConnector = false }: Props): React.JSX.Element {
   const { user: currentUser } = useAuth();
   const { data: achievements } = useAchievementMeta();
-  const emoji = TYPE_EMOJI[entry.type] ?? '•';
+  const emoji = TYPE_EMOJI[entry.type];
 
   return (
     <ActivityItem

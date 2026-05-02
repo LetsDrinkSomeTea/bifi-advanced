@@ -90,9 +90,8 @@ router.get('/', requireAuth, zValidator('query', HistoryQuerySchema), async (c) 
 
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor = hasMore
-    ? encodeCursor(page[page.length - 1]!.createdAt, page[page.length - 1]!.id)
-    : null;
+  const lastItem = page[page.length - 1];
+  const nextCursor = hasMore && lastItem ? encodeCursor(lastItem.createdAt, lastItem.id) : null;
 
   if (page.length === 0) return c.json({ data: [], nextCursor: null });
 
@@ -127,18 +126,38 @@ router.get('/', requireAuth, zValidator('query', HistoryQuerySchema), async (c) 
 
 // ─── Shared: resolve and price items ──────────────────────────────────────────
 
+interface ItemRow {
+  buyableId: string;
+  variantId: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  discountSavedCents: number;
+}
+
+interface ResolvedItems {
+  toInsert: ItemRow[];
+  feedItems: { name: string; variantName: string; count: number }[];
+  achievementItems: {
+    buyableId: string;
+    variantId: string;
+    category: string | null;
+    quantity: number;
+    buyableName: string;
+  }[];
+  consumedQuantityPromos: {
+    promoId: string;
+    name: string;
+    consumed: number;
+    isNowExhausted: boolean;
+    wasFirst: boolean;
+  }[];
+  cost: number;
+}
 async function resolveItems(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   items: { buyableId: string; variantId?: string; quantity: number }[],
-) {
-  interface ItemRow {
-    buyableId: string;
-    variantId: string;
-    quantity: number;
-    unitPrice: number;
-    totalPrice: number;
-    discountSavedCents: number;
-  }
+): Promise<ResolvedItems> {
   const toInsert: ItemRow[] = [];
   const feedItems: { name: string; variantName: string; count: number }[] = [];
   const achievementItems: {
@@ -382,16 +401,18 @@ router.post(
             initiatedBy: user.id,
             type: 'purchase',
             totalAmount: -buyerShare,
-            groupId: body.groupId!,
+            groupId: body.groupId ?? null,
             note: body.note ?? null,
           })
           .returning();
 
+        if (!primary) {
+          throw new Error('Failed to create primary transaction');
+        }
+
         await tx
           .insert(transactionItems)
-          .values(toInsert.map((i) => ({ transactionId: primary!.id, ...i })));
-
-        const variantIds = toInsert.map((i) => i.variantId);
+          .values(toInsert.map((i) => ({ transactionId: primary.id, ...i })));
 
         await tx
           .update(users)
@@ -400,8 +421,8 @@ router.post(
         await tx
           .update(transactions)
           .set({ totalAmount: -buyerShare })
-          .where(eq(transactions.id, primary!.id));
-        primary!.totalAmount = -buyerShare;
+          .where(eq(transactions.id, primary.id));
+        primary.totalAmount = -buyerShare;
 
         // Other members' split transactions (no items)
         const splitNotifications: {
@@ -418,10 +439,14 @@ router.post(
               initiatedBy: user.id,
               type: 'purchase',
               totalAmount: -sharePerOther,
-              groupId: body.groupId!,
+              groupId: body.groupId ?? null,
               note: `Gruppenaufteilung`,
             })
             .returning();
+
+          if (!splitTxn) {
+            throw new Error('Failed to create split transaction');
+          }
 
           await tx
             .update(users)
@@ -433,20 +458,21 @@ router.post(
           await tx
             .update(transactions)
             .set({ totalAmount: -sharePerOther })
-            .where(eq(transactions.id, splitTxn!.id));
+            .where(eq(transactions.id, splitTxn.id));
+
           await tx
             .insert(transactionItems)
-            .values(toInsert.map((i) => ({ transactionId: splitTxn!.id, ...i })));
+            .values(toInsert.map((i) => ({ transactionId: splitTxn.id, ...i })));
 
           splitNotifications.push({
             memberId,
             netShare: sharePerOther,
-            txnId: splitTxn!.id,
+            txnId: splitTxn.id,
           });
         }
 
         return {
-          txn: primary!,
+          txn: primary,
           feedItems,
           achievementItems,
           cost,
@@ -546,9 +572,13 @@ router.post(
         })
         .returning();
 
+      if (!created) {
+        throw new Error('Failed to create transaction');
+      }
+
       await tx
         .insert(transactionItems)
-        .values(toInsert.map((i) => ({ transactionId: created!.id, ...i })));
+        .values(toInsert.map((i) => ({ transactionId: created.id, ...i })));
 
       const variantIds: string[] = [];
       const variantPrices = new Map<string, number>();
@@ -564,7 +594,7 @@ router.post(
         user.id,
         variantIds,
         variantPrices,
-        created!.id,
+        created.id,
       );
       const netCost = Math.max(0, cost - credit);
 
@@ -576,12 +606,12 @@ router.post(
         await tx
           .update(transactions)
           .set({ totalAmount: -netCost })
-          .where(eq(transactions.id, created!.id));
-        created!.totalAmount = -netCost;
+          .where(eq(transactions.id, created.id));
+        created.totalAmount = -netCost;
       }
 
       return {
-        txn: created!,
+        txn: created,
         redeemedVouchers: vouchers,
         voucherCredit: credit,
         feedItems,
@@ -714,7 +744,7 @@ router.delete('/:id', requireAuth, async (c) => {
   const cancelledAt = new Date();
 
   await db.transaction(async (tx) => {
-    const cancelTxn = async (t: typeof txn) => {
+    const cancelTxn = async (t: typeof txn): Promise<void> => {
       await tx
         .update(transactions)
         .set({ cancelledAt, cancelledBy: user.id })

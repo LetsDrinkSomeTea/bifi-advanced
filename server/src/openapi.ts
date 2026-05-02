@@ -1,6 +1,8 @@
 // OpenAPI 3.1 spec — kept in sync manually with route files.
 // Served at GET /api/openapi.json and rendered at GET /docs.
 
+import { ROLES } from '../../shared/src/schemas.ts';
+
 export const openApiSpec = {
   openapi: '3.1.0',
   info: {
@@ -38,7 +40,7 @@ export const openApiSpec = {
           displayName: { type: 'string' },
           username: { type: 'string', nullable: true },
           avatarUrl: { type: 'string', nullable: true },
-          role: { type: 'string', enum: ['admin', 'moderator', 'member'] },
+          role: { type: 'string', enum: [...ROLES] },
           balance: { type: 'integer', description: 'Balance in Cent; can be negative' },
           jackpotAllowed: { type: 'boolean' },
           isActive: { type: 'boolean' },

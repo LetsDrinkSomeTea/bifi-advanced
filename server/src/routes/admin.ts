@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { and, asc, desc, eq, lt, or, sql } from 'drizzle-orm';
@@ -23,6 +24,7 @@ import { invalidateUserSessions } from '../middleware/session.ts';
 import { writeAuditLog } from '../services/audit.ts';
 import { pushInvalidate, createNotification } from '../services/notifications.ts';
 import { checkAchievements } from '../services/achievements.ts';
+import { ROLES } from '../../../shared/src/schemas.ts';
 
 const router = new Hono();
 
@@ -64,7 +66,7 @@ const CreateUserSchema = z.object({
     .optional(),
   displayName: z.string().min(1).max(80),
   password: z.string().min(8),
-  role: z.enum(['admin', 'moderator', 'member']).default('member'),
+  role: z.enum(ROLES).default('member'),
 });
 
 router.post('/users', requireRole('admin'), zValidator('json', CreateUserSchema), async (c) => {
@@ -74,7 +76,7 @@ router.post('/users', requireRole('admin'), zValidator('json', CreateUserSchema)
 
   const passwordHash = await argon2.hash(body.password);
 
-  const [created] = await db
+  const [user] = await db
     .insert(users)
     .values({
       email: body.email,
@@ -85,14 +87,18 @@ router.post('/users', requireRole('admin'), zValidator('json', CreateUserSchema)
     })
     .returning();
 
+  if (!user) {
+    throw new HTTPException(500, { message: 'Failed to create user' });
+  }
+
   await writeAuditLog({
     actorId: actor.id,
     action: 'user.created',
     resourceType: 'user',
-    resourceId: created!.id,
+    resourceId: user.id,
     changes: {
       after: {
-        id: created!.id,
+        id: user.id,
         email: body.email,
         role: body.role,
         via: 'admin',
@@ -103,18 +109,18 @@ router.post('/users', requireRole('admin'), zValidator('json', CreateUserSchema)
 
   return c.json(
     {
-      id: created!.id,
-      email: created!.email,
-      username: created!.username,
-      displayName: created!.displayName,
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      displayName: user.displayName,
       avatarUrl: null,
-      role: created!.role,
-      balance: created!.balance,
-      isActive: created!.isActive,
-      jackpotAllowed: created!.jackpotAllowed,
+      role: user.role,
+      balance: user.balance,
+      isActive: user.isActive,
+      jackpotAllowed: user.jackpotAllowed,
       hasSso: false,
       hasPassword: true,
-      createdAt: created!.createdAt,
+      createdAt: user.createdAt,
     },
     201,
   );
@@ -123,7 +129,7 @@ router.post('/users', requireRole('admin'), zValidator('json', CreateUserSchema)
 // ─── PATCH /api/admin/users/:id ───────────────────────────────────────────────
 
 const UpdateUserSchema = z.object({
-  role: z.enum(['admin', 'moderator', 'member']).optional(),
+  role: z.enum(ROLES).optional(),
   isActive: z.boolean().optional(),
   jackpotAllowed: z.boolean().optional(),
   displayName: z.string().min(1).max(80).optional(),
@@ -147,6 +153,10 @@ router.patch('/users/:id', zValidator('json', UpdateUserSchema), async (c) => {
     .set({ ...body, updatedAt: new Date() })
     .where(eq(users.id, id))
     .returning();
+
+  if (!updated) {
+    throw new HTTPException(500, { message: 'Failed to update user' });
+  }
 
   if (body.role !== undefined || body.isActive !== undefined) {
     await invalidateUserSessions(id);
@@ -191,12 +201,16 @@ router.post('/users/:id/deposit', zValidator('json', DepositSchema), async (c) =
       })
       .returning();
 
+    if (!created) {
+      throw new Error('Failed to create transaction');
+    }
+
     await tx
       .update(users)
       .set({ balance: sql`balance + ${amount}`, updatedAt: new Date() })
       .where(eq(users.id, id));
 
-    return created!;
+    return created;
   });
 
   await writeAuditLog({
@@ -281,9 +295,8 @@ router.get('/transactions', zValidator('query', TxnQuerySchema), async (c) => {
 
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor = hasMore
-    ? encodeCursor(page[page.length - 1]!.createdAt, page[page.length - 1]!.id)
-    : null;
+  const lastItem = page[page.length - 1];
+  const nextCursor = hasMore && lastItem ? encodeCursor(lastItem.createdAt, lastItem.id) : null;
 
   return c.json({ data: page, nextCursor });
 });
@@ -381,6 +394,10 @@ router.post('/users/:id/remind', async (c) => {
     })
     .returning();
 
+  if (!nudge) {
+    throw new HTTPException(500, { message: 'Failed to create nudge' });
+  }
+
   await redis.setEx(cdKey, 60, '1');
 
   createNotification({
@@ -388,7 +405,7 @@ router.post('/users/:id/remind', async (c) => {
     type: 'nudge',
     title: 'Zahlungserinnerung',
     message: REMIND_TEXT,
-    relatedId: nudge!.id,
+    relatedId: nudge.id,
   }).catch(console.error);
 
   return c.json({ ok: true });

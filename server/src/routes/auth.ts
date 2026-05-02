@@ -57,7 +57,9 @@ auth.get('/login', async (c) => {
       try {
         const u = new URL(referer);
         return `${u.protocol}//${u.host}`;
-      } catch {}
+      } catch {
+        /* invalid referer, ignore */
+      }
     }
     return process.env.APP_URL ?? 'http://localhost:3000';
   })();
@@ -156,7 +158,10 @@ auth.get('/callback', async (c) => {
       .where(eq(users.id, existing.id))
       .returning();
 
-    userId = updated!.id;
+    if (!updated) {
+      return c.redirect('/login?error=update_failed');
+    }
+    userId = updated.id;
   } else {
     const initialRole = roleSyncMode !== 'never' ? role : 'member';
     const [created] = await db
@@ -164,14 +169,17 @@ auth.get('/callback', async (c) => {
       .values({ ssoClaim: sub, email, displayName, avatarUrl, role: initialRole })
       .returning();
 
-    userId = created!.id;
+    if (!created) {
+      return c.redirect('/login?error=creation_failed');
+    }
+    userId = created.id;
 
     await writeAuditLog({
-      actorId: created!.id,
+      actorId: created.id,
       action: 'user.created',
       resourceType: 'user',
-      resourceId: created!.id,
-      changes: { after: { id: created!.id, email, role, via: 'oidc' } },
+      resourceId: created.id,
+      changes: { after: { id: created.id, email, role, via: 'oidc' } },
       ipAddress: ip,
     });
   }
@@ -186,7 +194,7 @@ auth.get('/callback', async (c) => {
   return c.redirect('/');
 });
 
-auth.post('/logout', async (c) => {
+auth.post('/logout', (c) => {
   const session = c.get('session');
   delete session.userId;
   delete session.oidcState;
@@ -194,7 +202,7 @@ auth.post('/logout', async (c) => {
   return c.json({ success: true });
 });
 
-auth.get('/me', requireAuth, async (c) => {
+auth.get('/me', requireAuth, (c) => {
   const user = c.get('user');
   return c.json({
     id: user.id,

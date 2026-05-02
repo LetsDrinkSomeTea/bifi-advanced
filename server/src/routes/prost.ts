@@ -68,8 +68,13 @@ router.post('/', requireAuth, zValidator('json', ProstSchema), async (c) => {
         note: recipient.displayName,
       })
       .returning();
+
+    if (!txn) {
+      throw new Error('Failed to create transaction');
+    }
+
     await tx.insert(transactionItems).values({
-      transactionId: txn!.id,
+      transactionId: txn.id,
       buyableId: variant.buyableId,
       variantId: variant.id,
       unitPrice: amount,
@@ -87,11 +92,15 @@ router.post('/', requireAuth, zValidator('json', ProstSchema), async (c) => {
         toUserId,
         variantId,
         amount,
-        fromTransactionId: txn!.id,
+        fromTransactionId: txn.id,
       })
       .returning();
 
-    return { txn: txn!, voucher: voucher! };
+    if (!voucher) {
+      throw new Error('Failed to create voucher');
+    }
+
+    return { txn, voucher };
   });
 
   emitFeedEvent({

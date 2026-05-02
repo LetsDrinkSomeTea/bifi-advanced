@@ -10,7 +10,7 @@ interface AuditEntry {
   ipAddress?: string | null;
 }
 
-export async function writeAuditLog(entry: AuditEntry) {
+export async function writeAuditLog(entry: AuditEntry): Promise<void> {
   await db.insert(auditLogs).values({
     actorId: entry.actorId ?? null,
     action: entry.action,

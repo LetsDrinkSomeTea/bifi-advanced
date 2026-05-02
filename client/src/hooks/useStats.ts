@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
 export interface UserStats {
@@ -53,7 +53,10 @@ export interface SystemStats {
   totalDiscountedItems: number;
 }
 
-export function useUserStats(userId: string | undefined, period?: string) {
+export function useUserStats(
+  userId: string | undefined,
+  period?: string,
+): UseQueryResult<UserStats> {
   return useQuery<UserStats>({
     queryKey: ['stats', 'user', userId, period],
     queryFn: () =>
@@ -62,7 +65,7 @@ export function useUserStats(userId: string | undefined, period?: string) {
   });
 }
 
-export function useSystemStats(period?: string) {
+export function useSystemStats(period?: string): UseQueryResult<SystemStats> {
   return useQuery<SystemStats>({
     queryKey: ['stats', 'system', period],
     queryFn: () => api.get<SystemStats>(`/api/stats/system${period ? `?period=${period}` : ''}`),

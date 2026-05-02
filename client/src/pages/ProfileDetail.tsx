@@ -10,21 +10,16 @@ import { useSendProst } from '../hooks/useProst';
 import { useBuyables } from '../hooks/useBuyables';
 import { useAuth } from '../hooks/useAuth';
 import { formatCents, cn } from '../lib/utils';
+import { ROLE_LABEL, ROLE_STYLE } from '../lib/constants';
 import type { FriendshipStatus } from '@shared/types';
 
-export const ROLE_LABEL: Record<string, string> = {
-  admin: 'Admin',
-  moderator: 'Moderator',
-  member: 'Mitglied',
-};
-
-export const ROLE_STYLE: Record<string, string> = {
-  admin: 'bg-primary/10 text-primary',
-  moderator: 'bg-purple-500/10 text-purple-500',
-  member: 'bg-muted text-muted-foreground',
-};
-
-function FriendButton({ userId, status }: { userId: string; status: FriendshipStatus }) {
+function FriendButton({
+  userId,
+  status,
+}: {
+  userId: string;
+  status: FriendshipStatus;
+}): React.JSX.Element {
   const { mutate: send, isPending: sending } = useSendFriendRequest();
   const { mutate: accept, isPending: accepting } = useAcceptFriendRequest();
   const { mutate: remove, isPending: removing } = useRemoveFriend();
@@ -32,7 +27,9 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
   if (status === 'friends') {
     return (
       <button
-        onClick={() => { remove(userId); }}
+        onClick={() => {
+          remove(userId);
+        }}
         disabled={removing}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors disabled:opacity-50"
       >
@@ -45,7 +42,9 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
   if (status === 'pending_sent') {
     return (
       <button
-        onClick={() => { remove(userId); }}
+        onClick={() => {
+          remove(userId);
+        }}
         disabled={removing}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground transition-colors disabled:opacity-50"
         title="Anfrage zurückziehen"
@@ -60,7 +59,9 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
     return (
       <div className="flex gap-2">
         <button
-          onClick={() => { accept(userId); }}
+          onClick={() => {
+            accept(userId);
+          }}
           disabled={accepting}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
@@ -68,7 +69,9 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
           Annehmen
         </button>
         <button
-          onClick={() => { remove(userId); }}
+          onClick={() => {
+            remove(userId);
+          }}
           disabled={removing}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors disabled:opacity-50"
         >
@@ -81,7 +84,9 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
 
   return (
     <button
-      onClick={() => { send(userId); }}
+      onClick={() => {
+        send(userId);
+      }}
       disabled={sending}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
     >
@@ -99,22 +104,32 @@ function NudgeSheet({
   userId: string;
   displayName: string;
   onClose: () => void;
-}) {
+}): React.JSX.Element {
   const [freetext, setFreetext] = useState('');
   const { data: presets } = useNudgePresets();
-  const { mutate: send, isPending, isSuccess, error } = useSendNudge();
+  const { mutate: send, isPending, error } = useSendNudge();
 
-  const handleSend = (preset?: string, message?: string) => {
+  const handleSend = (preset?: string, message?: string): void => {
     send({ recipientId: userId, preset, message }, { onSuccess: onClose });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/40"
+        onClick={() => {
+          onClose();
+        }}
+      />
       <div className="relative w-full max-w-md bg-background rounded-t-2xl sm:rounded-2xl p-5 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">{displayName} anstupsen</h2>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground">
+          <button
+            onClick={() => {
+              onClose();
+            }}
+            className="p-1 text-muted-foreground hover:text-foreground"
+          >
             <X size={18} />
           </button>
         </div>
@@ -124,7 +139,9 @@ function NudgeSheet({
           {presets?.map((p) => (
             <button
               key={p.key}
-              onClick={() => { handleSend(p.key); }}
+              onClick={() => {
+                handleSend(p.key);
+              }}
               disabled={isPending}
               className="w-full text-left px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-sm disabled:opacity-50"
             >
@@ -139,27 +156,31 @@ function NudgeSheet({
             type="text"
             placeholder="Eigene Nachricht (privat)…"
             value={freetext}
-            onChange={(e) => { setFreetext(e.target.value); }}
+            onChange={(e) => {
+              setFreetext(e.target.value);
+            }}
             maxLength={200}
             className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-            onKeyDown={(e) =>
-              e.key === 'Enter' && freetext.trim() && handleSend(undefined, freetext.trim())
-            }
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && freetext.trim() !== '') {
+                handleSend(undefined, freetext.trim());
+              }
+            }}
           />
           <button
-            onClick={() => { handleSend(undefined, freetext.trim()); }}
-            disabled={isPending || !freetext.trim()}
+            onClick={() => {
+              if (freetext.trim() !== '') {
+                handleSend(undefined, freetext.trim());
+              }
+            }}
+            disabled={isPending || freetext.trim() === ''}
             className="px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40"
           >
             Senden
           </button>
         </div>
 
-        {error && (
-          <p className="text-xs text-destructive mt-2">
-            {(error as { message?: string })?.message ?? 'Fehler beim Senden'}
-          </p>
-        )}
+        {error !== null ? <p className="text-xs text-destructive mt-2">{error.message}</p> : null}
       </div>
     </div>
   );
@@ -173,7 +194,7 @@ function ProstSheet({
   toUserId: string;
   displayName: string;
   onClose: () => void;
-}) {
+}): React.JSX.Element {
   const { data: buyables, isLoading } = useBuyables();
   const { mutate: send, isPending, error } = useSendProst();
 
@@ -184,11 +205,21 @@ function ProstSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/40"
+        onClick={() => {
+          onClose();
+        }}
+      />
       <div className="relative w-full max-w-md bg-background rounded-t-2xl sm:rounded-2xl p-5 shadow-xl max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <h2 className="font-semibold">Prost an {displayName} 🍺</h2>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground">
+          <button
+            onClick={() => {
+              onClose();
+            }}
+            className="p-1 text-muted-foreground hover:text-foreground"
+          >
             <X size={18} />
           </button>
         </div>
@@ -206,7 +237,9 @@ function ProstSheet({
             {variants.map((v) => (
               <button
                 key={v.id}
-                onClick={() => { send({ toUserId, variantId: v.id }, { onSuccess: onClose }); }}
+                onClick={() => {
+                  send({ toUserId, variantId: v.id }, { onSuccess: onClose });
+                }}
                 disabled={isPending}
                 className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-sm disabled:opacity-50"
               >
@@ -219,13 +252,15 @@ function ProstSheet({
             ))}
           </div>
         )}
-        {error && <p className="text-xs text-destructive mt-2 flex-shrink-0">Fehler beim Senden</p>}
+        {error !== null ? (
+          <p className="text-xs text-destructive mt-2 flex-shrink-0">Fehler beim Senden</p>
+        ) : null}
       </div>
     </div>
   );
 }
 
-export function ProfileDetail() {
+export function ProfileDetail(): React.JSX.Element {
   const { userId } = useParams<{ userId: string }>();
   const { user: currentUser } = useAuth();
   const { data: profile, isLoading } = usePublicProfile(userId);
@@ -263,7 +298,7 @@ export function ProfileDetail() {
     );
   }
 
-  const isOwnProfile = currentUser?.id === profile.id;
+  const isOwnProfile = currentUser !== null && currentUser.id === profile.id;
 
   return (
     <Layout>
@@ -271,7 +306,7 @@ export function ProfileDetail() {
         {/* Header */}
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold overflow-hidden flex-shrink-0">
-            {profile.avatarUrl ? (
+            {profile.avatarUrl !== null ? (
               <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
             ) : (
               <span>{profile.displayName[0]?.toUpperCase()}</span>
@@ -291,18 +326,22 @@ export function ProfileDetail() {
             </div>
             {!isOwnProfile && (
               <div className="flex items-center gap-2 mt-3 flex-wrap">
-                {profile.friendshipStatus && (
+                {profile.friendshipStatus !== null ? (
                   <FriendButton userId={profile.id} status={profile.friendshipStatus} />
-                )}
+                ) : null}
                 <button
-                  onClick={() => { setProstOpen(true); }}
+                  onClick={() => {
+                    setProstOpen(true);
+                  }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Beer size={15} />
                   Prost
                 </button>
                 <button
-                  onClick={() => { setNudgeOpen(true); }}
+                  onClick={() => {
+                    setNudgeOpen(true);
+                  }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Bell size={15} />
@@ -332,7 +371,9 @@ export function ProfileDetail() {
             <StatCard
               label="Rang"
               value={
-                profile.stats.leaderboardRank != null ? `#${profile.stats.leaderboardRank}` : '–'
+                profile.stats.leaderboardRank !== null
+                  ? `#${profile.stats.leaderboardRank.rank}`
+                  : '–'
               }
             />
             <StatCard label="Freunde" value={String(profile.stats.friendCount)} />
@@ -348,25 +389,37 @@ export function ProfileDetail() {
         />
       </div>
 
-      {prostOpen && (
+      {prostOpen ? (
         <ProstSheet
           toUserId={profile.id}
           displayName={profile.displayName}
-          onClose={() => { setProstOpen(false); }}
+          onClose={() => {
+            setProstOpen(false);
+          }}
         />
-      )}
-      {nudgeOpen && (
+      ) : null}
+      {nudgeOpen ? (
         <NudgeSheet
           userId={profile.id}
           displayName={profile.displayName}
-          onClose={() => { setNudgeOpen(false); }}
+          onClose={() => {
+            setNudgeOpen(false);
+          }}
         />
-      )}
+      ) : null}
     </Layout>
   );
 }
 
-function StatCard({ label, value, small }: { label: string; value: string; small?: boolean }) {
+function StatCard({
+  label,
+  value,
+  small,
+}: {
+  label: string;
+  value: string;
+  small?: boolean;
+}): React.JSX.Element {
   return (
     <div className="rounded-xl border border-border bg-card px-3 py-3 text-center">
       <p className="text-xs text-muted-foreground mb-1">{label}</p>

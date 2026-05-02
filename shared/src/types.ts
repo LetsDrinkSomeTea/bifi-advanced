@@ -1,9 +1,32 @@
 import type { z } from 'zod';
-import type { MeResponseSchema } from './schemas.ts';
+import {
+  type MeResponseSchema,
+  type BUYABLE_CATEGORIES,
+  type ROLES,
+  type TRANSACTION_TYPES,
+  type NOTIFICATION_TYPES,
+  type FEED_TYPES,
+  type NUDGE_TYPES,
+  type FRIENDSHIP_STATUSES,
+  type GROUP_ROLES,
+} from './schemas.ts';
 import type { AchievementKey, AchievementTier } from './achievements.ts';
 
 export type User = z.infer<typeof MeResponseSchema>;
-export type Role = User['role'];
+export type Role = (typeof ROLES)[number];
+
+export type BuyableCategory = (typeof BUYABLE_CATEGORIES)[number];
+
+export type TransactionType = (typeof TRANSACTION_TYPES)[number];
+
+export type NudgeType = (typeof NUDGE_TYPES)[number];
+
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+export type FeedType = (typeof FEED_TYPES)[number];
+
+export type FriendshipStatusType = (typeof FRIENDSHIP_STATUSES)[number];
+export type GroupRole = (typeof GROUP_ROLES)[number];
 
 export interface ApiError {
   error: string;
@@ -29,7 +52,7 @@ export interface BuyableWithVariants {
   id: string;
   name: string;
   imageUrl: string | null;
-  category: string | null;
+  category: BuyableCategory | null;
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
@@ -52,7 +75,7 @@ export interface Favorite {
   price: number;
   buyableId: string;
   buyableName: string;
-  category: string | null;
+  category: BuyableCategory | null;
   isAvailable: boolean;
   activeDiscount: ActiveDiscount | null;
   discountedPrice: number;
@@ -85,7 +108,7 @@ export interface TransactionWithItems {
   id: string;
   userId: string;
   initiatedBy: string;
-  type: 'purchase' | 'deposit' | 'correction' | 'jackpot' | 'prost';
+  type: TransactionType;
   totalAmount: number;
   groupId: string | null;
   note: string | null;
@@ -109,7 +132,7 @@ export interface PublicProfile {
   id: string;
   displayName: string;
   avatarUrl: string | null;
-  role: 'admin' | 'moderator' | 'member';
+  role: Role;
   createdAt: string;
   hasSso: boolean;
   hasPassword: boolean;
@@ -124,26 +147,19 @@ export interface PublicProfile {
   achievementProgress: Record<string, number>;
 }
 
-export interface FeedEvent {
+export interface FeedEntry {
   id: string;
+  type: FeedType;
   userId: string;
-  type:
-    | 'purchase'
-    | 'achievement'
-    | 'group_join'
-    | 'prost_sent'
-    | 'prost_received'
-    | 'goal_reached'
-    | 'jackpot_win'
-    | 'promotion_started'
-    | 'promotion_ended';
   targetUserId: string | null;
   targetGroupId: string | null;
   metadata: Record<string, unknown> | null;
   createdAt: string;
   user: { id: string; displayName: string; avatarUrl: string | null };
-  targetUser?: { id: string; displayName: string; avatarUrl: string | null };
+  targetUser: { id: string; displayName: string; avatarUrl: string | null } | null;
 }
+
+export type FeedEvent = FeedEntry;
 
 export type FriendshipStatus = 'none' | 'pending_sent' | 'pending_received' | 'friends';
 

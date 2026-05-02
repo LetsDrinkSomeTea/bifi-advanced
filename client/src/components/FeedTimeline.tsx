@@ -1,9 +1,8 @@
 import type { FeedEntry } from '../hooks/useFeed';
 import { FeedItem, type GroupedFeedEntry } from './FeedItem';
 import { APP_TZ } from '../lib/utils';
+import { groupEntries } from '../lib/feed';
 export type { GroupedFeedEntry };
-
-interface Item { name: string; variantName: string; count: number }
 
 type TimelineItem =
   | { kind: 'entry'; entry: GroupedFeedEntry }
@@ -22,36 +21,6 @@ function getDateLabel(dateStr: string): string {
     month: 'long',
     timeZone: APP_TZ,
   });
-}
-
-function mergeItems(a: Item[], b: Item[]): Item[] {
-  const map = new Map<string, Item>();
-  for (const item of [...a, ...b]) {
-    const key = `${item.name}::${item.variantName}`;
-    const existing = map.get(key);
-    map.set(key, existing ? { ...existing, count: existing.count + item.count } : { ...item });
-  }
-  return Array.from(map.values());
-}
-
-export function groupEntries(entries: FeedEntry[]): GroupedFeedEntry[] {
-  const result: GroupedFeedEntry[] = [];
-  for (const entry of entries) {
-    const last = result.at(-1);
-    if (
-      last &&
-      entry.type === 'purchase' &&
-      last.type === 'purchase' &&
-      entry.userId === last.userId
-    ) {
-      const lastItems = last.mergedItems ?? (last.metadata?.items as Item[]) ?? [];
-      const newItems = (entry.metadata?.items as Item[]) ?? [];
-      last.mergedItems = mergeItems(lastItems, newItems);
-    } else {
-      result.push({ ...entry });
-    }
-  }
-  return result;
 }
 
 function buildTimeline(entries: GroupedFeedEntry[]): TimelineItem[] {
@@ -88,8 +57,8 @@ export function FeedTimeline({
   fetchNextPage,
   isFetchingNextPage,
   preGrouped,
-}: Props) {
-  if (isLoading) {
+}: Props): React.JSX.Element {
+  if (isLoading ?? false) {
     return (
       <div className="space-y-5">
         {[1, 2, 3, 4, 5].map((i) => (
@@ -114,7 +83,7 @@ export function FeedTimeline({
     );
   }
 
-  const grouped = preGrouped ? (entries as GroupedFeedEntry[]) : groupEntries(entries);
+  const grouped = (preGrouped ?? false) ? (entries as GroupedFeedEntry[]) : groupEntries(entries);
   const items = buildTimeline(grouped);
 
   return (
@@ -137,15 +106,15 @@ export function FeedTimeline({
         );
       })}
 
-      {hasNextPage && (
+      {(hasNextPage ?? false) ? (
         <button
           onClick={fetchNextPage}
           disabled={isFetchingNextPage}
           className="w-full mt-4 py-2.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-xl transition-colors disabled:opacity-50"
         >
-          {isFetchingNextPage ? 'Laden…' : 'Mehr anzeigen'}
+          {(isFetchingNextPage ?? false) ? 'Laden…' : 'Mehr anzeigen'}
         </button>
-      )}
+      ) : null}
     </div>
   );
 }

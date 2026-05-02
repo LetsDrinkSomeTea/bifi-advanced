@@ -24,7 +24,7 @@ const NudgeSchema = z
     preset: z.enum(['bring', 'thirsty', 'cheers', 'hurry']).optional(),
     message: z.string().min(1).max(200).optional(),
   })
-  .refine((d) => d.preset || d.message, { message: 'preset or message required' });
+  .refine((d) => d.preset ?? d.message, { message: 'preset or message required' });
 
 // ─── POST /api/nudges/:recipientId ────────────────────────────────────────────
 
@@ -60,7 +60,13 @@ router.post(
       );
     }
 
-    const message = body.preset ? PRESETS[body.preset]! : body.message!;
+    const presetMessage = body.preset ? PRESETS[body.preset] : null;
+    const message = presetMessage ?? body.message;
+
+    if (!message) {
+      return c.json({ error: 'Message required', code: 'BAD_REQUEST' }, 400);
+    }
+
     const isPublic = !!body.preset;
 
     // Store nudge
@@ -75,6 +81,10 @@ router.post(
       })
       .returning();
 
+    if (!nudge) {
+      throw new Error('Failed to create nudge');
+    }
+
     // Set cooldown (10 minutes)
     await redis.setEx(cdKey, 600, '1');
 
@@ -84,7 +94,7 @@ router.post(
       type: 'nudge',
       title: `Stupser von ${sender.displayName}`,
       message,
-      relatedId: nudge!.id,
+      relatedId: nudge.id,
     }).catch(console.error);
 
     if (isPublic) {

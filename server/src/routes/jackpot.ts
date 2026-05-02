@@ -19,14 +19,18 @@ const MULTIPLIERS: number[] = [
 ];
 
 function pickMultiplierPct(): number {
-  return MULTIPLIERS[Math.floor(Math.random() * MULTIPLIERS.length)]!;
+  const multiplier = MULTIPLIERS[Math.floor(Math.random() * MULTIPLIERS.length)];
+  if (multiplier === undefined) {
+    throw new Error('Multiplier table corrupted');
+  }
+  return multiplier;
 }
 
 function jackpotEnabled(): boolean {
   return process.env.JACKPOT_ENABLED === 'true';
 }
 
-router.get('/eligibility', requireAuth, async (c) => {
+router.get('/eligibility', requireAuth, (c) => {
   const user = c.get('user');
   if (!jackpotEnabled()) return c.json({ eligible: false, reason: 'disabled' as const });
   if (!user.jackpotAllowed) return c.json({ eligible: false, reason: 'not_allowed' as const });
@@ -62,7 +66,7 @@ router.post('/spin', requireAuth, zValidator('json', JackpotSpinSchema), async (
 
   const variant = variantId
     ? allVariants.find((v) => v.id === variantId)
-    : allVariants.sort((a, b) => a.price - b.price)[0];
+    : [...allVariants].sort((a, b) => a.price - b.price)[0];
 
   if (!variant) return c.json({ error: 'Variant not found', code: 'VARIANT_NOT_FOUND' }, 404);
 
@@ -87,8 +91,12 @@ router.post('/spin', requireAuth, zValidator('json', JackpotSpinSchema), async (
       })
       .returning();
 
+    if (!created) {
+      throw new Error('Failed to create jackpot transaction');
+    }
+
     await tx.insert(transactionItems).values({
-      transactionId: created!.id,
+      transactionId: created.id,
       buyableId: buyable.id,
       variantId: variant.id,
       quantity: 1,
@@ -101,7 +109,7 @@ router.post('/spin', requireAuth, zValidator('json', JackpotSpinSchema), async (
       .set({ balance: sql`balance - ${pricePaid}`, updatedAt: new Date() })
       .where(eq(users.id, user.id));
 
-    return created!;
+    return created;
   });
 
   emitFeedEvent({

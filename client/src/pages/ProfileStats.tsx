@@ -53,7 +53,7 @@ const PERIOD_LABELS: Record<string, string> = {
   alltime: 'Gesamt',
 };
 
-export function ProfileStats() {
+export function ProfileStats(): React.JSX.Element {
   const { userId } = useParams<{ userId?: string }>();
   const { user: currentUser } = useAuth();
   const [, navigate] = useLocation();
@@ -61,7 +61,7 @@ export function ProfileStats() {
   const [period, setPeriod] = useState<'week' | 'month' | 'alltime'>('alltime');
 
   const targetId = userId === 'stats' ? currentUser?.id : (userId ?? currentUser?.id);
-  const isOwn = !userId || userId === 'stats' || userId === currentUser?.id;
+  const isOwn = userId === undefined || userId === 'stats' || userId === currentUser?.id;
 
   const { data: profile } = usePublicProfile(targetId);
   const { data: userStats, isLoading: userLoading } = useUserStats(targetId, period);
@@ -69,9 +69,12 @@ export function ProfileStats() {
 
   const showSystemTab = isOwn;
 
-  const handleBack = () => {
-    if (isOwn) navigate('/profile');
-    else navigate(`/profile/${targetId}`);
+  const handleBack = (): void => {
+    if (isOwn) {
+      navigate('/profile');
+    } else if (targetId !== undefined) {
+      navigate(`/profile/${targetId}`);
+    }
   };
 
   const hourData = Array.from({ length: 24 }, (_, i) => ({
@@ -102,10 +105,12 @@ export function ProfileStats() {
 
         {/* Filters */}
         <div className="space-y-4 mb-6">
-          {showSystemTab && (
+          {showSystemTab ? (
             <div className="flex p-1 rounded-xl bg-muted">
               <button
-                onClick={() => { setTab('personal'); }}
+                onClick={() => {
+                  setTab('personal');
+                }}
                 className={cn(
                   'flex-1 py-2 text-sm font-medium rounded-lg transition-all',
                   activeTab === 'personal'
@@ -116,7 +121,9 @@ export function ProfileStats() {
                 Persönlich
               </button>
               <button
-                onClick={() => { setTab('system'); }}
+                onClick={() => {
+                  setTab('system');
+                }}
                 className={cn(
                   'flex-1 py-2 text-sm font-medium rounded-lg transition-all',
                   activeTab === 'system'
@@ -127,13 +134,15 @@ export function ProfileStats() {
                 System
               </button>
             </div>
-          )}
+          ) : null}
 
           <div className="flex gap-2">
             {(Object.keys(PERIOD_LABELS) as ('week' | 'month' | 'alltime')[]).map((p) => (
               <button
                 key={p}
-                onClick={() => { setPeriod(p); }}
+                onClick={() => {
+                  setPeriod(p);
+                }}
                 className={cn(
                   'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
                   period === p
@@ -158,7 +167,7 @@ export function ProfileStats() {
             ) : (
               <>
                 {/* Finances */}
-                {userStats?.finances && (
+                {userStats?.finances ? (
                   <>
                     <section>
                       <SectionHeader icon={<Wallet size={16} />} title="Finanzen" />
@@ -204,10 +213,10 @@ export function ProfileStats() {
                       </section>
                     )}
                   </>
-                )}
+                ) : null}
 
                 {/* Consumption */}
-                {userStats?.consumption && (
+                {userStats?.consumption ? (
                   <section className="space-y-4">
                     <SectionHeader icon={<TrendingUp size={16} />} title="Konsum" />
                     {userStats.consumption.categories.length > 1 && (
@@ -359,10 +368,10 @@ export function ProfileStats() {
                       </div>
                     </div>
                   </section>
-                )}
+                ) : null}
 
                 {/* Social */}
-                {userStats?.social && (
+                {userStats?.social ? (
                   <section>
                     <SectionHeader icon={<Beer size={16} />} title="Soziales" />
                     <div className="grid grid-cols-2 gap-3">
@@ -405,10 +414,10 @@ export function ProfileStats() {
                       />
                     </div>
                   </section>
-                )}
+                ) : null}
 
                 {/* Jackpot */}
-                {userStats?.jackpot && userStats?.jackpot.totalSpins > 0 && (
+                {userStats?.jackpot && userStats.jackpot.totalSpins > 0 ? (
                   <section>
                     <SectionHeader icon={<Dices size={16} />} title="Jackpot" />
                     <div className="grid grid-cols-2 gap-3">
@@ -453,7 +462,7 @@ export function ProfileStats() {
                       />
                     </div>
                   </section>
-                )}
+                ) : null}
               </>
             )}
           </div>
@@ -531,7 +540,7 @@ export function ProfileStats() {
                       label="Systemweite Bilanz"
                       value={formatCents(systemStats?.systemJackpotBalance ?? 0)}
                       valueClassName={
-                        systemStats?.systemJackpotBalance && systemStats.systemJackpotBalance >= 0
+                        (systemStats?.systemJackpotBalance ?? 0) >= 0
                           ? 'text-green-500'
                           : 'text-red-500'
                       }
@@ -564,7 +573,13 @@ export function ProfileStats() {
   );
 }
 
-function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
+function SectionHeader({
+  icon,
+  title,
+}: {
+  icon: React.ReactNode;
+  title: string;
+}): React.JSX.Element {
   return (
     <div className="flex items-center gap-2 mb-3 text-muted-foreground">
       {icon}
@@ -585,7 +600,7 @@ function StatTile({
   valueClassName?: string;
   className?: string;
   icon?: React.ReactNode;
-}) {
+}): React.JSX.Element {
   return (
     <div className={cn('rounded-2xl border border-border bg-card p-3', className)}>
       <div className="flex items-center justify-between mb-1">

@@ -2,15 +2,16 @@ import { useMemo } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useCancelTransaction } from '../hooks/useTransactions';
 import { useAuth } from '../hooks/useAuth';
-import type { TransactionWithItems } from '@shared/types';
+import type { TransactionWithItems, TransactionType } from '@shared/types';
 import { formatCents, formatRelative, cn } from '../lib/utils';
-import { GroupSummary, useGroups } from '@/hooks/useGroups';
+import { type GroupSummary, useGroups } from '@/hooks/useGroups';
 
-const TYPE_LABEL: Record<string, string> = {
+const TYPE_LABEL: Record<TransactionType, string> = {
   purchase: 'Kauf',
   deposit: 'Einzahlung',
   correction: 'Korrektur',
   jackpot: 'Jackpot 🎰',
+  prost: 'Prost 🥂',
 };
 
 function txnLabel(txn: TransactionWithItems): string {
@@ -18,31 +19,31 @@ function txnLabel(txn: TransactionWithItems): string {
     const items = txn.items
       .map(
         (i) =>
-          `${i.quantity}× ${i.variantName ? `${i.buyableName} (${i.variantName})` : i.buyableName}`,
+          `${i.quantity}× ${i.variantName !== null ? `${i.buyableName} (${i.variantName})` : i.buyableName}`,
       )
       .join(', ');
-    const prefix = txn.note ? `${txn.note}: ` : '';
+    const prefix = txn.note !== null ? `${txn.note}: ` : '';
     return `${prefix}${items} ausgegeben`;
   }
 
   if (txn.type === 'correction' || txn.type === 'deposit') {
-    const label = TYPE_LABEL[txn.type] ?? txn.type;
-    return txn.note ? `${label} (${txn.note})` : label;
+    const label = TYPE_LABEL[txn.type];
+    return txn.note !== null ? `${label} (${txn.note})` : label;
   }
 
   if (txn.items.length > 0) {
     return txn.items
       .map(
         (i) =>
-          `${i.quantity}× ${i.variantName ? `${i.buyableName} (${i.variantName})` : i.buyableName}`,
+          `${i.quantity}× ${i.variantName !== null ? `${i.buyableName} (${i.variantName})` : i.buyableName}`,
       )
       .join(', ');
   }
-  return TYPE_LABEL[txn.type] ?? txn.type;
+  return TYPE_LABEL[txn.type];
 }
 
 function cancelable(txn: TransactionWithItems, isModerator: boolean): boolean {
-  if (txn.cancelledAt) return false;
+  if (txn.cancelledAt !== null) return false;
   if (txn.type === 'deposit' || txn.type === 'correction') return false;
   if (txn.type === 'jackpot' && !isModerator) return false;
   const ageMs = Date.now() - new Date(txn.createdAt).getTime();
@@ -59,7 +60,7 @@ export function TransactionList({
   transactions,
   isLoading,
   skeletonCount = 5,
-}: TransactionListProps) {
+}: TransactionListProps): React.JSX.Element {
   const { mutate: cancel, isPending: cancelling } = useCancelTransaction();
   const { isModerator } = useAuth();
   const { data: groups } = useGroups();
@@ -93,8 +94,7 @@ export function TransactionList({
       {transactions.map((txn) => {
         const isCancelled = !!txn.cancelledAt;
         const canCancel = cancelable(txn, isModerator);
-        const groupSummary =
-          txn.groupId !== undefined && txn.groupId !== null ? groupMap.get(txn.groupId) : null;
+        const groupSummary = txn.groupId !== null ? groupMap.get(txn.groupId) : null;
 
         return (
           <div
@@ -107,16 +107,16 @@ export function TransactionList({
             <div className="flex-1 min-w-0">
               <p className={cn('text-sm font-medium truncate', isCancelled && 'line-through')}>
                 {txnLabel(txn)}
-                {txn.groupId && txn.type !== 'prost' && (
+                {txn.groupId && txn.type !== 'prost' ? (
                   <>
                     <span className="ml-1.5 mr-1.5 text-sm text-muted-foreground">für Gruppe</span>
                     {groupSummary ? groupSummary.name : 'Gruppeneinkauf'}
                   </>
-                )}
+                ) : null}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {formatRelative(txn.createdAt)}
-                {isCancelled && ' · storniert'}
+                {isCancelled ? ' · storniert' : null}
               </p>
             </div>
 
@@ -131,16 +131,18 @@ export function TransactionList({
                 {formatCents(txn.totalAmount)}
               </span>
 
-              {canCancel && (
+              {canCancel ? (
                 <button
-                  onClick={() => { cancel(txn.id); }}
+                  onClick={() => {
+                    cancel(txn.id);
+                  }}
                   disabled={cancelling}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
                   title="Stornieren"
                 >
                   <Trash2 size={15} />
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
         );

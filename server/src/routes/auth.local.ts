@@ -20,7 +20,9 @@ const BootstrapSchema = z.object({
 
 // Creates first admin user; only works when NO users exist yet
 localAuth.post('/bootstrap', zValidator('json', BootstrapSchema), async (c) => {
-  const { count } = (await db.select({ count: sql`count(*)` }).from(users))[0]!;
+  const result = (await db.select({ count: sql`count(*)` }).from(users))[0];
+  const count = result?.count ?? 0;
+
   if (Number(count) > 0) {
     return c.json(
       { error: 'Bootstrap only allowed when no users exist', code: 'ALREADY_BOOTSTRAPPED' },
@@ -42,16 +44,20 @@ localAuth.post('/bootstrap', zValidator('json', BootstrapSchema), async (c) => {
     })
     .returning();
 
+  if (!created) {
+    return c.json({ error: 'Failed to create admin user', code: 'BOOTSTRAP_FAILED' }, 500);
+  }
+
   await writeAuditLog({
-    actorId: created!.id,
+    actorId: created.id,
     action: 'user.created',
     resourceType: 'user',
-    resourceId: created!.id,
-    changes: { after: { id: created!.id, email: body.email, role: 'admin', via: 'bootstrap' } },
+    resourceId: created.id,
+    changes: { after: { id: created.id, email: body.email, role: 'admin', via: 'bootstrap' } },
   });
 
   return c.json(
-    { id: created!.id, email: created!.email, displayName: created!.displayName, role: 'admin' },
+    { id: created.id, email: created.email, displayName: created.displayName, role: 'admin' },
     201,
   );
 });
@@ -131,23 +137,27 @@ localAuth.post(
       })
       .returning();
 
+    if (!created) {
+      return c.json({ error: 'Failed to create user', code: 'CREATE_FAILED' }, 500);
+    }
+
     await writeAuditLog({
       actorId: actor.id,
       action: 'user.created',
       resourceType: 'user',
-      resourceId: created!.id,
-      changes: { after: { id: created!.id, email: body.email, role: body.role, via: 'local' } },
+      resourceId: created.id,
+      changes: { after: { id: created.id, email: body.email, role: body.role, via: 'local' } },
       ipAddress: ip,
     });
 
     return c.json(
       {
-        id: created!.id,
-        email: created!.email,
-        username: created!.username,
-        displayName: created!.displayName,
-        role: created!.role,
-        createdAt: created!.createdAt,
+        id: created.id,
+        email: created.email,
+        username: created.username,
+        displayName: created.displayName,
+        role: created.role,
+        createdAt: created.createdAt,
       },
       201,
     );

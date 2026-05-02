@@ -1,8 +1,12 @@
 import { createMiddleware } from 'hono/factory';
-import type { Context } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
 import { redis } from '../db/redis.ts';
 
-export function rateLimit(limit: number, windowSeconds: number, keyFn?: (c: Context) => string) {
+export function rateLimit(
+  limit: number,
+  windowSeconds: number,
+  keyFn?: (c: Context) => string,
+): MiddlewareHandler {
   return createMiddleware(async (c, next) => {
     const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
     const key = keyFn ? keyFn(c) : `rl:${c.req.path}:${ip}`;

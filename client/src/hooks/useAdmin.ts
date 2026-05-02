@@ -1,15 +1,31 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { AdminUser, BuyableWithVariants, SettlementEntry } from '@shared/types';
+import type { AdminUser, BuyableWithVariants, SettlementEntry, Role } from '@shared/types';
 
-export function useAdminUsers() {
+export function useAdminUsers(): UseQueryResult<AdminUser[]> {
   return useQuery<AdminUser[]>({
     queryKey: ['admin', 'users'],
     queryFn: () => api.get<AdminUser[]>('/api/admin/users'),
   });
 }
 
-export function useUpdateUser() {
+export function useUpdateUser(): UseMutationResult<
+  AdminUser,
+  Error,
+  {
+    id: string;
+    role?: Role;
+    isActive?: boolean;
+    jackpotAllowed?: boolean;
+    displayName?: string;
+  }
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -17,16 +33,28 @@ export function useUpdateUser() {
       ...body
     }: {
       id: string;
-      role?: string;
+      role?: Role;
       isActive?: boolean;
       jackpotAllowed?: boolean;
       displayName?: string;
     }) => api.patch<AdminUser>(`/api/admin/users/${id}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
   });
 }
 
-export function useCreateUser() {
+export function useCreateUser(): UseMutationResult<
+  AdminUser,
+  Error,
+  {
+    email: string;
+    username?: string;
+    displayName: string;
+    password: string;
+    role: Role;
+  }
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: {
@@ -34,49 +62,63 @@ export function useCreateUser() {
       username?: string;
       displayName: string;
       password: string;
-      role: string;
+      role: Role;
     }) => api.post<AdminUser>('/api/admin/users', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
   });
 }
 
-export function useDeposit() {
+export function useDeposit(): UseMutationResult<
+  void,
+  Error,
+  { userId: string; amount: number; note?: string }
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ userId, amount, note }: { userId: string; amount: number; note?: string }) =>
       api.post(`/api/admin/users/${userId}/deposit`, { amount, note }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin', 'users'] });
-      qc.invalidateQueries({ queryKey: ['admin', 'settlement'] });
+      void qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+      void qc.invalidateQueries({ queryKey: ['admin', 'settlement'] });
     },
   });
 }
 
-export function useSettlement() {
+export function useSettlement(): UseQueryResult<SettlementEntry[]> {
   return useQuery<SettlementEntry[]>({
     queryKey: ['admin', 'settlement'],
     queryFn: () => api.get<SettlementEntry[]>('/api/admin/settlement'),
   });
 }
 
-export function useResetPassword() {
+export function useResetPassword(): UseMutationResult<
+  void,
+  Error,
+  { id: string; password: string }
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, password }: { id: string; password: string }) =>
       api.put(`/api/auth/local/users/${id}/password`, { password }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
   });
 }
 
-export function useDeleteUser() {
+export function useDeleteUser(): UseMutationResult<void, Error, string> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/api/admin/users/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
   });
 }
 
-export function useAllBuyables() {
+export function useAllBuyables(): UseQueryResult<BuyableWithVariants[]> {
   return useQuery<BuyableWithVariants[]>({
     queryKey: ['buyables', { all: true }],
     queryFn: () => api.get<BuyableWithVariants[]>('/api/buyables?all=true'),
@@ -84,13 +126,24 @@ export function useAllBuyables() {
   });
 }
 
-export function useSendReminder() {
+export function useSendReminder(): UseMutationResult<void, Error, string> {
   return useMutation({
     mutationFn: (userId: string) => api.post(`/api/admin/users/${userId}/remind`, {}),
   });
 }
 
-export function useUpdateBuyable() {
+export function useUpdateBuyable(): UseMutationResult<
+  void,
+  Error,
+  {
+    id: string;
+    name?: string;
+    imageUrl?: string | null;
+    category?: string | null;
+    isActive?: boolean;
+    sortOrder?: number;
+  }
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -104,11 +157,24 @@ export function useUpdateBuyable() {
       isActive?: boolean;
       sortOrder?: number;
     }) => api.put(`/api/buyables/${id}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['buyables'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['buyables'] });
+    },
   });
 }
 
-export function useUpdateVariant() {
+export function useUpdateVariant(): UseMutationResult<
+  void,
+  Error,
+  {
+    buyableId: string;
+    variantId: string;
+    name?: string;
+    price?: number;
+    isActive?: boolean;
+    sortOrder?: number;
+  }
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -123,6 +189,8 @@ export function useUpdateVariant() {
       isActive?: boolean;
       sortOrder?: number;
     }) => api.put(`/api/buyables/${buyableId}/variants/${variantId}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['buyables'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['buyables'] });
+    },
   });
 }

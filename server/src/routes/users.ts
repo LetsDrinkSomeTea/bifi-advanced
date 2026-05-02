@@ -98,7 +98,10 @@ router.get('/:id/profile', requireAuth, async (c) => {
   }
 
   const groupKeys = Array.from(groupProgressFns.keys());
-  const progressPromises = groupKeys.map((key) => groupProgressFns.get(key)!(id));
+  const progressPromises: Promise<number>[] = groupKeys.map((key) => {
+    const fn = groupProgressFns.get(key);
+    return fn ? Promise.resolve(fn(id)) : Promise.resolve(0);
+  });
 
   const [
     [countRow],
@@ -204,7 +207,7 @@ router.get('/:id/profile', requireAuth, async (c) => {
 
   const achievementProgress: Record<string, number> = {};
   groupKeys.forEach((key, i) => {
-    achievementProgress[key] = progressValues[i]!;
+    achievementProgress[key] = progressValues[i] ?? 0;
   });
 
   return c.json({
@@ -251,11 +254,15 @@ router.patch('/me', requireAuth, zValidator('json', UpdateProfileSchema), async 
   try {
     const [updated] = await db.update(users).set(patch).where(eq(users.id, self.id)).returning();
 
+    if (!updated) {
+      return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
+    }
+
     return c.json({
-      id: updated!.id,
-      displayName: updated!.displayName,
-      username: updated!.username,
-      avatarUrl: updated!.avatarUrl,
+      id: updated.id,
+      displayName: updated.displayName,
+      username: updated.username,
+      avatarUrl: updated.avatarUrl,
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : '';

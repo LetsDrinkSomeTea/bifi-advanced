@@ -3,14 +3,12 @@ import {
   KeyRound,
   Link2,
   Plus,
-  UserCog,
   Dices,
   ChevronDown,
   ChevronUp,
   Trash2,
   Eye,
   EyeOff,
-  Check,
 } from 'lucide-react';
 import { AdminLayout } from './AdminLayout';
 import { Modal } from '../../components/Modal';
@@ -25,28 +23,38 @@ import {
 import { useAuth, useAuthConfig } from '../../hooks/useAuth';
 import type { AdminUser } from '@shared/types';
 import { cn, formatCents } from '../../lib/utils';
-import { ROLE_LABEL, ROLE_STYLE } from '../ProfileDetail';
+import { ROLE_LABEL, ROLE_STYLE } from '../../lib/constants';
 
 // ─── Deposit Modal ────────────────────────────────────────────────────────────
 
-function DepositModal({ user, onClose }: { user: AdminUser | null; onClose: () => void }) {
+function DepositModal({
+  user,
+  onClose,
+}: {
+  user: AdminUser | null;
+  onClose: () => void;
+}): React.JSX.Element {
   const [euros, setEuros] = useState('');
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const { mutate: deposit, isPending } = useDeposit();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
+    if (user === null) return;
+
     const cents = Math.round(parseFloat(euros) * 100);
-    if (!cents || cents < 1) {
+    if (isNaN(cents) || cents < 1) {
       setError('Ungültiger Betrag');
       return;
     }
     deposit(
-      { userId: user!.id, amount: cents, note: note || undefined },
+      { userId: user.id, amount: cents, note: note || undefined },
       {
         onSuccess: onClose,
-        onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Fehler');
+        },
       },
     );
   };
@@ -76,11 +84,13 @@ function DepositModal({ user, onClose }: { user: AdminUser | null; onClose: () =
             type="text"
             placeholder="z.B. Bareinzahlung"
             value={note}
-            onChange={(e) => { setNote(e.target.value); }}
+            onChange={(e) => {
+              setNote(e.target.value);
+            }}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
         <button
           type="submit"
           disabled={isPending}
@@ -109,23 +119,24 @@ function UserRow({
   isAdmin: boolean;
   onDeposit: () => void;
   onResetPassword: () => void;
-}) {
+}): React.JSX.Element {
   const [expanded, setExpanded] = useState(false);
   const { mutate: update, isPending: isUpdating } = useUpdateUser();
   const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser();
   const [deleteError, setDeleteError] = useState('');
 
-  const handleUpdate = (patch: Partial<AdminUser>) => {
+  const handleUpdate = (patch: Partial<AdminUser>): void => {
     update({ id: user.id, ...patch });
   };
 
-  const handleDelete = () => {
+  const handleDelete = (): void => {
     if (!window.confirm(`Möchtest du ${user.displayName} wirklich löschen?`)) return;
     deleteUser(user.id, {
-      onError: (err) =>
-        { setDeleteError(
+      onError: (err) => {
+        setDeleteError(
           err instanceof Error ? err.message : 'Löschen fehlgeschlagen. Nutzer hat evtl. Historie.',
-        ); },
+        );
+      },
     });
   };
 
@@ -133,14 +144,16 @@ function UserRow({
     <div className={cn('rounded-xl border border-border bg-card overflow-hidden')}>
       <div
         className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/50 transition-colors"
-        onClick={() => { setExpanded(!expanded); }}
+        onClick={() => {
+          setExpanded(!expanded);
+        }}
       >
         {/* Avatar & Info with conditional opacity */}
         <div
           className={cn('flex flex-1 items-center gap-3 min-w-0', !user.isActive && 'opacity-60')}
         >
           <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold flex-shrink-0 overflow-hidden">
-            {user.avatarUrl ? (
+            {user.avatarUrl !== null ? (
               <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
             ) : (
               user.displayName[0]?.toUpperCase()
@@ -163,11 +176,11 @@ function UserRow({
                   <EyeOff size={14} />
                 </span>
               )}
-              {user.isActive && (
+              {user.isActive ? (
                 <span className="text-green-600" title="Account aktiv">
                   <Eye size={14} />
                 </span>
-              )}
+              ) : null}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span
@@ -179,29 +192,34 @@ function UserRow({
                 {formatCents(user.balance)}
               </span>
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                {user.hasSso && <Link2 size={11} />}
-                {user.hasPassword && <KeyRound size={11} />}
-                {user.jackpotAllowed && (
+                {user.hasSso ? <Link2 size={11} /> : null}
+                {user.hasPassword ? <KeyRound size={11} /> : null}
+                {user.jackpotAllowed ? (
                   <span title="Jackpot freigeschaltet">
                     <Dices size={11} className="text-yellow-500" />
                   </span>
-                )}
+                ) : null}
               </span>
             </div>
           </div>
         </div>
 
         {/* Quick Actions (always full opacity) */}
-        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => { e.stopPropagation(); }}>
-          {isModerator && (
+        <div
+          className="flex items-center gap-1 flex-shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          {isModerator ? (
             <button
               onClick={onDeposit}
               className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent transition-colors"
             >
               + €
             </button>
-          )}
-          {isAdmin && (
+          ) : null}
+          {isAdmin ? (
             <button
               onClick={onResetPassword}
               className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -209,9 +227,11 @@ function UserRow({
             >
               <KeyRound size={15} />
             </button>
-          )}
+          ) : null}
           <button
-            onClick={() => { setExpanded(!expanded); }}
+            onClick={() => {
+              setExpanded(!expanded);
+            }}
             className="p-1.5 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
             title={expanded ? 'Einklappen' : 'Ausklappen'}
           >
@@ -220,7 +240,7 @@ function UserRow({
         </div>
       </div>
 
-      {expanded && (
+      {expanded ? (
         <div className="px-4 py-4 border-t border-border bg-accent/20 space-y-4">
           <div className="flex flex-col gap-4">
             {
@@ -236,7 +256,9 @@ function UserRow({
                 </label>
                 <select
                   value={user.role}
-                  onChange={(e) => { handleUpdate({ role: e.target.value as any }); }}
+                  onChange={(e) => {
+                    handleUpdate({ role: e.target.value as AdminUser['role'] });
+                  }}
                   disabled={isUpdating || !canChangeRole}
                   className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
@@ -253,7 +275,9 @@ function UserRow({
               </label>
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => { handleUpdate({ jackpotAllowed: !user.jackpotAllowed }); }}
+                  onClick={() => {
+                    handleUpdate({ jackpotAllowed: !user.jackpotAllowed });
+                  }}
                   disabled={isUpdating}
                   className={cn(
                     'flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold',
@@ -275,7 +299,9 @@ function UserRow({
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <button
-                onClick={() => { handleUpdate({ isActive: !user.isActive }); }}
+                onClick={() => {
+                  handleUpdate({ isActive: !user.isActive });
+                }}
                 disabled={isUpdating}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold',
@@ -288,7 +314,7 @@ function UserRow({
                 {user.isActive ? 'Deaktivieren' : 'Aktivieren'}
               </button>
 
-              {isAdmin && (
+              {isAdmin ? (
                 <div className="flex flex-col items-end gap-1">
                   <button
                     onClick={handleDelete}
@@ -298,39 +324,47 @@ function UserRow({
                     <Trash2 size={14} />
                     Nutzer löschen
                   </button>
-                  {deleteError && (
+                  {deleteError !== '' ? (
                     <p className="text-[10px] text-destructive max-w-[200px] text-right">
                       {deleteError}
                     </p>
-                  )}
+                  ) : null}
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
 // ─── Create User Modal ────────────────────────────────────────────────────────
 
-function CreateUserModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CreateUserModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}): React.JSX.Element {
   const [form, setForm] = useState({
     email: '',
     username: '',
     displayName: '',
     password: '',
-    role: 'member',
+    role: 'member' as AdminUser['role'],
   });
   const [error, setError] = useState('');
   const { mutate: create, isPending } = useCreateUser();
 
   const set =
-    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      { setForm((f) => ({ ...f, [k]: e.target.value })); };
+    (k: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
+      setForm((f) => ({ ...f, [k]: e.target.value }));
+    };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     create(
       { ...form, username: form.username || undefined },
@@ -339,7 +373,9 @@ function CreateUserModal({ open, onClose }: { open: boolean; onClose: () => void
           setForm({ email: '', username: '', displayName: '', password: '', role: 'member' });
           onClose();
         },
-        onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Fehler');
+        },
       },
     );
   };
@@ -376,7 +412,7 @@ function CreateUserModal({ open, onClose }: { open: boolean; onClose: () => void
             <option value="admin">Admin</option>
           </select>
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
         <button
           type="submit"
           disabled={isPending}
@@ -391,14 +427,22 @@ function CreateUserModal({ open, onClose }: { open: boolean; onClose: () => void
 
 // ─── Reset Password Modal ─────────────────────────────────────────────────────
 
-function ResetPasswordModal({ user, onClose }: { user: AdminUser | null; onClose: () => void }) {
+function ResetPasswordModal({
+  user,
+  onClose,
+}: {
+  user: AdminUser | null;
+  onClose: () => void;
+}): React.JSX.Element {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const { mutate: reset, isPending } = useResetPassword();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
+    if (user === null) return;
+
     if (password.length < 8) {
       setError('Mindestens 8 Zeichen');
       return;
@@ -408,14 +452,16 @@ function ResetPasswordModal({ user, onClose }: { user: AdminUser | null; onClose
       return;
     }
     reset(
-      { id: user!.id, password },
+      { id: user.id, password },
       {
         onSuccess: () => {
           setPassword('');
           setConfirm('');
           onClose();
         },
-        onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Fehler');
+        },
       },
     );
   };
@@ -452,7 +498,7 @@ function ResetPasswordModal({ user, onClose }: { user: AdminUser | null; onClose
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
         <button
           type="submit"
           disabled={isPending}
@@ -467,7 +513,7 @@ function ResetPasswordModal({ user, onClose }: { user: AdminUser | null; onClose
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export function AdminUsers() {
+export function AdminUsers(): React.JSX.Element {
   const { data: users, isLoading } = useAdminUsers();
   const { isAdmin, isModerator } = useAuth();
   const { data: config } = useAuthConfig();
@@ -476,11 +522,12 @@ export function AdminUsers() {
   const [createOpen, setCreateOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  const canChangeRole = (u: AdminUser) => !u.hasSso || (config?.roleSync ?? 'always') !== 'always';
+  const canChangeRole = (u: AdminUser): boolean =>
+    !u.hasSso || (config?.roleSync ?? 'always') !== 'always';
 
   const filtered = (users ?? []).filter(
     (u) =>
-      !search ||
+      search === '' ||
       u.displayName.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase()),
   );
@@ -493,11 +540,15 @@ export function AdminUsers() {
             type="search"
             placeholder="Suchen…"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
             className="flex-1 px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <button
-            onClick={() => { setCreateOpen(true); }}
+            onClick={() => {
+              setCreateOpen(true);
+            }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
           >
             <Plus size={15} />
@@ -505,13 +556,13 @@ export function AdminUsers() {
           </button>
         </div>
 
-        {isLoading && (
+        {isLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
             ))}
           </div>
-        )}
+        ) : null}
 
         {filtered.map((u) => (
           <UserRow
@@ -520,19 +571,38 @@ export function AdminUsers() {
             canChangeRole={canChangeRole(u)}
             isModerator={isModerator}
             isAdmin={isAdmin}
-            onDeposit={() => { setDepositTarget(u); }}
-            onResetPassword={() => { setResetTarget(u); }}
+            onDeposit={() => {
+              setDepositTarget(u);
+            }}
+            onResetPassword={() => {
+              setResetTarget(u);
+            }}
           />
         ))}
 
-        {!isLoading && filtered.length === 0 && (
+        {!isLoading && filtered.length === 0 ? (
           <p className="text-center text-muted-foreground text-sm py-8">Keine Nutzer gefunden</p>
-        )}
+        ) : null}
       </div>
 
-      <DepositModal user={depositTarget} onClose={() => { setDepositTarget(null); }} />
-      <ResetPasswordModal user={resetTarget} onClose={() => { setResetTarget(null); }} />
-      <CreateUserModal open={createOpen} onClose={() => { setCreateOpen(false); }} />
+      <DepositModal
+        user={depositTarget}
+        onClose={() => {
+          setDepositTarget(null);
+        }}
+      />
+      <ResetPasswordModal
+        user={resetTarget}
+        onClose={() => {
+          setResetTarget(null);
+        }}
+      />
+      <CreateUserModal
+        open={createOpen}
+        onClose={() => {
+          setCreateOpen(false);
+        }}
+      />
     </AdminLayout>
   );
 }

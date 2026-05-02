@@ -14,21 +14,7 @@ import { useAuth } from '../hooks/useAuth';
 import { cn } from '../lib/utils';
 
 function copyToClipboard(text: string): Promise<void> {
-  if (navigator.clipboard) {
-    return navigator.clipboard.writeText(text);
-  }
-  // Fallback for non-HTTPS / older browsers
-  return new Promise((resolve) => {
-    const el = document.createElement('textarea');
-    el.value = text;
-    el.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
-    document.body.appendChild(el);
-    el.focus();
-    el.select();
-    document.execCommand('copy');
-    document.body.removeChild(el);
-    resolve();
-  });
+  return navigator.clipboard.writeText(text);
 }
 
 function QRModal({
@@ -39,7 +25,7 @@ function QRModal({
   code: string;
   groupName: string;
   onClose: () => void;
-}) {
+}): React.JSX.Element {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
@@ -69,7 +55,7 @@ function QRModal({
   );
 }
 
-export function GroupDetail() {
+export function GroupDetail(): React.JSX.Element {
   const { groupId } = useParams<{ groupId: string }>();
   const { user } = useAuth();
   const { data: group, isLoading } = useGroupDetail(groupId);
@@ -81,11 +67,13 @@ export function GroupDetail() {
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
 
-  const handleCopy = () => {
+  const handleCopy = (): void => {
     if (!group?.inviteCode) return;
-    copyToClipboard(group.inviteCode).then(() => {
+    void copyToClipboard(group.inviteCode).then(() => {
       setCopied(true);
-      setTimeout(() => { setCopied(false); }, 2000);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     });
   };
 
@@ -123,9 +111,9 @@ export function GroupDetail() {
         {/* Header */}
         <div>
           <h1 className="text-xl font-bold">{group.name}</h1>
-          {group.description && (
+          {group.description ? (
             <p className="text-sm text-muted-foreground mt-1">{group.description}</p>
-          )}
+          ) : null}
         </div>
 
         {/* Invite code */}
@@ -150,23 +138,27 @@ export function GroupDetail() {
               <Copy size={18} />
             </button>
             <button
-              onClick={() => { setQrOpen(true); }}
+              onClick={() => {
+                setQrOpen(true);
+              }}
               className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               title="QR-Code anzeigen"
             >
               <QrCode size={18} />
             </button>
-            {isOwner && (
+            {isOwner ? (
               <button
-                onClick={() => { refreshCode(group.id); }}
+                onClick={() => {
+                  refreshCode(group.id);
+                }}
                 className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 title="Neuen Code generieren"
               >
                 <RefreshCw size={18} />
               </button>
-            )}
+            ) : null}
           </div>
-          {copied && <p className="text-xs text-green-500">Code kopiert!</p>}
+          {copied ? <p className="text-xs text-green-500">Code kopiert!</p> : null}
         </div>
 
         {/* Members */}
@@ -198,16 +190,18 @@ export function GroupDetail() {
                   </Link>
                   {m.role === 'owner' && <span className="text-xs text-primary">Eigentümer</span>}
                 </div>
-                {isOwner && m.id !== user?.id && (
+                {isOwner && m.id !== user?.id ? (
                   <button
-                    onClick={() => { remove({ groupId: group.id, userId: m.id }); }}
+                    onClick={() => {
+                      remove({ groupId: group.id, userId: m.id });
+                    }}
                     disabled={removing}
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
                     title="Entfernen"
                   >
                     <UserX size={15} />
                   </button>
-                )}
+                ) : null}
               </div>
             ))}
           </div>
@@ -216,7 +210,13 @@ export function GroupDetail() {
         {/* Danger zone */}
         <div className="space-y-2 pb-4">
           <button
-            onClick={() => { leave(group.id, { onSuccess: () => { navigate('/social'); } }); }}
+            onClick={() => {
+              leave(group.id, {
+                onSuccess: () => {
+                  navigate('/social');
+                },
+              });
+            }}
             disabled={leaving}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-1 disabled:opacity-50"
           >
@@ -224,11 +224,15 @@ export function GroupDetail() {
             Gruppe verlassen
           </button>
 
-          {isOwner && (
+          {isOwner ? (
             <button
               onClick={() => {
                 if (confirm(`Gruppe „${group.name}" wirklich löschen?`)) {
-                  deleteGroup(group.id, { onSuccess: () => { navigate('/social'); } });
+                  deleteGroup(group.id, {
+                    onSuccess: () => {
+                      navigate('/social');
+                    },
+                  });
                 }
               }}
               disabled={deleting}
@@ -237,13 +241,19 @@ export function GroupDetail() {
               <Trash2 size={15} />
               Gruppe löschen
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {qrOpen && group.inviteCode && (
-        <QRModal code={group.inviteCode} groupName={group.name} onClose={() => { setQrOpen(false); }} />
-      )}
+      {qrOpen && group.inviteCode ? (
+        <QRModal
+          code={group.inviteCode}
+          groupName={group.name}
+          onClose={() => {
+            setQrOpen(false);
+          }}
+        />
+      ) : null}
     </Layout>
   );
 }

@@ -12,62 +12,52 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import {
+  ROLES,
+  TRANSACTION_TYPES,
+  NUDGE_TYPES,
+  NOTIFICATION_TYPES,
+  BUYABLE_CATEGORIES,
+  FRIENDSHIP_STATUSES,
+  GROUP_ROLES,
+  FEED_TYPES,
+} from '../../../shared/src/schemas.ts';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export const roleEnum = pgEnum('role', ['admin', 'moderator', 'member']);
-export const transactionTypeEnum = pgEnum('transaction_type', [
-  'purchase',
-  'deposit',
-  'correction',
-  'jackpot',
-  'prost',
-]);
-export const nudgeTypeEnum = pgEnum('nudge_type', ['nudge', 'prost']);
-export const notificationTypeEnum = pgEnum('notification_type', [
-  'nudge',
-  'prost',
-  'achievement',
-  'deposit',
-  'goal_reached',
-  'balance_warning',
-  'friend_request',
-  'system',
-]);
+export const roleEnum = pgEnum('role', ROLES as unknown as [string, ...string[]]);
+export const transactionTypeEnum = pgEnum(
+  'transaction_type',
+  TRANSACTION_TYPES as unknown as [string, ...string[]],
+);
+export const nudgeTypeEnum = pgEnum('nudge_type', NUDGE_TYPES as unknown as [string, ...string[]]);
+export const notificationTypeEnum = pgEnum(
+  'notification_type',
+  NOTIFICATION_TYPES as unknown as [string, ...string[]],
+);
 
-export const buyableCategoryEnum = pgEnum('buyable_category', [
-  'alcoholic',
-  'soft_drink',
-  'food',
-  'snack',
-  'other',
-]);
-export const friendshipStatusEnum = pgEnum('friendship_status', ['pending', 'accepted']);
-export const groupRoleEnum = pgEnum('group_role', ['owner', 'member']);
-export const feedTypeEnum = pgEnum('feed_type', [
-  'purchase',
-  'achievement',
-  'group_join',
-  'group_created',
-  'group_left',
-  'group_deleted',
-  'nudge',
-  'prost_sent',
-  'prost_received',
-  'friendship_started',
-  'goal_reached',
-  'jackpot_win',
-  'promotion_started',
-  'promotion_ended',
-]);
+export const buyableCategoryEnum = pgEnum(
+  'buyable_category',
+  BUYABLE_CATEGORIES as unknown as [string, ...string[]],
+);
+export const friendshipStatusEnum = pgEnum(
+  'friendship_status',
+  FRIENDSHIP_STATUSES as unknown as [string, ...string[]],
+);
+export const groupRoleEnum = pgEnum('group_role', GROUP_ROLES as unknown as [string, ...string[]]);
+export const feedTypeEnum = pgEnum('feed_type', FEED_TYPES as unknown as [string, ...string[]]);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const id = () =>
   uuid('id')
     .primaryKey()
+    .notNull()
     .default(sql`gen_random_uuid()`);
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const createdAt = () => timestamp('created_at').notNull().defaultNow();
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const updatedAt = () => timestamp('updated_at').notNull().defaultNow();
 
 // ─── Tables ───────────────────────────────────────────────────────────────────

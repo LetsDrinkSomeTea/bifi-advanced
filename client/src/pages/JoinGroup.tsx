@@ -4,7 +4,9 @@ import { Layout } from '../components/layout/Layout';
 import { useJoinGroup } from '../hooks/useGroups';
 import { useAuth } from '../hooks/useAuth';
 
-export function JoinGroup() {
+import { type ApiError } from '../lib/api';
+
+export function JoinGroup(): React.JSX.Element {
   const { code } = useParams<{ code: string }>();
   const [, navigate] = useLocation();
   const { user } = useAuth();
@@ -12,7 +14,7 @@ export function JoinGroup() {
   const attempted = useRef(false);
 
   useEffect(() => {
-    if (!user || !code || attempted.current) return;
+    if (user === null || attempted.current) return;
     attempted.current = true;
 
     join(code.toUpperCase(), {
@@ -20,15 +22,15 @@ export function JoinGroup() {
         navigate(`/groups/${group.id}`, { replace: true });
       },
       onError: (err) => {
-        const code = (err as Error & { code?: string }).code;
-        if (code === 'ALREADY_MEMBER') {
+        const error = err as ApiError;
+        if (error.code === 'ALREADY_MEMBER') {
           // Don't have the group id here, send to social page
           navigate('/social', { replace: true });
         }
         // Otherwise stay on page and show error
       },
     });
-  }, [user, code]);
+  }, [user, code, join, navigate]);
 
   return (
     <Layout>

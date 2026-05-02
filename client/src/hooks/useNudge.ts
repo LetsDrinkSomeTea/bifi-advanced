@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import { api } from '../lib/api';
 
 export interface NudgePreset {
@@ -6,7 +12,7 @@ export interface NudgePreset {
   text: string;
 }
 
-export function useNudgePresets() {
+export function useNudgePresets(): UseQueryResult<NudgePreset[]> {
   return useQuery<NudgePreset[]>({
     queryKey: ['nudge', 'presets'],
     queryFn: () => api.get<NudgePreset[]>('/api/nudges/presets'),
@@ -14,7 +20,15 @@ export function useNudgePresets() {
   });
 }
 
-export function useSendNudge() {
+export function useSendNudge(): UseMutationResult<
+  void,
+  Error,
+  {
+    recipientId: string;
+    preset?: string;
+    message?: string;
+  }
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -27,7 +41,7 @@ export function useSendNudge() {
       message?: string;
     }) => api.post(`/api/nudges/${recipientId}`, { preset, message }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['feed'] });
+      void qc.invalidateQueries({ queryKey: ['feed'] });
     },
   });
 }

@@ -9,7 +9,7 @@ interface Props {
   requireRole?: Role;
 }
 
-export function ProtectedRoute({ children, requireRole }: Props) {
+export function ProtectedRoute({ children, requireRole }: Props): React.JSX.Element {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {

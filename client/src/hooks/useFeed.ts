@@ -1,24 +1,22 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  type UseInfiniteQueryResult,
+  type InfiniteData,
+} from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { PaginatedResponse } from '@shared/types';
+import type { PaginatedResponse, FeedEntry } from '@shared/types';
 
-export interface FeedEntry {
-  id: string;
-  type: string;
-  userId: string;
-  targetUserId: string | null;
-  targetGroupId: string | null;
-  metadata: Record<string, unknown> | null;
-  createdAt: string;
-  user: { id: string; displayName: string; avatarUrl: string | null };
-  targetUser: { id: string; displayName: string; avatarUrl: string | null } | null;
-}
+export type { FeedEntry };
 
-export function useFeed() {
+export function useFeed(): UseInfiniteQueryResult<InfiniteData<PaginatedResponse<FeedEntry>>> {
   return useInfiniteQuery<PaginatedResponse<FeedEntry>>({
     queryKey: ['feed'],
-    queryFn: ({ pageParam }) =>
-      api.get<PaginatedResponse<FeedEntry>>(`/api/feed${pageParam ? `?cursor=${pageParam}` : ''}`),
+    queryFn: ({ pageParam }) => {
+      const cursor = typeof pageParam === 'string' ? pageParam : '';
+      return api.get<PaginatedResponse<FeedEntry>>(
+        `/api/feed${cursor !== '' ? `?cursor=${cursor}` : ''}`,
+      );
+    },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   });

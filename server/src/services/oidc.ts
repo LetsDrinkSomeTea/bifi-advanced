@@ -10,7 +10,7 @@ type OIDCConfig = Awaited<ReturnType<typeof discovery>>;
 
 let oidcConfig: OIDCConfig | null = null;
 
-export async function initOIDC() {
+export async function initOIDC(): Promise<void> {
   const issuer = process.env.OIDC_ISSUER;
   const clientId = process.env.OIDC_CLIENT_ID;
 
@@ -24,7 +24,7 @@ export async function initOIDC() {
   console.log('OIDC discovery complete');
 }
 
-export function getOIDCConfig() {
+export function getOIDCConfig(): OIDCConfig | null {
   return oidcConfig;
 }
 

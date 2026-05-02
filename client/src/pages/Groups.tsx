@@ -3,14 +3,13 @@ import { Link } from 'wouter';
 import { Plus, X, Users, ChevronRight } from 'lucide-react';
 import { Layout } from '../components/layout/Layout';
 import { useGroups, useCreateGroup, useJoinGroup } from '../hooks/useGroups';
-import { cn } from '../lib/utils';
 
-function CreateGroupModal({ onClose }: { onClose: () => void }) {
+function CreateGroupModal({ onClose }: { onClose: () => void }): React.JSX.Element {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const { mutate: create, isPending, error } = useCreateGroup();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (!name.trim()) return;
     create(
@@ -34,7 +33,9 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
             type="text"
             placeholder="Gruppenname"
             value={name}
-            onChange={(e) => { setName(e.target.value); }}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
             maxLength={60}
             required
             className="w-full px-3 py-2.5 rounded-xl border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -43,11 +44,13 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
             type="text"
             placeholder="Beschreibung (optional)"
             value={description}
-            onChange={(e) => { setDescription(e.target.value); }}
+            onChange={(e) => {
+              setDescription(e.target.value);
+            }}
             maxLength={200}
             className="w-full px-3 py-2.5 rounded-xl border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
-          {error && <p className="text-xs text-destructive">Fehler beim Erstellen</p>}
+          {error ? <p className="text-xs text-destructive">Fehler beim Erstellen</p> : null}
           <button
             type="submit"
             disabled={isPending || !name.trim()}
@@ -61,11 +64,11 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function JoinGroupModal({ onClose }: { onClose: () => void }) {
+function JoinGroupModal({ onClose }: { onClose: () => void }): React.JSX.Element {
   const [code, setCode] = useState('');
   const { mutate: join, isPending, error } = useJoinGroup();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (!code.trim()) return;
     join(code.trim(), { onSuccess: onClose });
@@ -86,16 +89,18 @@ function JoinGroupModal({ onClose }: { onClose: () => void }) {
             type="text"
             placeholder="Einladungscode"
             value={code}
-            onChange={(e) => { setCode(e.target.value.toUpperCase()); }}
+            onChange={(e) => {
+              setCode(e.target.value.toUpperCase());
+            }}
             maxLength={8}
             required
             className="w-full px-3 py-2.5 rounded-xl border border-border bg-card text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
-          {error && (
+          {error ? (
             <p className="text-xs text-destructive">
-              {(error as { message?: string })?.message ?? 'Ungültiger Code'}
+              {(error as { message?: string }).message ?? 'Ungültiger Code'}
             </p>
-          )}
+          ) : null}
           <button
             type="submit"
             disabled={isPending || !code.trim()}
@@ -109,7 +114,7 @@ function JoinGroupModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function Groups() {
+export function Groups(): React.JSX.Element {
   const { data: groups, isLoading } = useGroups();
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
@@ -121,13 +126,17 @@ export function Groups() {
           <h1 className="text-xl font-bold">Gruppen</h1>
           <div className="flex gap-2">
             <button
-              onClick={() => { setJoinOpen(true); }}
+              onClick={() => {
+                setJoinOpen(true);
+              }}
               className="px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
             >
               Beitreten
             </button>
             <button
-              onClick={() => { setCreateOpen(true); }}
+              onClick={() => {
+                setCreateOpen(true);
+              }}
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <Plus size={15} />
@@ -136,13 +145,15 @@ export function Groups() {
           </div>
         </div>
 
-        {isLoading && (
+        {isLoading ? (
           <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
-            ))}
+            {[1, 2, 3].map(
+              (i: number): React.JSX.Element => (
+                <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
+              ),
+            )}
           </div>
-        )}
+        ) : null}
 
         {!isLoading && (!groups || groups.length === 0) && (
           <div className="rounded-2xl border border-dashed border-border p-10 text-center space-y-2">
@@ -154,31 +165,45 @@ export function Groups() {
           </div>
         )}
 
-        {groups && groups.length > 0 && (
+        {groups && groups.length > 0 ? (
           <div className="space-y-3">
-            {groups.map((g) => (
-              <Link key={g.id} href={`/groups/${g.id}`}>
-                <div className="flex items-center gap-3 px-4 py-4 rounded-2xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Users size={18} className="text-primary" />
+            {groups.map(
+              (g): React.JSX.Element => (
+                <Link key={g.id} href={`/groups/${g.id}`}>
+                  <div className="flex items-center gap-3 px-4 py-4 rounded-2xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Users size={18} className="text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">{g.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {g.memberCount} {g.memberCount === 1 ? 'Mitglied' : 'Mitglieder'}
+                        {g.myRole === 'owner' && ' · Eigentümer'}
+                      </p>
+                    </div>
+                    <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{g.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {g.memberCount} {g.memberCount === 1 ? 'Mitglied' : 'Mitglieder'}
-                      {g.myRole === 'owner' && ' · Eigentümer'}
-                    </p>
-                  </div>
-                  <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ),
+            )}
           </div>
-        )}
+        ) : null}
       </div>
 
-      {createOpen && <CreateGroupModal onClose={() => { setCreateOpen(false); }} />}
-      {joinOpen && <JoinGroupModal onClose={() => { setJoinOpen(false); }} />}
+      {createOpen ? (
+        <CreateGroupModal
+          onClose={() => {
+            setCreateOpen(false);
+          }}
+        />
+      ) : null}
+      {joinOpen ? (
+        <JoinGroupModal
+          onClose={() => {
+            setJoinOpen(false);
+          }}
+        />
+      ) : null}
     </Layout>
   );
 }

@@ -29,6 +29,7 @@ services:
     ports:
       - '3000:3000'
       - '5173:5173'
+      - '4983:4983'
     volumes:
       - .:/app
       - /app/node_modules # preserve container node_modules

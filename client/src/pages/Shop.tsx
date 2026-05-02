@@ -24,7 +24,7 @@ function formatTimeLeft(endTime: string | null): string | null {
   return `noch ${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'}`;
 }
 
-function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
+function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.JSX.Element | null {
   const { title, summary, badge } = useMemo(() => {
     const discountedLabels: string[] = [];
     let earliestEnd: number | null = null;
@@ -33,8 +33,8 @@ function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
     items.forEach((item) => {
       const discountedVariants = item.variants.filter((v) => v.activeDiscount);
 
-      if (discountedVariants.length === 1) {
-        discountedLabels.push(`${item.name} (${discountedVariants[0]!.name})`);
+      if (discountedVariants.length === 1 && discountedVariants[0]) {
+        discountedLabels.push(`${item.name} (${discountedVariants[0].name})`);
       } else if (discountedVariants.length > 1) {
         discountedLabels.push(item.name);
       }
@@ -67,12 +67,12 @@ function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
     }
 
     let badge = '';
-    if (minQuantityRemaining !== null) {
-      badge = `noch ${minQuantityRemaining}x`;
+    if (typeof minQuantityRemaining === 'number') {
+      badge = `noch ${String(minQuantityRemaining)}x`;
+    } else if (typeof earliestEnd === 'number') {
+      badge = formatTimeLeft(new Date(earliestEnd).toISOString()) ?? '';
     } else {
-      badge = earliestEnd
-        ? (formatTimeLeft(new Date(earliestEnd).toISOString()) ?? '')
-        : 'zeitlich unbegrenzt';
+      badge = 'zeitlich unbegrenzt';
     }
 
     return {
@@ -97,18 +97,19 @@ function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
           <h3 className="font-black text-lg leading-tight uppercase tracking-tighter italic">
             {title}
           </h3>
-          {badge && (
+          {badge !== '' ? (
             <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-bold whitespace-nowrap">
               {badge}
             </span>
-          )}
+          ) : null}
         </div>
         <p className="text-sm font-medium opacity-95 truncate">{summary}</p>
       </div>
     </div>
   );
 }
-export function Shop() {
+
+export function Shop(): React.JSX.Element {
   const { data: items, isLoading } = useBuyables();
   const { data: favorites } = useFavorites();
   const { mutate: toggleFav } = useToggleFavorite();
@@ -152,9 +153,11 @@ export function Shop() {
       list.push(item);
       map.set(key, list);
     }
-    return BUYABLE_CATEGORIES.filter((cat) => map.has(cat)).map(
-      (cat) => [cat, map.get(cat)!] as [string, BuyableWithVariants[]],
-    );
+    return BUYABLE_CATEGORIES.filter((cat) => map.has(cat)).map((cat) => {
+      const prods = map.get(cat);
+      if (!prods) throw new Error(`Category ${cat} missing in map`);
+      return [cat, prods] as [string, BuyableWithVariants[]];
+    });
   }, [filtered]);
 
   const filterRef = useRef<HTMLDivElement>(null);
@@ -164,16 +167,18 @@ export function Shop() {
   useEffect(() => {
     const el = filterRef.current;
     if (!el) return;
-    const update = () => {
+    const update = (): void => {
       setLeftFade(el.scrollLeft > 0);
       setRightFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
     };
     update();
     el.addEventListener('scroll', update, { passive: true });
-    return () => { el.removeEventListener('scroll', update); };
+    return () => {
+      el.removeEventListener('scroll', update);
+    };
   }, [categories]);
 
-  const openSheet = (item: BuyableWithVariants, variantId: string) => {
+  const openSheet = (item: BuyableWithVariants, variantId: string): void => {
     setSelected(item);
     setSelectedVariantId(variantId);
   };
@@ -182,7 +187,7 @@ export function Shop() {
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto space-y-4">
         {/* Promo Banner */}
-        {!isLoading && items && <PromoBanner items={items} />}
+        {!isLoading && items ? <PromoBanner items={items} /> : null}
 
         {/* Search */}
         <div className="relative">
@@ -194,23 +199,27 @@ export function Shop() {
             type="search"
             placeholder="Produkt oder Variante suchen…"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
         {/* Category filter */}
-        {categories.length > 0 && (
+        {categories.length > 0 ? (
           <div className="relative">
-            {leftFade && (
+            {leftFade ? (
               <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-5 bg-gradient-to-r from-background to-transparent z-10" />
-            )}
-            {rightFade && (
+            ) : null}
+            {rightFade ? (
               <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-5 bg-gradient-to-l from-background to-transparent z-10" />
-            )}
+            ) : null}
             <div ref={filterRef} className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin-x">
               <button
-                onClick={() => { setActiveCategory(null); }}
+                onClick={() => {
+                  setActiveCategory(null);
+                }}
                 className={cn(
                   'flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
                   !activeCategory
@@ -223,7 +232,9 @@ export function Shop() {
               {categories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => { setActiveCategory(cat === activeCategory ? null : cat); }}
+                  onClick={() => {
+                    setActiveCategory(cat === activeCategory ? null : cat);
+                  }}
                   className={cn(
                     'flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
                     activeCategory === cat
@@ -236,10 +247,10 @@ export function Shop() {
               ))}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Skeleton */}
-        {isLoading && (
+        {isLoading ? (
           <div className="space-y-4">
             {[1, 2].map((i) => (
               <div key={i} className="space-y-2">
@@ -250,20 +261,24 @@ export function Shop() {
               </div>
             ))}
           </div>
-        )}
+        ) : null}
 
         {/* Product groups */}
         {!isLoading &&
           grouped.map(([category, products]) => (
             <section key={category}>
-              {!activeCategory && (
+              {!activeCategory ? (
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  {CATEGORY_LABELS[category as BuyableCategory] ?? category}
+                  {CATEGORY_LABELS[category as BuyableCategory]}
                 </h2>
-              )}
+              ) : null}
               <div className="space-y-3">
                 {products.map((item) => {
                   const activeVariants = item.variants.filter((v) => v.isActive);
+                  const firstCategoryChar = (
+                    item.category ? CATEGORY_LABELS[item.category] : null
+                  )?.[0];
+
                   return (
                     <div
                       key={item.id}
@@ -279,7 +294,7 @@ export function Shop() {
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl shadow-sm">
-                            {CATEGORY_LABELS[item.category as BuyableCategory]?.[0] ?? '📦'}
+                            {firstCategoryChar ?? '📦'}
                           </div>
                         )}
                         <h3 className="font-bold text-base">{item.name}</h3>
@@ -291,7 +306,6 @@ export function Shop() {
                           const isFav = favoriteIds.has(v.id);
                           const voucherCount = voucherMap.get(v.id) ?? 0;
                           const hasVoucher = voucherCount > 0;
-                          const hasDiscount = v.activeDiscount != null;
 
                           return (
                             <div
@@ -299,20 +313,22 @@ export function Shop() {
                               className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group"
                             >
                               <button
-                                onClick={() => { openSheet(item, v.id); }}
+                                onClick={() => {
+                                  openSheet(item, v.id);
+                                }}
                                 className="flex-1 min-w-0 flex items-center gap-3 text-left"
                               >
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <span className="font-semibold text-sm truncate">{v.name}</span>
-                                    {hasVoucher && (
+                                    {hasVoucher ? (
                                       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
                                         {voucherCount}x 🎁
                                       </span>
-                                    )}
+                                    ) : null}
                                   </div>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    {hasDiscount ? (
+                                    {v.activeDiscount !== null ? (
                                       <>
                                         <span className="text-sm font-bold text-orange-500">
                                           {formatCents(v.discountedPrice)}
@@ -321,15 +337,15 @@ export function Shop() {
                                           {formatCents(v.price)}
                                         </span>
                                         <span className="text-[10px] font-black text-orange-500 uppercase tracking-tighter">
-                                          {v.activeDiscount!.type === 'percent'
-                                            ? `-${v.activeDiscount!.value}%`
+                                          {v.activeDiscount.type === 'percent'
+                                            ? `-${v.activeDiscount.value}%`
                                             : 'Aktion'}
                                         </span>
-                                        {v.activeDiscount!.quantityRemaining !== null && (
+                                        {v.activeDiscount.quantityRemaining !== null ? (
                                           <span className="text-[10px] font-medium text-blue-500">
-                                            noch {v.activeDiscount!.quantityRemaining}x
+                                            noch {v.activeDiscount.quantityRemaining}x
                                           </span>
-                                        )}
+                                        ) : null}
                                       </>
                                     ) : (
                                       <span className="text-sm font-medium text-foreground/80">
@@ -363,7 +379,9 @@ export function Shop() {
                                   />
                                 </button>
                                 <button
-                                  onClick={() => { openSheet(item, v.id); }}
+                                  onClick={() => {
+                                    openSheet(item, v.id);
+                                  }}
                                   className="p-2 rounded-lg text-muted-foreground group-hover:text-primary group-hover:bg-primary/5 transition-all"
                                 >
                                   <Plus size={20} />
@@ -380,9 +398,9 @@ export function Shop() {
             </section>
           ))}
 
-        {!isLoading && filtered.length === 0 && (
+        {!isLoading && filtered.length === 0 ? (
           <p className="text-center text-muted-foreground text-sm py-8">Keine Produkte gefunden</p>
-        )}
+        ) : null}
       </div>
 
       <BuySheet

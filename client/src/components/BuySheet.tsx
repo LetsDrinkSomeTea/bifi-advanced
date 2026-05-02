@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Minus, Plus, X, Users2, Dices } from 'lucide-react';
 import type { BuyableWithVariants } from '@shared/types';
 import { usePurchase } from '../hooks/useTransactions';
@@ -14,7 +14,7 @@ interface Props {
   onClose: () => void;
 }
 
-export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
+export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.JSX.Element | null {
   const [variantId, setVariantId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -26,29 +26,26 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
   const { data: jackpotEligibility } = useJackpotEligibility();
   const voucherMap = useVoucherMap();
 
-  const open = buyable !== null;
   const variants = buyable?.variants.filter((v) => v.isActive) ?? [];
   const isSingleVariant = variants.length === 1;
-  const autoSelected = isSingleVariant || !!initialVariantId;
 
-  useEffect(() => {
+  // Sync state when buyable changes without using useEffect for internal resets
+  const [lastBuyableId, setLastBuyableId] = useState<string | null>(null);
+
+  const currentBuyableId = buyable?.id ?? null;
+  if (currentBuyableId !== lastBuyableId) {
+    setLastBuyableId(currentBuyableId);
     if (buyable) {
-      if (isSingleVariant) {
-        setVariantId(variants[0]!.id);
-      } else if (initialVariantId) {
-        setVariantId(initialVariantId);
-      } else {
-        setVariantId(null);
-      }
+      const firstVariantId = variants[0]?.id ?? null;
+      setVariantId(isSingleVariant ? firstVariantId : (initialVariantId ?? null));
       setQuantity(1);
       setFeedback(null);
       setGroupId(null);
       setJackpotOpen(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buyable?.id, initialVariantId]);
+  }
 
-  if (!open || !buyable) return null;
+  if (!buyable) return null;
 
   const selectedVariant = variants.find((v) => v.id === variantId);
   const originalUnitPrice = selectedVariant?.price ?? 0;
@@ -73,19 +70,19 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
     groupId && memberCount > 1 ? Math.ceil(effectiveTotal / memberCount) : effectiveTotal;
 
   const showJackpot =
-    jackpotEligibility?.eligible &&
+    (jackpotEligibility?.eligible ?? false) &&
     !groupId &&
     quantity === 1 &&
     discountedUnitPrice > 0 &&
     !hasVoucher;
 
-  const handleBuy = () => {
+  const handleBuy = (): void => {
     if (!variantId) return;
     mutate(
       { items: [{ buyableId: buyable.id, variantId, quantity }], groupId: groupId ?? undefined },
       {
         onSuccess: (data) => {
-          setFeedback(data?.voucherRedeemed ? 'Gutschein eingelöst! 🎁' : 'Gekauft! ✓');
+          setFeedback(data.voucherRedeemed ? 'Gutschein eingelöst! 🎁' : 'Gekauft! ✓');
           setTimeout(onClose, 1000);
         },
         onError: (err) => {
@@ -95,7 +92,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
     );
   };
 
-  const handleJackpot = () => {
+  const handleJackpot = (): void => {
     setJackpotOpen(true);
   };
 
@@ -131,7 +128,9 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                 {variants.map((v) => (
                   <button
                     key={v.id}
-                    onClick={() => { setVariantId(v.id); }}
+                    onClick={() => {
+                      setVariantId(v.id);
+                    }}
                     className={cn(
                       'px-4 py-2 rounded-xl border text-sm transition-all relative overflow-hidden',
                       variantId === v.id
@@ -140,9 +139,9 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                     )}
                   >
                     {v.name}
-                    {v.activeDiscount && (
+                    {v.activeDiscount ? (
                       <div className="absolute top-0 right-0 w-2 h-2 bg-orange-500 rounded-bl-full" />
-                    )}
+                    ) : null}
                   </button>
                 ))}
               </div>
@@ -150,7 +149,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
           )}
 
           {/* Pricing Details */}
-          {selectedVariant && (
+          {selectedVariant ? (
             <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-3">
               <div className="flex items-end justify-between">
                 <div>
@@ -159,14 +158,14 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-2xl font-black">{formatCents(discountedUnitPrice)}</span>
-                    {isDiscounted && (
+                    {isDiscounted ? (
                       <span className="text-sm text-muted-foreground line-through decoration-orange-500/40">
                         {formatCents(originalUnitPrice)}
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 </div>
-                {selectedVariant.activeDiscount && (
+                {selectedVariant.activeDiscount ? (
                   <div className="flex flex-col items-end gap-1">
                     <span className="px-2 py-1 rounded-lg bg-orange-500 text-white text-[10px] font-black uppercase tracking-tighter shadow-sm shadow-orange-500/20">
                       {selectedVariant.activeDiscount.type === 'percent'
@@ -179,7 +178,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                       </span>
                     )}
                   </div>
-                )}
+                ) : null}
               </div>
 
               {/* Vouchers Info */}
@@ -204,7 +203,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                 </div>
               )}
             </div>
-          )}
+          ) : null}
 
           {/* Quantity Selection */}
           <div className="flex items-center justify-between py-1">
@@ -214,14 +213,18 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
             </div>
             <div className="flex items-center gap-4 bg-muted/50 p-1 rounded-2xl border border-border">
               <button
-                onClick={() => { setQuantity((q) => Math.max(1, q - 1)); }}
+                onClick={() => {
+                  setQuantity((q) => Math.max(1, q - 1));
+                }}
                 className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
               >
                 <Minus size={18} />
               </button>
               <span className="w-8 text-center font-black text-lg">{quantity}</span>
               <button
-                onClick={() => { setQuantity((q) => Math.min(99, q + 1)); }}
+                onClick={() => {
+                  setQuantity((q) => Math.min(99, q + 1));
+                }}
                 className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
               >
                 <Plus size={18} />
@@ -230,7 +233,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
           </div>
 
           {/* Group split */}
-          {groups && groups.length > 0 && (
+          {groups && groups.length > 0 ? (
             <div className="space-y-2 pt-2">
               <div className="flex items-center gap-2">
                 <Users2 size={14} className="text-muted-foreground" />
@@ -240,7 +243,9 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => { setGroupId(null); }}
+                  onClick={() => {
+                    setGroupId(null);
+                  }}
                   className={cn(
                     'px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm',
                     !groupId
@@ -253,7 +258,9 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                 {groups.map((g) => (
                   <button
                     key={g.id}
-                    onClick={() => { setGroupId(g.id === groupId ? null : g.id); }}
+                    onClick={() => {
+                      setGroupId(g.id === groupId ? null : g.id);
+                    }}
                     className={cn(
                       'px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm',
                       groupId === g.id
@@ -265,16 +272,16 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                   </button>
                 ))}
               </div>
-              {groupId && memberCount > 1 && (
+              {groupId && memberCount > 1 ? (
                 <p className="text-[10px] font-medium text-primary bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10">
                   Fair-Share: {formatCents(pricePerPerson)} pro Person ({memberCount} Mitglieder)
                 </p>
-              )}
+              ) : null}
             </div>
-          )}
+          ) : null}
 
           {/* Feedback */}
-          {feedback && (
+          {feedback ? (
             <div
               className={cn(
                 'p-3 rounded-xl text-sm font-bold text-center animate-in fade-in slide-in-from-bottom-2',
@@ -285,7 +292,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
             >
               {feedback}
             </div>
-          )}
+          ) : null}
 
           {/* Action Buttons */}
           <div className="flex pt-2">
@@ -340,7 +347,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
         </div>
       </div>
 
-      {variantId && selectedVariant && (
+      {variantId && selectedVariant ? (
         <JackpotModal
           open={jackpotOpen}
           onClose={() => {
@@ -353,7 +360,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
           productName={buyable.name}
           variantName={selectedVariant.name}
         />
-      )}
+      ) : null}
     </>
   );
 }

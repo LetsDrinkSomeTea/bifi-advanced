@@ -29,15 +29,22 @@ import { useLeaderboard } from '../hooks/useLeaderboard';
 import { useFeed } from '../hooks/useFeed';
 import { useAuth } from '../hooks/useAuth';
 import { formatCents, cn } from '../lib/utils';
+import type { FeedEntry } from '@shared/types';
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
-function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CreateGroupModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}): React.JSX.Element {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const { mutate: create, isPending } = useCreateGroup();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (!name.trim()) return;
     create(
@@ -60,7 +67,9 @@ function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => voi
           <input
             type="text"
             value={name}
-            onChange={(e) => { setName(e.target.value); }}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
             maxLength={60}
             autoFocus
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -73,7 +82,9 @@ function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => voi
           <input
             type="text"
             value={description}
-            onChange={(e) => { setDescription(e.target.value); }}
+            onChange={(e) => {
+              setDescription(e.target.value);
+            }}
             maxLength={200}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -90,11 +101,17 @@ function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => voi
   );
 }
 
-function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function JoinGroupModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}): React.JSX.Element {
   const [code, setCode] = useState('');
   const { mutate: join, isPending, error } = useJoinGroup();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (!code.trim()) return;
     join(code.trim().toUpperCase(), {
@@ -113,18 +130,16 @@ function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () => void 
           <input
             type="text"
             value={code}
-            onChange={(e) => { setCode(e.target.value.toUpperCase()); }}
+            onChange={(e) => {
+              setCode(e.target.value.toUpperCase());
+            }}
             maxLength={8}
             placeholder="A1B2C3D4"
             autoFocus
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm font-mono uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        {error && (
-          <p className="text-sm text-destructive">
-            {(error).message ?? 'Ungültiger Code'}
-          </p>
-        )}
+        {error !== null ? <p className="text-sm text-destructive">{error.message}</p> : null}
         <button
           type="submit"
           disabled={isPending || code.length < 6}
@@ -139,10 +154,16 @@ function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () => void 
 
 // ─── Avatar helper ────────────────────────────────────────────────────────────
 
-function Avatar({ displayName, avatarUrl }: { displayName: string; avatarUrl: string | null }) {
+function Avatar({
+  displayName,
+  avatarUrl,
+}: {
+  displayName: string;
+  avatarUrl: string | null;
+}): React.JSX.Element {
   return (
     <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold overflow-hidden flex-shrink-0">
-      {avatarUrl ? (
+      {avatarUrl !== null ? (
         <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
       ) : (
         <span>{displayName[0]?.toUpperCase()}</span>
@@ -159,7 +180,7 @@ function GroupsSection({
 }: {
   onCreateOpen: () => void;
   onJoinOpen: () => void;
-}) {
+}): React.JSX.Element {
   const { data: groups, isLoading } = useGroups();
 
   return (
@@ -192,7 +213,7 @@ function GroupsSection({
             <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />
           ))}
         </div>
-      ) : !groups || groups.length === 0 ? (
+      ) : (groups?.length ?? 0) === 0 ? (
         <p className="text-sm text-muted-foreground py-3">
           Noch keine Gruppen.{' '}
           <button onClick={onCreateOpen} className="text-primary hover:underline">
@@ -206,7 +227,7 @@ function GroupsSection({
         </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
-          {groups.map((g) => (
+          {groups?.map((g) => (
             <Link key={g.id} href={`/groups/${g.id}`}>
               <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent transition-colors cursor-pointer">
                 <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
@@ -215,9 +236,9 @@ function GroupsSection({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium truncate">{g.name}</span>
-                    {g.myRole === 'owner' && (
+                    {g.myRole === 'owner' ? (
                       <Crown size={11} className="text-amber-500 flex-shrink-0" />
-                    )}
+                    ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">{g.memberCount} Mitglieder</p>
                 </div>
@@ -231,11 +252,13 @@ function GroupsSection({
   );
 }
 
-function FriendsSection() {
+function FriendsSection(): React.JSX.Element {
   const { data: friends, isLoading } = useFriends();
   const { data: requests } = useFriendRequests();
   const { mutate: accept } = useAcceptFriendRequest();
   const { mutate: remove } = useRemoveFriend();
+
+  const requestCount = requests?.length ?? 0;
 
   return (
     <div className="space-y-3">
@@ -243,9 +266,9 @@ function FriendsSection() {
         Freunde
       </h2>
 
-      {requests && requests.length > 0 && (
+      {requestCount > 0 && requests ? (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Anfragen ({requests.length})</p>
+          <p className="text-xs font-medium text-muted-foreground">Anfragen ({requestCount})</p>
           <div className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
             {requests.map((r) => (
               <div key={r.id} className="flex items-center gap-3 px-4 py-3 bg-card">
@@ -260,14 +283,18 @@ function FriendsSection() {
                 </Link>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <button
-                    onClick={() => { accept(r.id); }}
+                    onClick={() => {
+                      accept(r.id);
+                    }}
                     className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                     title="Annehmen"
                   >
                     <UserCheck size={15} />
                   </button>
                   <button
-                    onClick={() => { remove(r.id); }}
+                    onClick={() => {
+                      remove(r.id);
+                    }}
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     title="Ablehnen"
                   >
@@ -278,7 +305,7 @@ function FriendsSection() {
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
       {isLoading ? (
         <div className="space-y-2">
@@ -286,13 +313,13 @@ function FriendsSection() {
             <div key={i} className="h-12 rounded-xl bg-muted animate-pulse" />
           ))}
         </div>
-      ) : !friends || friends.length === 0 ? (
+      ) : (friends?.length ?? 0) === 0 ? (
         <p className="text-sm text-muted-foreground py-3">
           Noch keine Freunde. Suche oben nach Personen.
         </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
-          {friends.map((f) => (
+          {friends?.map((f) => (
             <Link key={f.id} href={`/profile/${f.id}`}>
               <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent transition-colors cursor-pointer">
                 <Avatar displayName={f.displayName} avatarUrl={f.avatarUrl} />
@@ -321,7 +348,7 @@ function SearchResults({
   query: string;
   groups: ReturnType<typeof useGroups>['data'];
   friends: ReturnType<typeof useFriends>['data'];
-}) {
+}): React.JSX.Element {
   const { data: userResults } = useUserSearch(query);
   const { mutate: sendRequest } = useSendFriendRequest();
 
@@ -397,15 +424,17 @@ function SearchResults({
                 {item.kind === 'friend' ? 'Freund' : 'Person'}
               </p>
             </Link>
-            {item.kind === 'new_person' && (
+            {item.kind === 'new_person' ? (
               <button
-                onClick={() => { sendRequest(item.id); }}
+                onClick={() => {
+                  sendRequest(item.id);
+                }}
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                 title="Freundschaft anfragen"
               >
                 <UserPlus size={15} />
               </button>
-            )}
+            ) : null}
             <Link href={`/profile/${item.id}`}>
               <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
             </Link>
@@ -440,7 +469,7 @@ function formatValue(type: LeaderboardType, value: number): string {
   return String(value);
 }
 
-function RankMedal({ rank }: { rank: number }) {
+function RankMedal({ rank }: { rank: number }): React.JSX.Element {
   if (rank === 1) return <span className="text-lg leading-none">🥇</span>;
   if (rank === 2) return <span className="text-lg leading-none">🥈</span>;
   if (rank === 3) return <span className="text-lg leading-none">🥉</span>;
@@ -459,7 +488,7 @@ function LeaderboardSection({
   title: string;
   period: LeaderboardPeriod;
   currentUserId: string | undefined;
-}) {
+}): React.JSX.Element {
   const { data, isLoading } = useLeaderboard(type, period);
   const top3 = (data ?? []).slice(0, 3);
 
@@ -494,7 +523,7 @@ function LeaderboardSection({
                     <RankMedal rank={entry.rank} />
                   </div>
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold overflow-hidden flex-shrink-0">
-                    {entry.avatarUrl ? (
+                    {entry.avatarUrl !== null ? (
                       <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <span>{entry.displayName[0]?.toUpperCase()}</span>
@@ -525,7 +554,7 @@ function LeaderboardSection({
   );
 }
 
-function LeaderboardTab() {
+function LeaderboardTab(): React.JSX.Element {
   const [period, setPeriod] = useState<LeaderboardPeriod>('alltime');
   const { user } = useAuth();
 
@@ -536,7 +565,9 @@ function LeaderboardTab() {
         {(Object.keys(PERIOD_LABELS) as LeaderboardPeriod[]).map((p) => (
           <button
             key={p}
-            onClick={() => { setPeriod(p); }}
+            onClick={() => {
+              setPeriod(p);
+            }}
             className={cn(
               'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
               period === p
@@ -585,16 +616,18 @@ function LeaderboardTab() {
 
 // ─── Activity tab ─────────────────────────────────────────────────────────────
 
-function ActivityTab() {
+function ActivityTab(): React.JSX.Element {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useFeed();
-  const entries = data?.pages.flatMap((p) => p.data) ?? [];
+  const entries: FeedEntry[] = data?.pages.flatMap((p) => p.data) ?? [];
 
   return (
     <FeedTimeline
       entries={entries}
       isLoading={isLoading}
       hasNextPage={hasNextPage}
-      fetchNextPage={fetchNextPage}
+      fetchNextPage={() => {
+        void fetchNextPage();
+      }}
       isFetchingNextPage={isFetchingNextPage}
     />
   );
@@ -605,7 +638,7 @@ function ActivityTab() {
 const TABS = ['social', 'leaderboard', 'activity'] as const;
 type Tab = (typeof TABS)[number];
 
-export function Social() {
+export function Social(): React.JSX.Element {
   const search = useSearch();
   const [, navigate] = useLocation();
 
@@ -616,7 +649,7 @@ export function Social() {
 
   const [tab, setTab] = useState<Tab>(initialTab);
 
-  const changeTab = (newTab: Tab) => {
+  const changeTab = (newTab: Tab): void => {
     setTab(newTab);
     navigate(newTab === 'social' ? '/social' : `/social?tab=${newTab}`, { replace: true });
   };
@@ -630,11 +663,18 @@ export function Social() {
 
   useEffect(() => {
     if (tab !== 'social') return;
-    const t = setTimeout(() => { setDebouncedQuery(query); }, 300);
-    return () => { clearTimeout(t); };
+    const t = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 300);
+    return () => {
+      clearTimeout(t);
+    };
   }, [query, tab]);
 
   const isSearching = debouncedQuery.length >= 2;
+
+  const currentGroups = groups ?? [];
+  const currentFriends = friends ?? [];
 
   return (
     <Layout>
@@ -650,7 +690,9 @@ export function Social() {
           ).map(([value, label]) => (
             <button
               key={value}
-              onClick={() => { changeTab(value); }}
+              onClick={() => {
+                changeTab(value);
+              }}
               className={cn(
                 'flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors',
                 tab === value
@@ -674,27 +716,39 @@ export function Social() {
               <input
                 type="text"
                 value={query}
-                onChange={(e) => { setQuery(e.target.value); }}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                }}
                 placeholder="Gruppen und Personen suchen…"
                 className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              {query && (
+              {query !== '' ? (
                 <button
-                  onClick={() => { setQuery(''); }}
+                  onClick={() => {
+                    setQuery('');
+                  }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   <X size={14} />
                 </button>
-              )}
+              ) : null}
             </div>
 
             {isSearching ? (
-              <SearchResults query={debouncedQuery} groups={groups} friends={friends} />
+              <SearchResults
+                query={debouncedQuery}
+                groups={currentGroups}
+                friends={currentFriends}
+              />
             ) : (
               <>
                 <GroupsSection
-                  onCreateOpen={() => { setCreateOpen(true); }}
-                  onJoinOpen={() => { setJoinOpen(true); }}
+                  onCreateOpen={() => {
+                    setCreateOpen(true);
+                  }}
+                  onJoinOpen={() => {
+                    setJoinOpen(true);
+                  }}
                 />
                 <FriendsSection />
               </>
@@ -707,8 +761,18 @@ export function Social() {
         )}
       </div>
 
-      <CreateGroupModal open={createOpen} onClose={() => { setCreateOpen(false); }} />
-      <JoinGroupModal open={joinOpen} onClose={() => { setJoinOpen(false); }} />
+      <CreateGroupModal
+        open={createOpen}
+        onClose={() => {
+          setCreateOpen(false);
+        }}
+      />
+      <JoinGroupModal
+        open={joinOpen}
+        onClose={() => {
+          setJoinOpen(false);
+        }}
+      />
     </Layout>
   );
 }

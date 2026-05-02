@@ -9,7 +9,7 @@ const TABS = [
   { href: '/admin/settlement', label: 'Schulden' },
 ];
 
-export function AdminLayout({ children }: { children: React.ReactNode }) {
+export function AdminLayout({ children }: { children: React.ReactNode }): React.JSX.Element {
   const [location] = useLocation();
   return (
     <Layout>

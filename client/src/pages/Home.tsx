@@ -1,27 +1,28 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Star, ChevronRight, X } from 'lucide-react';
 import { Link } from 'wouter';
 import { Layout } from '../components/layout/Layout';
 import { TransactionList } from '../components/TransactionList';
-import { FeedTimeline, groupEntries } from '../components/FeedTimeline';
+import { FeedTimeline } from '../components/FeedTimeline';
+import { groupEntries } from '../lib/feed';
 import { useFavorites, useToggleFavorite } from '../hooks/useFavorites';
 import { useFeed } from '../hooks/useFeed';
 import { usePurchase, useTransactionHistory } from '../hooks/useTransactions';
 import { useVoucherMap } from '../hooks/useProst';
 import type { Favorite } from '@shared/types';
 import { formatCents, cn } from '../lib/utils';
-import { CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas';
+import { CATEGORY_LABELS } from '@shared/schemas';
 
 type CardState = { variantId: string; status: 'buying' | 'done' | 'error' } | null;
 
-function HomeFeedPreview() {
+function HomeFeedPreview(): React.JSX.Element {
   const { data, isLoading } = useFeed();
   const entries = groupEntries(data?.pages[0]?.data ?? []).slice(0, 3);
 
   return <FeedTimeline entries={entries} isLoading={isLoading} preGrouped />;
 }
 
-export function Home() {
+export function Home(): React.JSX.Element {
   const { data: favorites, isLoading } = useFavorites();
   const { data: txnData, isLoading: txnLoading } = useTransactionHistory();
   const { mutate: purchase } = usePurchase();
@@ -31,19 +32,23 @@ export function Home() {
 
   const recentTxns = (txnData?.pages[0]?.data ?? []).slice(0, 3);
 
-  const handleBuy = (fav: Favorite) => {
-    if (cardState || !fav.isAvailable) return;
+  const handleBuy = (fav: Favorite): void => {
+    if (cardState !== null || !fav.isAvailable) return;
     setCardState({ variantId: fav.variantId, status: 'buying' });
     purchase(
       { items: [{ buyableId: fav.buyableId, variantId: fav.variantId, quantity: 1 }] },
       {
         onSuccess: () => {
           setCardState({ variantId: fav.variantId, status: 'done' });
-          setTimeout(() => { setCardState(null); }, 900);
+          setTimeout(() => {
+            setCardState(null);
+          }, 900);
         },
         onError: () => {
           setCardState({ variantId: fav.variantId, status: 'error' });
-          setTimeout(() => { setCardState(null); }, 1200);
+          setTimeout(() => {
+            setCardState(null);
+          }, 1200);
         },
       },
     );
@@ -58,13 +63,13 @@ export function Home() {
             Favoriten
           </h2>
 
-          {isLoading && (
+          {isLoading ? (
             <div className="grid grid-cols-2 gap-3">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
               ))}
             </div>
-          )}
+          ) : null}
 
           {!isLoading && (!favorites || favorites.length === 0) && (
             <div className="rounded-2xl border border-dashed border-border p-8 text-center space-y-2">
@@ -76,7 +81,7 @@ export function Home() {
             </div>
           )}
 
-          {favorites && favorites.length > 0 && (
+          {favorites && favorites.length > 0 ? (
             <div className="grid grid-cols-2 gap-3">
               {favorites.map((fav) => {
                 const state = cardState?.variantId === fav.variantId ? cardState.status : null;
@@ -85,7 +90,9 @@ export function Home() {
                   <div key={fav.variantId} className="relative group">
                     <button
                       key={fav.variantId}
-                      onClick={() => { handleBuy(fav); }}
+                      onClick={() => {
+                        handleBuy(fav);
+                      }}
                       disabled={!!cardState || !fav.isAvailable}
                       className={cn(
                         'w-full h-full relative flex flex-col justify-between p-4 rounded-2xl border text-left transition-all overflow-hidden',
@@ -97,7 +104,7 @@ export function Home() {
                         fav.isAvailable && !!cardState && !state && 'opacity-50',
                       )}
                     >
-                      {fav.isAvailable && fav.activeDiscount && !state && (
+                      {fav.isAvailable && fav.activeDiscount && !state ? (
                         <div className="absolute top-0 right-0 bg-orange-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg pointer-events-none uppercase tracking-tighter text-center leading-tight">
                           <div>
                             {fav.activeDiscount.type === 'percent'
@@ -110,21 +117,21 @@ export function Home() {
                             </div>
                           )}
                         </div>
-                      )}
-                      {fav.category && (
+                      ) : null}
+                      {fav.category ? (
                         <span className="text-xs text-muted-foreground">
-                          {CATEGORY_LABELS[fav.category as BuyableCategory]}
+                          {CATEGORY_LABELS[fav.category]}
                         </span>
-                      )}
+                      ) : null}
                       <span className="font-semibold text-sm leading-tight pr-4">
                         {fav.buyableName}
                       </span>
                       <div className="flex items-end justify-between mt-1">
                         <span className="text-xs text-muted-foreground">{fav.variantName}</span>
                         <div className="flex items-center gap-1">
-                          {fav.isAvailable && voucherMap.has(fav.variantId) && !state && (
+                          {fav.isAvailable && voucherMap.has(fav.variantId) && !state ? (
                             <span className="text-sm">🎁</span>
-                          )}
+                          ) : null}
                           <span
                             className={cn(
                               'text-sm font-bold tabular-nums',
@@ -148,13 +155,13 @@ export function Home() {
                                       )}
                           </span>
                           {fav.isAvailable &&
-                            fav.activeDiscount &&
-                            !state &&
-                            !voucherMap.has(fav.variantId) && (
-                              <span className="text-[10px] text-muted-foreground line-through decoration-muted-foreground/30 font-normal">
-                                {formatCents(fav.price)}
-                              </span>
-                            )}
+                          fav.activeDiscount &&
+                          !state &&
+                          !voucherMap.has(fav.variantId) ? (
+                            <span className="text-[10px] text-muted-foreground line-through decoration-muted-foreground/30 font-normal">
+                              {formatCents(fav.price)}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </button>
@@ -177,7 +184,7 @@ export function Home() {
                 );
               })}
             </div>
-          )}
+          ) : null}
         </section>
 
         {/* Recent purchases */}

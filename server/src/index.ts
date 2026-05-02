@@ -8,7 +8,6 @@ import { apiReference } from '@scalar/hono-api-reference';
 import { sessionMiddleware } from './middleware/session.ts';
 import { APP_TZ } from './services/achievements.ts';
 import { globalRateLimit } from './middleware/rateLimit.ts';
-import { initOIDC } from './services/oidc.ts';
 import { initRedis } from './db/redis.ts';
 import { openApiSpec } from './openapi.ts';
 import authRoutes from './routes/auth.ts';
@@ -41,9 +40,9 @@ app.use(
   cors({
     // In production: only allow the configured APP_URL.
     // In development: reflect any origin so Vite's dev server (port 5173) works.
-    origin: (origin) => {
-      if (process.env.NODE_ENV !== 'production') return origin || null;
-      return process.env.APP_URL || null;
+    origin: (origin): string | null => {
+      if (process.env.NODE_ENV !== 'production') return origin;
+      return process.env.APP_URL ?? null;
     },
     credentials: true,
   }),
@@ -72,10 +71,10 @@ app.route('/api/achievements', achievementsRoutes);
 app.route('/api/jackpot', jackpotRoutes);
 app.route('/api/stats', statsRoutes);
 
-app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
+app.get('/health', (c): Response => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // Translate thrown errors that carry a status/code (e.g. from resolveItems) into proper responses
-app.onError((err, c) => {
+app.onError((err, c): Response => {
   const e = err as Error & { status?: number; code?: string };
   if (typeof e.status === 'number' && e.status >= 400 && e.status < 500) {
     return c.json(
@@ -89,7 +88,7 @@ app.onError((err, c) => {
 
 // ─── API Docs ─────────────────────────────────────────────────────────────────
 
-app.get('/api/openapi.json', (c) => c.json(openApiSpec));
+app.get('/api/openapi.json', (c): Response => c.json(openApiSpec));
 app.get(
   '/docs',
   apiReference({
@@ -108,7 +107,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // ─── Startup ──────────────────────────────────────────────────────────────────
 
-async function main() {
+async function main(): Promise<void> {
   await initRedis();
   console.log(`Starting BiFi with TZ: ${APP_TZ}`);
   const port = parseInt(process.env.PORT ?? '3000');
@@ -117,7 +116,7 @@ async function main() {
   });
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error('Startup failed:', err);
   process.exit(1);
 });

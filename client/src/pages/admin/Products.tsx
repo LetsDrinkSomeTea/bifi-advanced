@@ -7,11 +7,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import type { BuyableWithVariants } from '@shared/types';
 import { formatCents, cn } from '../../lib/utils';
-import { BUYABLE_CATEGORIES, CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas';
+import { BUYABLE_CATEGORIES, CATEGORY_LABELS } from '@shared/schemas';
 
 // ─── Create Product Modal ─────────────────────────────────────────────────────
 
-function CreateProductModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CreateProductModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}): React.JSX.Element {
   const [form, setForm] = useState({ name: '', category: '', variantName: '', variantPrice: '' });
   const [error, setError] = useState('');
   const qc = useQueryClient();
@@ -26,14 +32,16 @@ function CreateProductModal({ open, onClose }: { open: boolean; onClose: () => v
         },
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['buyables'] });
+      void qc.invalidateQueries({ queryKey: ['buyables'] });
       setForm({ name: '', category: '', variantName: '', variantPrice: '' });
       onClose();
     },
-    onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : 'Fehler');
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     const price = parseFloat(form.variantPrice);
     if (!form.name || !form.variantName || isNaN(price) || price < 0) {
@@ -50,7 +58,9 @@ function CreateProductModal({ open, onClose }: { open: boolean; onClose: () => v
           <label className="block text-sm font-medium mb-1">Produktname *</label>
           <input
             value={form.name}
-            onChange={(e) => { setForm((f) => ({ ...f, name: e.target.value })); }}
+            onChange={(e) => {
+              setForm((f) => ({ ...f, name: e.target.value }));
+            }}
             required
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -59,7 +69,9 @@ function CreateProductModal({ open, onClose }: { open: boolean; onClose: () => v
           <label className="block text-sm font-medium mb-1">Kategorie</label>
           <select
             value={form.category}
-            onChange={(e) => { setForm((f) => ({ ...f, category: e.target.value })); }}
+            onChange={(e) => {
+              setForm((f) => ({ ...f, category: e.target.value }));
+            }}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">Keine Kategorie</option>
@@ -77,14 +89,18 @@ function CreateProductModal({ open, onClose }: { open: boolean; onClose: () => v
           <div className="space-y-2">
             <input
               value={form.variantName}
-              onChange={(e) => { setForm((f) => ({ ...f, variantName: e.target.value })); }}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, variantName: e.target.value }));
+              }}
               required
               placeholder="Name (z.B. 0,5l) *"
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <input
               value={form.variantPrice}
-              onChange={(e) => { setForm((f) => ({ ...f, variantPrice: e.target.value })); }}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, variantPrice: e.target.value }));
+              }}
               required
               type="number"
               step="0.01"
@@ -94,7 +110,7 @@ function CreateProductModal({ open, onClose }: { open: boolean; onClose: () => v
             />
           </div>
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
         <button
           type="submit"
           disabled={isPending}
@@ -115,27 +131,31 @@ function AddVariantModal({
 }: {
   buyable: BuyableWithVariants | null;
   onClose: () => void;
-}) {
+}): React.JSX.Element {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [error, setError] = useState('');
   const qc = useQueryClient();
   const { mutate, isPending } = useMutation({
-    mutationFn: () =>
-      api.post(`/api/buyables/${buyable!.id}/variants`, {
+    mutationFn: () => {
+      if (!buyable) throw new Error('No product selected');
+      return api.post(`/api/buyables/${buyable.id}/variants`, {
         name,
         price: Math.round(parseFloat(price) * 100),
-      }),
+      });
+    },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['buyables'] });
+      void qc.invalidateQueries({ queryKey: ['buyables'] });
       setName('');
       setPrice('');
       onClose();
     },
-    onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : 'Fehler');
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     const p = parseFloat(price);
     if (!name || isNaN(p) || p < 0) {
@@ -152,7 +172,9 @@ function AddVariantModal({
           <label className="block text-sm font-medium mb-1">Name *</label>
           <input
             value={name}
-            onChange={(e) => { setName(e.target.value); }}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
             required
             autoFocus
             placeholder="z.B. 0,3l"
@@ -163,7 +185,9 @@ function AddVariantModal({
           <label className="block text-sm font-medium mb-1">Preis (€) *</label>
           <input
             value={price}
-            onChange={(e) => { setPrice(e.target.value); }}
+            onChange={(e) => {
+              setPrice(e.target.value);
+            }}
             required
             type="number"
             step="0.01"
@@ -172,7 +196,7 @@ function AddVariantModal({
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
         <button
           type="submit"
           disabled={isPending}
@@ -195,20 +219,22 @@ function VariantRow({
   buyableId: string;
   variant: BuyableWithVariants['variants'][0];
   parentActive: boolean;
-}) {
+}): React.JSX.Element {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(variant.name);
   const [price, setPrice] = useState((variant.price / 100).toString());
   const { mutate: update, isPending } = useUpdateVariant();
   const { mutate: toggleActive } = useUpdateVariant();
 
-  const handleSave = () => {
+  const handleSave = (): void => {
     const p = Math.round(parseFloat(price) * 100);
     if (!name || isNaN(p) || p < 0) return;
     update(
       { buyableId, variantId: variant.id, name, price: p },
       {
-        onSuccess: () => { setIsEditing(false); },
+        onSuccess: () => {
+          setIsEditing(false);
+        },
       },
     );
   };
@@ -220,7 +246,9 @@ function VariantRow({
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border/50 bg-accent/30">
         <input
           value={name}
-          onChange={(e) => { setName(e.target.value); }}
+          onChange={(e) => {
+            setName(e.target.value);
+          }}
           className="flex-1 min-w-0 px-2 py-1 rounded border border-input bg-background text-sm"
           autoFocus
         />
@@ -229,7 +257,9 @@ function VariantRow({
             type="number"
             step="0.01"
             value={price}
-            onChange={(e) => { setPrice(e.target.value); }}
+            onChange={(e) => {
+              setPrice(e.target.value);
+            }}
             className="w-full px-2 py-1 rounded border border-input bg-background text-sm pr-4"
           />
           <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
@@ -244,8 +274,10 @@ function VariantRow({
           <Check size={16} />
         </button>
         <button
-          onClick={() => { setIsEditing(false); }}
-          className="p-1.5 text-red-500 hover:bg-red-500/10rounded"
+          onClick={() => {
+            setIsEditing(false);
+          }}
+          className="p-1.5 text-red-500 hover:bg-red-500/10 rounded"
         >
           <X size={16} />
         </button>
@@ -269,7 +301,9 @@ function VariantRow({
           )}
         </div>
         <button
-          onClick={() => { setIsEditing(true); }}
+          onClick={() => {
+            setIsEditing(true);
+          }}
           disabled={!parentActive}
           className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-all ml-1 disabled:opacity-0"
         >
@@ -278,9 +312,9 @@ function VariantRow({
       </div>
       <div className="flex items-center gap-1">
         <button
-          onClick={() =>
-            { toggleActive({ buyableId, variantId: variant.id, isActive: !variant.isActive }); }
-          }
+          onClick={() => {
+            toggleActive({ buyableId, variantId: variant.id, isActive: !variant.isActive });
+          }}
           disabled={!parentActive}
           className={cn(
             'p-2 rounded-lg border transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed',
@@ -307,7 +341,7 @@ function ProductRow({
 }: {
   item: BuyableWithVariants;
   onAddVariant: () => void;
-}) {
+}): React.JSX.Element {
   const [expanded, setExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(item.name);
@@ -315,12 +349,14 @@ function ProductRow({
   const { mutate: update, isPending } = useUpdateBuyable();
   const { mutate: toggleActive } = useUpdateBuyable();
 
-  const handleSave = () => {
+  const handleSave = (): void => {
     if (!name) return;
     update(
       { id: item.id, name, category: category || null },
       {
-        onSuccess: () => { setIsEditing(false); },
+        onSuccess: () => {
+          setIsEditing(false);
+        },
       },
     );
   };
@@ -335,7 +371,9 @@ function ProductRow({
       {/* Product header */}
       <div className="flex items-center gap-2 px-4 py-3 group">
         <button
-          onClick={() => { setExpanded((e) => !e); }}
+          onClick={() => {
+            setExpanded((e) => !e);
+          }}
           className="flex items-center gap-2 flex-1 min-w-0 text-left"
         >
           {expanded ? (
@@ -345,11 +383,18 @@ function ProductRow({
           )}
 
           {isEditing ? (
-            <div className="flex flex-col gap-2 flex-1" onClick={(e) => { e.stopPropagation(); }}>
+            <div
+              className="flex flex-col gap-2 flex-1"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
               <div className="flex items-center gap-2">
                 <input
                   value={name}
-                  onChange={(e) => { setName(e.target.value); }}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                  }}
                   className="flex-1 min-w-0 px-2 py-1 rounded border border-input bg-background text-sm"
                   autoFocus
                 />
@@ -361,7 +406,9 @@ function ProductRow({
                   <Check size={16} />
                 </button>
                 <button
-                  onClick={() => { setIsEditing(false); }}
+                  onClick={() => {
+                    setIsEditing(false);
+                  }}
                   className="p-1.5 text-muted-foreground hover:bg-muted rounded"
                 >
                   <X size={16} />
@@ -369,7 +416,9 @@ function ProductRow({
               </div>
               <select
                 value={category}
-                onChange={(e) => { setCategory(e.target.value); }}
+                onChange={(e) => {
+                  setCategory(e.target.value);
+                }}
                 className="px-2 py-1 rounded border border-input bg-background text-xs w-full"
               >
                 <option value="">Keine Kategorie</option>
@@ -395,11 +444,11 @@ function ProductRow({
                 </button>
               </div>
               <div className="flex items-center gap-2">
-                {item.category && (
+                {item.category ? (
                   <span className="text-xs text-muted-foreground">
-                    {CATEGORY_LABELS[item.category as BuyableCategory] ?? item.category}
+                    {CATEGORY_LABELS[item.category]}
                   </span>
-                )}
+                ) : null}
                 {!item.isActive && <span className="text-xs text-muted-foreground">(inaktiv)</span>}
               </div>
             </div>
@@ -408,7 +457,9 @@ function ProductRow({
 
         {!isEditing && (
           <button
-            onClick={() => { toggleActive({ id: item.id, isActive: !item.isActive }); }}
+            onClick={() => {
+              toggleActive({ id: item.id, isActive: !item.isActive });
+            }}
             className={cn(
               'p-2 rounded-lg border transition-colors flex-shrink-0',
               item.isActive
@@ -423,7 +474,7 @@ function ProductRow({
       </div>
 
       {/* Variants */}
-      {expanded && (
+      {expanded ? (
         <div className="border-t border-border">
           {item.variants.map((v) => (
             <VariantRow key={v.id} buyableId={item.id} variant={v} parentActive={item.isActive} />
@@ -437,14 +488,14 @@ function ProductRow({
             Variante hinzufügen
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export function AdminProducts() {
+export function AdminProducts(): React.JSX.Element {
   const { data: items, isLoading } = useAllBuyables();
   const [createOpen, setCreateOpen] = useState(false);
   const [addVariantTarget, setAddVariantTarget] = useState<BuyableWithVariants | null>(null);
@@ -454,7 +505,9 @@ export function AdminProducts() {
       <div className="space-y-2">
         <div className="flex justify-end">
           <button
-            onClick={() => { setCreateOpen(true); }}
+            onClick={() => {
+              setCreateOpen(true);
+            }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
           >
             <Plus size={15} />
@@ -462,16 +515,22 @@ export function AdminProducts() {
           </button>
         </div>
 
-        {isLoading && (
+        {isLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />
             ))}
           </div>
-        )}
+        ) : null}
 
         {items?.map((item) => (
-          <ProductRow key={item.id} item={item} onAddVariant={() => { setAddVariantTarget(item); }} />
+          <ProductRow
+            key={item.id}
+            item={item}
+            onAddVariant={() => {
+              setAddVariantTarget(item);
+            }}
+          />
         ))}
 
         {!isLoading && items?.length === 0 && (
@@ -479,8 +538,18 @@ export function AdminProducts() {
         )}
       </div>
 
-      <CreateProductModal open={createOpen} onClose={() => { setCreateOpen(false); }} />
-      <AddVariantModal buyable={addVariantTarget} onClose={() => { setAddVariantTarget(null); }} />
+      <CreateProductModal
+        open={createOpen}
+        onClose={() => {
+          setCreateOpen(false);
+        }}
+      />
+      <AddVariantModal
+        buyable={addVariantTarget}
+        onClose={() => {
+          setAddVariantTarget(null);
+        }}
+      />
     </AdminLayout>
   );
 }

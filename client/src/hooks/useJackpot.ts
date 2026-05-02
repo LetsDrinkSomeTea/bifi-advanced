@@ -1,4 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import { api } from '../lib/api';
 
 export interface JackpotEligibility {
@@ -16,20 +22,24 @@ export interface SpinResult {
   variantName: string;
 }
 
-export function useJackpotEligibility() {
+export function useJackpotEligibility(): UseQueryResult<JackpotEligibility> {
   return useQuery<JackpotEligibility>({
     queryKey: ['jackpot', 'eligibility'],
     queryFn: () => api.get<JackpotEligibility>('/api/jackpot/eligibility'),
   });
 }
 
-export function useSpinJackpot() {
+export function useSpinJackpot(): UseMutationResult<
+  SpinResult,
+  Error,
+  { buyableId: string; variantId: string }
+> {
   const queryClient = useQueryClient();
   return useMutation<SpinResult, Error, { buyableId: string; variantId: string }>({
     mutationFn: (body) => api.post<SpinResult>('/api/jackpot/spin', body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      void queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      void queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
   });
 }

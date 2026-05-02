@@ -1,5 +1,5 @@
-import { useMemo, useState, useEffect } from 'react';
-import { Pencil, ChevronRight, BarChart2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Pencil, BarChart2 } from 'lucide-react';
 import { Link } from 'wouter';
 import { Layout } from '../components/layout/Layout';
 import { Modal } from '../components/Modal';
@@ -7,16 +7,17 @@ import { AchievementGrid } from '@/components/AchievementGrid';
 import { ActivityItem, type ActivityUser, ProfileLink } from '../components/ActivityItem';
 import { useAuth } from '../hooks/useAuth';
 import { usePublicProfile, useUpdateProfile } from '../hooks/useProfile';
-import { ProstVoucher, useProstVouchers } from '../hooks/useProst';
+import { type ProstVoucher, useProstVouchers } from '../hooks/useProst';
 import { formatCents, balanceColor, cn } from '../lib/utils';
+import { type Role } from '@shared/types';
 
-const ROLE_LABEL: Record<string, string> = {
+const ROLE_LABEL: Record<Role, string> = {
   admin: 'Admin',
   moderator: 'Moderator',
   member: 'Mitglied',
 };
 
-const ROLE_STYLE: Record<string, string> = {
+const ROLE_STYLE: Record<Role, string> = {
   admin: 'bg-primary/10 text-primary',
   moderator: 'bg-orange-500/10 text-orange-500',
   member: 'bg-muted text-muted-foreground',
@@ -32,7 +33,7 @@ function EditProfileModal({
   open: boolean;
   onClose: () => void;
   hasSso: boolean;
-}) {
+}): React.JSX.Element {
   const { user } = useAuth();
   const { mutate: update, isPending } = useUpdateProfile();
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
@@ -42,7 +43,7 @@ function EditProfileModal({
 
   const canEditName = !hasSso;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     const body: { displayName?: string; username?: string | null; avatarUrl?: string | null } = {
       avatarUrl: avatarUrl.trim() || null,
@@ -53,7 +54,9 @@ function EditProfileModal({
     }
     update(body, {
       onSuccess: onClose,
-      onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
+      onError: (err) => {
+        setError(err instanceof Error ? err.message : 'Fehler');
+      },
     });
   };
 
@@ -74,7 +77,7 @@ function EditProfileModal({
           />
         </div>
 
-        {canEditName && (
+        {canEditName ? (
           <>
             <div>
               <label className="block text-sm font-medium mb-1">Anzeigename</label>
@@ -102,9 +105,9 @@ function EditProfileModal({
               />
             </div>
           </>
-        )}
+        ) : null}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
         <button
           type="submit"
           disabled={isPending}
@@ -120,7 +123,7 @@ function EditProfileModal({
 type StackedVoucher = ProstVoucher & { count: number };
 
 // ─── Voucher Item ────────────────────────────────────────────────────────────────
-function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }) {
+function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }): React.JSX.Element {
   const { data: profile, isLoading } = usePublicProfile(voucher.fromUserId);
   const donor: ActivityUser = {
     id: voucher.fromUserId,
@@ -132,14 +135,14 @@ function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }) {
 
   return (
     <div className={cn('group relative', isStacked && 'mb-2 mr-2')}>
-      {isStacked && (
+      {isStacked ? (
         <>
           {/* Deepest layer */}
           <div className="pointer-events-none absolute inset-0 z-0 rounded-xl border border-border/50 bg-card translate-x-2 translate-y-2" />
           {/* Middle layer */}
           <div className="pointer-events-none absolute inset-0 z-0 rounded-xl border border-border/80 bg-card translate-x-1 translate-y-1" />
         </>
-      )}
+      ) : null}
       <ActivityItem
         user={donor}
         icon="🍺"
@@ -153,11 +156,11 @@ function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }) {
           {isLoading ? <span className="font-semibold">...</span> : <ProfileLink user={donor} />}
         </div>
         {/* Prominent, always-visible count badge */}
-        {isStacked && (
+        {isStacked ? (
           <span className="absolute -top-1.5 -right-1.5 z-20 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-lg">
             {voucher.count}x
           </span>
-        )}
+        ) : null}
       </ActivityItem>
     </div>
   );
@@ -165,16 +168,17 @@ function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export function Profile() {
+export function Profile(): React.JSX.Element {
   const { user } = useAuth();
   const { data: profile, isLoading: profileLoading } = usePublicProfile(user?.id);
   const { data: vouchers } = useProstVouchers();
   const [editOpen, setEditOpen] = useState(false);
   const stackedVouchers = useMemo<StackedVoucher[]>(() => {
-    if (!vouchers || vouchers.length === 0) return [];
+    const vList = vouchers ?? [];
+    if (vList.length === 0) return [];
 
     const grouped = new Map<string, StackedVoucher>();
-    for (const voucher of vouchers) {
+    for (const voucher of vList) {
       const key = `${voucher.fromUserId}::${voucher.variantId}::${voucher.amount}`;
       const existing = grouped.get(key);
       if (existing) {
@@ -206,9 +210,11 @@ export function Profile() {
           </div>
           <div className="flex-1 min-w-0 pt-1">
             <h1 className="text-xl font-bold truncate">{user?.displayName}</h1>
-            {user?.username && <p className="text-sm text-muted-foreground">@{user.username}</p>}
+            {user?.username ? (
+              <p className="text-sm text-muted-foreground">@{user.username}</p>
+            ) : null}
             <div className="flex items-center gap-2 mt-1">
-              {user?.role && (
+              {user?.role ? (
                 <span
                   className={cn(
                     'text-xs px-1.5 py-0.5 rounded-full font-medium',
@@ -217,11 +223,13 @@ export function Profile() {
                 >
                   {ROLE_LABEL[user.role]}
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
           <button
-            onClick={() => { setEditOpen(true); }}
+            onClick={() => {
+              setEditOpen(true);
+            }}
             className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0"
             title="Profil bearbeiten"
           >
@@ -281,7 +289,7 @@ export function Profile() {
         />
 
         {/* Prost vouchers */}
-        {stackedVouchers.length > 0 && (
+        {stackedVouchers.length > 0 ? (
           <div>
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Prost-Gutscheine 🍺
@@ -292,12 +300,14 @@ export function Profile() {
               ))}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
       <EditProfileModal
         open={editOpen}
-        onClose={() => { setEditOpen(false); }}
+        onClose={() => {
+          setEditOpen(false);
+        }}
         hasSso={profile?.hasSso ?? false}
       />
     </Layout>
@@ -312,25 +322,39 @@ const RANK_CATEGORY_LABELS: Record<string, string> = {
   jackpot_spins: 'Spins',
 };
 
-function RankCard({ rank }: { rank: { rank: number; categories: string[] } | null }) {
+function RankCard({
+  rank,
+}: {
+  rank: { rank: number; categories: string[] } | null;
+}): React.JSX.Element {
   return (
     <div className="rounded-xl border border-border bg-card px-3 py-3 text-center">
       <p className="text-xs text-muted-foreground mb-1">Rang</p>
-      <p className="text-xl font-bold leading-tight">{rank != null ? `#${rank.rank}` : '–'}</p>
-      {rank != null && (
+      <p className="text-xl font-bold leading-tight">{rank !== null ? `#${rank.rank}` : '–'}</p>
+      {rank !== null ? (
         <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
           {rank.categories.map((c) => RANK_CATEGORY_LABELS[c] ?? c).join(', ')}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }
 
-function StatCard({ label, value, small }: { label: string; value: string; small?: boolean }) {
+function StatCard({
+  label,
+  value,
+  small,
+}: {
+  label: string;
+  value: string;
+  small?: boolean;
+}): React.JSX.Element {
   return (
     <div className="rounded-xl border border-border bg-card px-3 py-3 text-center">
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      <p className={cn('font-bold leading-tight', small ? 'text-sm' : 'text-xl')}>{value}</p>
+      <p className={cn('font-bold leading-tight', (small ?? false) ? 'text-sm' : 'text-xl')}>
+        {value}
+      </p>
     </div>
   );
 }

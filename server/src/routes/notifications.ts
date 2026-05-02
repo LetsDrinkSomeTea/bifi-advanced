@@ -57,12 +57,13 @@ router.get('/count', requireAuth, async (c) => {
 
 // ─── GET /api/notifications/stream (SSE) ─────────────────────────────────────
 
-router.get('/stream', requireAuth, async (c) => {
+router.get('/stream', requireAuth, (c) => {
   const user = c.get('user');
 
   return streamSSE(c, async (stream) => {
-    const writer: (event: string, data: unknown) => Promise<void> = (event, data) =>
-      stream.writeSSE({ event, data: JSON.stringify(data) });
+    const writer = async (event: string, data: unknown): Promise<void> => {
+      await stream.writeSSE({ event, data: JSON.stringify(data) });
+    };
 
     addSSEClient(user.id, writer);
 
@@ -78,6 +79,7 @@ router.get('/stream', requireAuth, async (c) => {
       });
 
       // Keep-alive pings every 30 s
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       while (true) {
         await stream.sleep(30_000);
         await stream.writeSSE({ event: 'ping', data: '{}' });

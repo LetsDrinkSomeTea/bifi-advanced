@@ -22,7 +22,12 @@ interface Props {
 
 // ─── Card types ───────────────────────────────────────────────────────────────
 
-interface TierEntry { tier: AchievementTier; key: string; description: string; unlocked: boolean }
+interface TierEntry {
+  tier: AchievementTier;
+  key: string;
+  description: string;
+  unlocked: boolean;
+}
 
 interface GroupCard {
   kind: 'group';
@@ -61,8 +66,9 @@ function buildCards(unlockedMap: Map<string, Date>, meta: AchievementDef[]): Car
 
   for (const def of meta) {
     if (def.groupKey && def.tier) {
-      if (!groupMap.has(def.groupKey)) {
-        const card: GroupCard = {
+      let group = groupMap.get(def.groupKey);
+      if (!group) {
+        group = {
           kind: 'group',
           groupKey: def.groupKey,
           name: def.name,
@@ -73,10 +79,9 @@ function buildCards(unlockedMap: Map<string, Date>, meta: AchievementDef[]): Car
           highestUnlocked: null,
           latestUnlockedAt: null,
         };
-        groupMap.set(def.groupKey, card);
-        cards.push(card);
+        groupMap.set(def.groupKey, group);
+        cards.push(group);
       }
-      const group = groupMap.get(def.groupKey)!;
       const unlockedAt = unlockedMap.get(def.key) ?? null;
       const isUnlocked = unlockedAt !== null;
       group.tiers.push({
@@ -123,7 +128,51 @@ function buildCards(unlockedMap: Map<string, Date>, meta: AchievementDef[]): Car
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function TierBadge({ tier, unlocked }: { tier: AchievementTier; unlocked: boolean }) {
+const SEEN_ACHIEVEMENTS_KEY = 'bifi_seen_achievements';
+
+function useJustUnlocked(latestUnlockedAt: Date | null, id: string): boolean {
+  const [isJustUnlocked] = useState(() => {
+    if (!latestUnlockedAt) return false;
+
+    const now = Date.now();
+    const isRecent = now - latestUnlockedAt.getTime() < RECENT_UNLOCK_MS;
+
+    if (isRecent) {
+      try {
+        const seenStr = sessionStorage.getItem(SEEN_ACHIEVEMENTS_KEY) ?? '[]';
+        const seen = JSON.parse(seenStr) as string[];
+        return !seen.includes(id);
+      } catch {
+        return true;
+      }
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isJustUnlocked) {
+      try {
+        const seenStr = sessionStorage.getItem(SEEN_ACHIEVEMENTS_KEY) ?? '[]';
+        const seen = JSON.parse(seenStr) as string[];
+        if (!seen.includes(id)) {
+          sessionStorage.setItem(SEEN_ACHIEVEMENTS_KEY, JSON.stringify([...seen, id]));
+        }
+      } catch (err) {
+        console.error('Failed to update seen achievements', err);
+      }
+    }
+  }, [isJustUnlocked, id]);
+
+  return isJustUnlocked;
+}
+
+function TierBadge({
+  tier,
+  unlocked,
+}: {
+  tier: AchievementTier;
+  unlocked: boolean;
+}): React.JSX.Element {
   return (
     <span
       className={cn('text-sm leading-none', !unlocked && 'opacity-20 grayscale')}
@@ -142,17 +191,21 @@ function ProgressBar({
   value: number;
   max: number;
   format?: 'count' | 'cents';
-}) {
+}): React.JSX.Element {
   const [animWidth, setAnimWidth] = useState(0);
 
   useEffect(() => {
+    const targetWidth = Math.min(value / max, 1) * 100;
     const id = requestAnimationFrame(() => {
-      setAnimWidth(Math.min(value / max, 1) * 100);
+      setAnimWidth(targetWidth);
     });
-    return () => { cancelAnimationFrame(id); };
+    return () => {
+      cancelAnimationFrame(id);
+    };
   }, [value, max]);
 
-  const fmt = (v: number) => (format === 'cents' ? formatCents(v) : v.toLocaleString('de-DE'));
+  const fmt = (v: number): string =>
+    format === 'cents' ? formatCents(v) : v.toLocaleString('de-DE');
 
   return (
     <div className="w-full">
@@ -178,7 +231,7 @@ function GroupCardComponent({
   card: GroupCard;
   progress?: Record<string, number>;
   meta: AchievementDef[];
-}) {
+}): React.JSX.Element {
   const isHiddenAndLocked = card.hidden && !card.anyUnlocked;
   const tooltip = isHiddenAndLocked
     ? '???'
@@ -186,9 +239,7 @@ function GroupCardComponent({
         .map((t) => `${TIER_META[t.tier].emoji} ${t.description}${t.unlocked ? ' ✓' : ''}`)
         .join('\n');
 
-  const justUnlocked = card.latestUnlockedAt
-    ? Date.now() - card.latestUnlockedAt.getTime() < RECENT_UNLOCK_MS
-    : false;
+  const justUnlocked = useJustUnlocked(card.latestUnlockedAt, card.groupKey);
 
   // Progress bar: only for non-hidden groups with data, when next tier exists
   let progressBar: React.ReactNode = null;
@@ -196,11 +247,11 @@ function GroupCardComponent({
     const nextTier = card.tiers.find((t) => !t.unlocked);
     if (nextTier) {
       const def = meta.find((m) => m.key === nextTier.key);
-      if (def?.threshold !== undefined) {
-        const currentValue = progress[card.groupKey] ?? 0;
+      const cardProgress = progress[card.groupKey];
+      if (def?.threshold !== undefined && cardProgress) {
         progressBar = (
           <ProgressBar
-            value={currentValue}
+            value={cardProgress}
             max={def.threshold}
             format={def.progressFormat ?? 'count'}
           />
@@ -234,16 +285,14 @@ function GroupCardComponent({
           <TierBadge key={t.tier} tier={t.tier} unlocked={t.unlocked} />
         ))}
       </div>
-      {progressBar && <div className="w-full mt-0.5">{progressBar}</div>}
+      {progressBar ? <div className="w-full mt-0.5">{progressBar}</div> : null}
     </div>
   );
 }
 
-function StandaloneCardComponent({ card }: { card: StandaloneCard }) {
+function StandaloneCardComponent({ card }: { card: StandaloneCard }): React.JSX.Element {
   const isHiddenAndLocked = card.hidden && !card.unlocked;
-  const justUnlocked = card.unlockedAt
-    ? Date.now() - card.unlockedAt.getTime() < RECENT_UNLOCK_MS
-    : false;
+  const justUnlocked = useJustUnlocked(card.unlockedAt, card.key);
 
   return (
     <div
@@ -269,7 +318,12 @@ function StandaloneCardComponent({ card }: { card: StandaloneCard }) {
 
 // ─── Grid ─────────────────────────────────────────────────────────────────────
 
-export const AchievementGrid = ({ achievements, limit, allLink, progress }: Props) => {
+export const AchievementGrid = ({
+  achievements,
+  limit,
+  allLink,
+  progress,
+}: Props): React.JSX.Element => {
   const { data: meta, isLoading } = useAchievementMeta();
   const unlockedMap = new Map(achievements.map((a) => [a.key, new Date(a.unlockedAt)]));
 
@@ -292,15 +346,15 @@ export const AchievementGrid = ({ achievements, limit, allLink, progress }: Prop
     const aDate = a.kind === 'group' ? a.latestUnlockedAt : a.unlockedAt;
     const bDate = b.kind === 'group' ? b.latestUnlockedAt : b.unlockedAt;
 
-    const aLockedAndHidden = !aDate && a.hidden;
-    const bLockedAndHidden = !bDate && b.hidden;
+    const aLockedAndHidden = aDate === null && a.hidden;
+    const bLockedAndHidden = bDate === null && b.hidden;
 
     if (aLockedAndHidden && !bLockedAndHidden) return 1;
     if (!aLockedAndHidden && bLockedAndHidden) return -1;
 
-    if (!aDate && !bDate) return 0;
-    if (!aDate) return 1;
-    if (!bDate) return -1;
+    if (aDate === null && bDate === null) return 0;
+    if (aDate === null) return 1;
+    if (bDate === null) return -1;
 
     return bDate.getTime() - aDate.getTime();
   });
@@ -313,14 +367,14 @@ export const AchievementGrid = ({ achievements, limit, allLink, progress }: Prop
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
           Achievements
         </h2>
-        {allLink && (
+        {allLink ? (
           <Link
             href={allLink}
             className="flex items-center gap-0.5 text-xs text-primary hover:underline"
           >
             Alle <ChevronRight size={13} />
           </Link>
-        )}
+        ) : null}
       </div>
       {displayCards.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6">Noch keine Achievements</p>

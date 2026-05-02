@@ -6,6 +6,8 @@ import { useLeaderboard } from '../hooks/useLeaderboard';
 import { useAuth } from '../hooks/useAuth';
 import { formatCents, cn } from '../lib/utils';
 
+import type { LeaderboardEntry } from '@shared/types';
+
 type LeaderboardType =
   | 'total_spent'
   | 'total_purchases'
@@ -37,7 +39,7 @@ function formatValue(type: LeaderboardType, value: number | null): string {
   return String(value);
 }
 
-function RankMedal({ rank }: { rank: number }) {
+function RankMedal({ rank }: { rank: number }): React.JSX.Element {
   if (rank === 1) return <span className="text-xl leading-none">🥇</span>;
   if (rank === 2) return <span className="text-xl leading-none">🥈</span>;
   if (rank === 3) return <span className="text-xl leading-none">🥉</span>;
@@ -46,11 +48,12 @@ function RankMedal({ rank }: { rank: number }) {
   );
 }
 
-export function Leaderboard() {
+export function Leaderboard(): React.JSX.Element {
   const { user } = useAuth();
   const [type, setType] = useState<LeaderboardType>('total_spent');
   const [period, setPeriod] = useState<LeaderboardPeriod>('alltime');
   const { data, isLoading } = useLeaderboard(type, period);
+  const entries: LeaderboardEntry[] = data ?? [];
 
   return (
     <Layout>
@@ -65,7 +68,9 @@ export function Leaderboard() {
           {(Object.keys(TYPE_LABELS) as LeaderboardType[]).map((t) => (
             <button
               key={t}
-              onClick={() => { setType(t); }}
+              onClick={() => {
+                setType(t);
+              }}
               className={cn(
                 'flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors',
                 type === t
@@ -83,7 +88,9 @@ export function Leaderboard() {
           {(Object.keys(PERIOD_LABELS) as LeaderboardPeriod[]).map((p) => (
             <button
               key={p}
-              onClick={() => { setPeriod(p); }}
+              onClick={() => {
+                setPeriod(p);
+              }}
               className={cn(
                 'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
                 period === p
@@ -110,12 +117,12 @@ export function Leaderboard() {
                 <div className="w-16 h-4 rounded bg-muted" />
               </div>
             ))
-          ) : !data || data.length === 0 ? (
+          ) : entries.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
               Noch keine Einträge
             </div>
           ) : (
-            data.map((entry) => {
+            entries.map((entry) => {
               const isSelf = entry.userId === user?.id;
               return (
                 <Link key={entry.userId} href={isSelf ? '/profile' : `/profile/${entry.userId}`}>
@@ -129,7 +136,7 @@ export function Leaderboard() {
                       <RankMedal rank={entry.rank} />
                     </div>
                     <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold overflow-hidden flex-shrink-0">
-                      {entry.avatarUrl ? (
+                      {entry.avatarUrl !== null ? (
                         <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <span>{entry.displayName[0]?.toUpperCase()}</span>

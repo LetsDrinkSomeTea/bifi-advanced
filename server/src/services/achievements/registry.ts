@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { db } from '../../db/index.ts';
 import { users, transactions } from '../../db/schema.ts';
 import {
@@ -33,23 +33,36 @@ import {
 
 // ─── Registry Types ──────────────────────────────────────────────────────────
 
-export interface ServerAchievementDef extends AchievementDef {
-  events: AchievementEventType[];
-  check: (event: AchievementEvent) => Promise<boolean | number> | boolean | number;
+export interface ServerAchievementDef<
+  T extends AchievementEventType = AchievementEventType,
+> extends AchievementDef {
+  events: T[];
+  check: (
+    event: Extract<AchievementEvent, { type: T }>,
+  ) => Promise<boolean | number> | boolean | number;
   progress?: (userId: string) => Promise<number> | number;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
+ * Helper to define a standalone achievement.
+ */
+function defineAchievement<T extends AchievementEventType>(
+  def: ServerAchievementDef<T>,
+): ServerAchievementDef {
+  return def as unknown as ServerAchievementDef;
+}
+
+/**
  * Helper to define a tiered achievement (Bronze, Silver, Gold).
  * The 'check' or 'progress' function should return a numeric value.
  */
-function defineTieredAchievement(config: {
+function defineTieredAchievement<T extends AchievementEventType>(config: {
   groupKey: string;
   name: string;
   icon: string;
-  events: AchievementEventType[];
+  events: T[];
   hidden?: boolean;
   progressFormat?: 'count' | 'cents';
   tiers: {
@@ -58,7 +71,7 @@ function defineTieredAchievement(config: {
     threshold: number;
     hidden?: boolean;
   }[];
-  check?: (event: AchievementEvent) => Promise<number> | number;
+  check?: (event: Extract<AchievementEvent, { type: T }>) => Promise<number> | number;
   progress?: (userId: string) => Promise<number> | number;
 }): ServerAchievementDef[] {
   return config.tiers.map((t) => ({
@@ -73,9 +86,9 @@ function defineTieredAchievement(config: {
     hidden: t.hidden ?? config.hidden,
     events: config.events,
     progress: config.progress,
-    check: async (event) => {
+    check: async (event: AchievementEvent): Promise<boolean> => {
       const value = config.check
-        ? await config.check(event)
+        ? await config.check(event as Extract<AchievementEvent, { type: T }>)
         : config.progress
           ? await config.progress(event.userId)
           : 0;
@@ -264,7 +277,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   }),
 
   // ── Balance-related ────────────────────────────────────────────────────────
-  {
+  defineAchievement({
     key: 'pleite',
     name: 'Pleite',
     description: 'Kontostand fiel unter -10 €',
@@ -276,10 +289,10 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
         .select({ balance: users.balance })
         .from(users)
         .where(eq(users.id, e.userId));
-      return !!user && user.balance < -1000;
+      return (user?.balance ?? 0) < -1000;
     },
-  },
-  {
+  }),
+  defineAchievement({
     key: 'tief_verschuldet',
     name: 'Tief verschuldet',
     description: 'Kontostand fiel unter -20 €',
@@ -291,52 +304,52 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
         .select({ balance: users.balance })
         .from(users)
         .where(eq(users.id, e.userId));
-      return !!user && user.balance < -2000;
+      return (user?.balance ?? 0) < -2000;
     },
-  },
-  {
+  }),
+  defineAchievement({
     key: 'verantwortungsvoll',
     name: 'Verantwortungsvoll',
     description: 'Einen positiven Kontostand gehalten',
     icon: '💚',
     events: ['deposit'],
-    check: (e) => e.type === 'deposit' && e.balanceAfter > 0,
-  },
-  {
+    check: (e) => e.balanceAfter > 0,
+  }),
+  defineAchievement({
     key: 'passendes_kleingeld',
     name: 'Passendes Kleingeld',
     description: 'Exakten Betrag eingezahlt, um auf Null zu kommen',
     icon: '🪙',
     hidden: true,
     events: ['deposit'],
-    check: (e) => e.type === 'deposit' && e.balanceBefore < 0 && e.balanceBefore + e.amount === 0,
-  },
-  {
+    check: (e) => e.balanceBefore < 0 && e.balanceBefore + e.amount === 0,
+  }),
+  defineAchievement({
     key: 'grosse_einzahlung',
     name: 'Große Einzahlung',
     description: 'Einzahlung von 50 € oder mehr',
     icon: '💰',
     events: ['deposit'],
-    check: (e) => e.type === 'deposit' && e.amount >= 5000,
-  },
-  {
+    check: (e) => e.amount >= 5000,
+  }),
+  defineAchievement({
     key: 'finanz_phoenix',
     name: 'Finanz-Phönix',
     description: 'Von unter -20 € auf über 20 € in einer Einzahlung',
     icon: '🔥',
     hidden: true,
     events: ['deposit'],
-    check: (e) => e.type === 'deposit' && e.balanceBefore < -2000 && e.balanceAfter > 2000,
-  },
-  {
+    check: (e) => e.balanceBefore < -2000 && e.balanceAfter > 2000,
+  }),
+  defineAchievement({
     key: 'ich_habs_ja',
     name: 'Ich habs ja',
     description: 'Eingezahlt obwohl der Kontostand positiv war',
     icon: '😏',
     hidden: true,
     events: ['deposit'],
-    check: (e) => e.type === 'deposit' && e.balanceBefore > 0,
-  },
+    check: (e) => e.balanceBefore > 0,
+  }),
 
   ...defineTieredAchievement({
     groupKey: 'dagobert',
@@ -344,7 +357,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     icon: '🤑',
     events: ['deposit'],
     hidden: true,
-    check: (e) => (e.type === 'deposit' ? e.balanceAfter : 0),
+    check: (e) => e.balanceAfter,
     tiers: [
       {
         tier: 'bronze',
@@ -365,19 +378,18 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   }),
 
   // ── Tageszeit (standalone) ─────────────────────────────────────────────────
-  {
+  defineAchievement({
     key: 'fruher_vogel',
     name: 'Früher Vogel',
     description: 'Kauf zwischen 6 und 10 Uhr',
     icon: '🌅',
     events: ['purchase'],
     check: (e) => {
-      if (e.type !== 'purchase') return false;
       const h = getLocalHour(e.now);
       return h >= 6 && h < 10;
     },
-  },
-  {
+  }),
+  defineAchievement({
     key: 'morgenrote',
     name: 'Morgenröte',
     description: 'Kauf zwischen 4 und 6 Uhr früh',
@@ -385,12 +397,11 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     hidden: true,
     events: ['purchase'],
     check: (e) => {
-      if (e.type !== 'purchase') return false;
       const h = getLocalHour(e.now);
       return h >= 4 && h < 6;
     },
-  },
-  {
+  }),
+  defineAchievement({
     key: 'geisterstunde',
     name: 'Geisterstunde',
     description: 'Kauf um genau Mitternacht (±10 Sek.)',
@@ -398,38 +409,35 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     hidden: true,
     events: ['purchase'],
     check: (e) => {
-      if (e.type !== 'purchase') return false;
       const h = getLocalHour(e.now);
       const m = getLocalMinute(e.now);
       const s = getLocalSecond(e.now);
       return (h === 0 && m === 0 && s <= 10) || (h === 23 && m === 59 && s >= 50);
     },
-  },
-  {
+  }),
+  defineAchievement({
     key: 'happy_hour',
     name: 'Happy Hour',
     description: 'Kauf zwischen 16 und 18 Uhr',
     icon: '🍻',
     events: ['purchase'],
     check: (e) => {
-      if (e.type !== 'purchase') return false;
       const h = getLocalHour(e.now);
       return h >= 16 && h < 18;
     },
-  },
-  {
+  }),
+  defineAchievement({
     key: 'mittagspause',
     name: 'Mittagspause',
     description: 'Kauf zwischen 12 und 13 Uhr',
     icon: '☀️',
     events: ['purchase'],
     check: (e) => {
-      if (e.type !== 'purchase') return false;
       const h = getLocalHour(e.now);
       return h >= 12 && h < 13;
     },
-  },
-  {
+  }),
+  defineAchievement({
     key: 'monday_blues',
     name: 'Monday Blues',
     description: 'Mehr als 3 Getränke an einem Montag',
@@ -437,12 +445,11 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     hidden: true,
     events: ['purchase'],
     check: async (e) => {
-      if (e.type !== 'purchase') return false;
       if (getLocalWeekday(e.now) !== 1) return false;
       const count = await purchasesOnBiFiDay(e.userId, getBiFiDay(e.now));
       return count > 3;
     },
-  },
+  }),
 
   // ── Muster (tiered & standalone) ───────────────────────────────────────────
   ...defineTieredAchievement({
@@ -451,7 +458,6 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     icon: '🛍️',
     events: ['purchase'],
     check: async (e) => {
-      if (e.type !== 'purchase') return 0;
       return await purchasesOnBiFiDay(e.userId, getBiFiDay(e.now));
     },
     tiers: [
@@ -473,7 +479,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     ],
   }),
 
-  {
+  defineAchievement({
     key: 'schnellfeuer',
     name: 'Schnellfeuer',
     description: 'Mindestens 3 Käufe innerhalb einer Stunde mit je mind. 5 Min. Abstand',
@@ -481,7 +487,6 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     hidden: true,
     events: ['purchase'],
     check: async (e) => {
-      if (e.type !== 'purchase') return false;
       const oneHourAgo = new Date(e.now.getTime() - 60 * 60 * 1000);
       const recent = await db
         .select({ createdAt: transactions.createdAt })
@@ -491,12 +496,15 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       if (rows.length < 3) return false;
       const sorted = rows.map((r) => r.createdAt.getTime()).sort((a, b) => a - b);
       for (let i = 1; i < sorted.length; i++) {
-        if (sorted[i]! - sorted[i - 1]! < 5 * 60 * 1000) return false;
+        const current = sorted[i];
+        const previous = sorted[i - 1];
+        if (current !== undefined && previous !== undefined && current - previous < 5 * 60 * 1000)
+          return false;
       }
       return true;
     },
-  },
-  {
+  }),
+  defineAchievement({
     key: 'intervall_trinker',
     name: 'Intervall-Trinker',
     description: 'Drei aufeinanderfolgende Käufe mit gleichen Pausen (±1 Min.)',
@@ -504,19 +512,23 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     hidden: true,
     events: ['purchase'],
     check: async (e) => {
-      if (e.type !== 'purchase') return false;
       const lastThree = await db
         .select({ createdAt: transactions.createdAt })
         .from(transactions)
         .where(eq(transactions.userId, e.userId))
+        .orderBy(desc(transactions.createdAt))
         .limit(3);
       if (lastThree.length < 3) return false;
       const times = lastThree.map((r) => r.createdAt.getTime()).sort((a, b) => a - b);
-      const gap1 = times[1]! - times[0]!;
-      const gap2 = times[2]! - times[1]!;
+      const t0 = times[0];
+      const t1 = times[1];
+      const t2 = times[2];
+      if (t0 === undefined || t1 === undefined || t2 === undefined) return false;
+      const gap1 = t1 - t0;
+      const gap2 = t2 - t1;
       return Math.abs(gap1 - gap2) <= 60000;
     },
-  },
+  }),
 
   ...defineTieredAchievement({
     groupKey: 'tagliches_ritual',
@@ -524,7 +536,6 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     icon: '📅',
     events: ['purchase'],
     check: async (e) => {
-      if (e.type !== 'purchase') return 0;
       const all = await db
         .select({ createdAt: transactions.createdAt })
         .from(transactions)
@@ -533,8 +544,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       if (distinctDays.length === 0) return 0;
       let streak = 0;
       let current = getBiFiDay(e.now);
-      for (let i = 0; i < distinctDays.length; i++) {
-        if (distinctDays[i] === current) {
+      for (const day of distinctDays) {
+        if (day === current) {
           streak++;
           const d = new Date(new Date(current).getTime() - 24 * 60 * 60 * 1000);
           current = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -567,7 +578,6 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     icon: '🗓️',
     events: ['purchase'],
     check: async (e) => {
-      if (e.type !== 'purchase') return 0;
       const all = await db
         .select({ createdAt: transactions.createdAt })
         .from(transactions)
@@ -587,8 +597,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       let streak = 0;
       let yr = year,
         wk = week;
-      for (let i = 0; i < weekKeys.length; i++) {
-        if (weekKeys[i] === `${yr}-W${String(wk).padStart(2, '0')}`) {
+      for (const wkKey of weekKeys) {
+        if (wkKey === `${yr}-W${String(wk).padStart(2, '0')}`) {
           streak++;
           wk--;
           if (wk === 0) {
@@ -618,14 +628,13 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     ],
   }),
 
-  {
+  defineAchievement({
     key: 'weekend_warrior',
     name: 'Weekend-Warrior',
     description: 'An einem Wochenende sowohl Samstag als auch Sonntag gekauft',
     icon: '🏖️',
     events: ['purchase'],
     check: async (e) => {
-      if (e.type !== 'purchase') return false;
       const w = getLocalWeekday(e.now);
       if (w !== 6 && w !== 7) return false;
       const all = await db
@@ -639,8 +648,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       const days = new Set(all.map((r) => getBiFiDay(r.createdAt)));
       return days.has(todayStr) && days.has(otherStr);
     },
-  },
-  {
+  }),
+  defineAchievement({
     key: 'saisontrinker',
     name: 'Saisontrinker',
     description: 'In allen vier Jahreszeiten gekauft',
@@ -662,8 +671,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       }
       return seasons.size >= 4;
     },
-  },
-  {
+  }),
+  defineAchievement({
     key: 'feierlaune',
     name: 'Feierlaune',
     description: 'An einem Feiertag (Weihnachten, Neujahr, Halloween) gekauft',
@@ -671,13 +680,12 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     hidden: true,
     events: ['purchase'],
     check: (e) => {
-      if (e.type !== 'purchase') return false;
       const b = toLocalTime(e.now);
       const mm = b.getUTCMonth() + 1,
         dd = b.getUTCDate();
       return (mm === 12 && dd === 25) || (mm === 1 && dd === 1) || (mm === 10 && dd === 31);
     },
-  },
+  }),
 
   // ── Sozial (tiered & standalone) ───────────────────────────────────────────
   ...defineTieredAchievement({
@@ -686,7 +694,6 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     icon: '🥳',
     events: ['purchase'],
     check: (e) => {
-      if (e.type !== 'purchase') return 0;
       return e.items.reduce((s, i) => s + i.quantity, 0);
     },
     tiers: [
@@ -708,7 +715,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     ],
   }),
 
-  {
+  defineAchievement({
     key: 'wein_buddy',
     name: 'Wein-Buddy',
     description: 'Gruppenbestellung mit einem Wein',
@@ -716,21 +723,19 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     hidden: true,
     events: ['purchase'],
     check: (e) =>
-      e.type === 'purchase' &&
-      !!e.groupId &&
-      e.items.some((i) => i.buyableName.toLowerCase().includes('wein')),
-  },
-  {
+      e.groupId !== undefined && e.items.some((i) => i.buyableName.toLowerCase().includes('wein')),
+  }),
+  defineAchievement({
     key: 'party',
     name: 'Party',
     description: 'Erste Gruppenbestellung',
     icon: '🎊',
     events: ['purchase'],
-    check: (e) => e.type === 'purchase' && !!e.groupId,
-  },
+    check: (e) => e.groupId !== undefined,
+  }),
 
   // ── Lucky (standalone) ─────────────────────────────────────────────────────
-  {
+  defineAchievement({
     key: 'lucky_seven',
     name: 'Lucky Seven',
     description: 'Die 7., 77., 777., ... Transaktion im System',
@@ -738,7 +743,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     hidden: true,
     events: ['purchase'],
     check: async () => isAllSevens(await globalPurchaseCount()),
-  },
+  }),
 
   // ── Jackpot (tiered) ───────────────────────────────────────────────────────
   ...defineTieredAchievement({
@@ -824,24 +829,23 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       { tier: 'gold', description: '50 € gespart', threshold: 5000 },
     ],
   }),
-
   // ── Kontingent-Aktionen (hidden standalone) ─────────────────────────────────
-  {
+  defineAchievement({
     key: 'resteverwerter',
     name: 'Resteverwerter',
     description: 'Das letzte Stück einer Kontingent-Aktion gekauft',
     icon: '🗑️',
     hidden: true,
     events: ['promo_exhausted_buyer'],
-    check: (e) => e.type === 'promo_exhausted_buyer',
-  },
-  {
-    key: 'erster',
-    name: 'Erster!',
-    description: 'Als erstes aus einer neuen Kontingent-Aktion gekauft',
-    icon: '🚀',
+    check: () => true,
+  }),
+  defineAchievement({
+    key: 'promo_champion',
+    name: 'Aktions-Held',
+    description: 'Als Erster bei einer neuen Aktion zugeschlagen',
+    icon: '🥇',
     hidden: true,
     events: ['promo_first_buyer'],
-    check: (e) => e.type === 'promo_first_buyer',
-  },
+    check: () => true,
+  }),
 ]; // Ende von ACHIEVEMENT_REGISTRY

@@ -1,10 +1,13 @@
+import React from 'react';
 import { Layout } from '../components/layout/Layout';
 import { FeedTimeline } from '../components/FeedTimeline';
 import { useFeed } from '../hooks/useFeed';
 
-export function Feed() {
+import type { FeedEntry } from '../hooks/useFeed';
+
+export function Feed(): React.JSX.Element {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useFeed();
-  const entries = data?.pages.flatMap((p) => p.data) ?? [];
+  const entries: FeedEntry[] = data?.pages.flatMap((p) => p.data) ?? [];
 
   return (
     <Layout>
@@ -14,7 +17,9 @@ export function Feed() {
           entries={entries}
           isLoading={isLoading}
           hasNextPage={hasNextPage}
-          fetchNextPage={fetchNextPage}
+          fetchNextPage={() => {
+            void fetchNextPage();
+          }}
           isFetchingNextPage={isFetchingNextPage}
         />
       </div>

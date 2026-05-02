@@ -3,10 +3,11 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { and, eq } from 'drizzle-orm';
 import { db } from '../db/index.ts';
-import { buyables, buyableCategoryEnum, productVariants } from '../db/schema.ts';
+import { buyables, productVariants } from '../db/schema.ts';
 import { requireAuth, requireRole } from '../middleware/auth.ts';
 import { writeAuditLog } from '../services/audit.ts';
 import { getActiveDiscount, calculateDiscountedPrice } from '../services/promotions.ts';
+import { BUYABLE_CATEGORIES } from '../../../shared/src/schemas.ts';
 
 const router = new Hono();
 
@@ -55,8 +56,6 @@ router.get('/', requireAuth, async (c) => {
 
 // ─── POST /api/buyables ───────────────────────────────────────────────────────
 
-const BUYABLE_CATEGORIES = ['alcoholic', 'soft_drink', 'food', 'snack', 'other'] as const;
-
 const CreateBuyableSchema = z.object({
   name: z.string().min(1).max(80),
   imageUrl: z.string().url().optional(),
@@ -89,17 +88,25 @@ router.post(
         })
         .returning();
 
+      if (!buyable) {
+        throw new Error('Failed to create buyable');
+      }
+
       const [variant] = await tx
         .insert(productVariants)
         .values({
-          buyableId: buyable!.id,
+          buyableId: buyable.id,
           name: body.firstVariant.name,
           price: body.firstVariant.price,
           sortOrder: 0,
         })
         .returning();
 
-      return { buyable: buyable!, variant: variant! };
+      if (!variant) {
+        throw new Error('Failed to create variant');
+      }
+
+      return { buyable, variant };
     });
 
     await writeAuditLog({
@@ -201,8 +208,7 @@ router.post(
     const body = c.req.valid('json');
 
     const [parent] = await db.select().from(buyables).where(eq(buyables.id, id));
-    if (!parent?.isActive)
-      return c.json({ error: 'Buyable not found', code: 'NOT_FOUND' }, 404);
+    if (!parent?.isActive) return c.json({ error: 'Buyable not found', code: 'NOT_FOUND' }, 404);
 
     const [created] = await db
       .insert(productVariants)

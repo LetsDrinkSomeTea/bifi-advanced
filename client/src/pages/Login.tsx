@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth, useAuthConfig } from '../hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '../lib/utils';
 
-export function Login() {
+export function Login(): React.JSX.Element | null {
   const { user, isLoading } = useAuth();
   const { data: config, isLoading: configLoading } = useAuthConfig();
   const [, navigate] = useLocation();
@@ -33,11 +33,11 @@ export function Login() {
   const showOIDC = config?.oidcEnabled ?? true;
   const showLocal = config?.localEnabled ?? true;
 
-  const handleSSOLogin = () => {
+  const handleSSOLogin = (): void => {
     window.location.href = '/api/auth/login';
   };
 
-  const handleLocalLogin = async (e: React.FormEvent) => {
+  const handleLocalLogin = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
@@ -83,22 +83,22 @@ export function Login() {
           <p className="text-muted-foreground text-sm">Vereins-Getränkeliste</p>
         </div>
 
-        {(error || urlError) && (
+        {error || urlError ? (
           <div className="rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
             {error ?? (urlError ? (errorMessages[urlError] ?? 'Ein Fehler ist aufgetreten.') : '')}
           </div>
-        )}
+        ) : null}
 
-        {showOIDC && (
+        {showOIDC ? (
           <button
             onClick={handleSSOLogin}
             className="w-full py-2.5 px-4 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors text-sm"
           >
             Mit SSO anmelden
           </button>
-        )}
+        ) : null}
 
-        {showOIDC && showLocal && (
+        {showOIDC && showLocal ? (
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
@@ -107,16 +107,23 @@ export function Login() {
               <span className="bg-background px-2 text-muted-foreground">oder lokal anmelden</span>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {showLocal && (
-          <form onSubmit={handleLocalLogin} className="space-y-3">
+        {showLocal ? (
+          <form
+            onSubmit={(e) => {
+              void handleLocalLogin(e);
+            }}
+            className="space-y-3"
+          >
             <div>
               <label className="block text-sm font-medium mb-1.5">E-Mail oder Benutzername</label>
               <input
                 type="text"
                 value={login}
-                onChange={(e) => { setLogin(e.target.value); }}
+                onChange={(e) => {
+                  setLogin(e.target.value);
+                }}
                 className={cn(
                   'w-full px-3 py-2 rounded-md border bg-background text-sm',
                   'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
@@ -134,7 +141,9 @@ export function Login() {
               <input
                 type="password"
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); }}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                }}
                 className={cn(
                   'w-full px-3 py-2 rounded-md border bg-background text-sm',
                   'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
@@ -152,7 +161,7 @@ export function Login() {
               {submitting ? 'Anmelden…' : 'Anmelden'}
             </button>
           </form>
-        )}
+        ) : null}
       </div>
     </div>
   );

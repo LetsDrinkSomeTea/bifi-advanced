@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import { api } from '../lib/api';
 
 export interface ProstVoucher {
@@ -11,7 +17,7 @@ export interface ProstVoucher {
   createdAt: string;
 }
 
-export function useProstVouchers() {
+export function useProstVouchers(): UseQueryResult<ProstVoucher[]> {
   return useQuery<ProstVoucher[]>({
     queryKey: ['prost', 'vouchers'],
     queryFn: () => api.get<ProstVoucher[]>('/api/prost/vouchers'),
@@ -27,15 +33,19 @@ export function useVoucherMap(): Map<string, number> {
   return map;
 }
 
-export function useSendProst() {
+export function useSendProst(): UseMutationResult<
+  void,
+  Error,
+  { toUserId: string; variantId: string }
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ toUserId, variantId }: { toUserId: string; variantId: string }) =>
       api.post('/api/prost', { toUserId, variantId }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
-      qc.invalidateQueries({ queryKey: ['transactions'] });
-      qc.invalidateQueries({ queryKey: ['feed'] });
+      void qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+      void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['feed'] });
     },
   });
 }

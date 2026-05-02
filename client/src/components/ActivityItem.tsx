@@ -14,7 +14,7 @@ export function UserAvatar({
 }: {
   user: Pick<ActivityUser, 'displayName' | 'avatarUrl'>;
   className?: string;
-}) {
+}): React.JSX.Element {
   return (
     <div
       className={cn(
@@ -22,7 +22,7 @@ export function UserAvatar({
         className,
       )}
     >
-      {user.avatarUrl ? (
+      {user.avatarUrl !== null ? (
         <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
       ) : (
         <span>{user.displayName[0]?.toUpperCase()}</span>
@@ -37,7 +37,7 @@ export function ProfileLink({
 }: {
   user: Pick<ActivityUser, 'id' | 'displayName'>;
   className?: string;
-}) {
+}): React.JSX.Element {
   return (
     <Link href={`/profile/${user.id}`} className={cn('font-semibold hover:underline', className)}>
       {user.displayName}
@@ -61,7 +61,7 @@ export function ActivityItem({
   createdAt,
   children,
   className,
-}: ActivityItemProps) {
+}: ActivityItemProps): React.JSX.Element {
   return (
     <div className={cn('flex items-start gap-3', className)}>
       <div className="flex flex-col items-center flex-shrink-0">
@@ -69,13 +69,13 @@ export function ActivityItem({
           <Link href={`/profile/${user.id}`}>
             <UserAvatar user={user} />
           </Link>
-          {icon && (
+          {icon ? (
             <span className="absolute -bottom-1 -right-1 text-[11px] leading-none select-none bg-background rounded-full">
               {icon}
             </span>
-          )}
+          ) : null}
         </div>
-        {hasConnector && <div className="w-px bg-border mt-2 flex-1 min-h-[1.5rem]" />}
+        {hasConnector ? <div className="w-px bg-border mt-2 flex-1 min-h-[1.5rem]" /> : null}
       </div>
       <div className={cn('flex-1 min-w-0 pt-0.5', hasConnector && 'pb-3')}>
         <p className="text-sm leading-snug">{children}</p>

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { and, desc, eq, isNull, lt, or, sql } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import { promotions } from '../db/schema.ts';
 import { requireAuth } from '../middleware/auth.ts';
@@ -56,18 +56,22 @@ router.post('/', zValidator('json', PromotionSchema), async (c) => {
     })
     .returning();
 
+  if (!created) {
+    return c.json({ error: 'Failed to create promotion', code: 'CREATE_FAILED' }, 500);
+  }
+
   broadcastInvalidate(['buyables']);
 
   // Emit feed event if it's an immediate promotion
-  if (!created!.startTime && created!.isActive) {
+  if (!created.startTime && created.isActive) {
     emitFeedEvent({
       type: 'promotion_started',
       userId: user.id,
       metadata: {
-        promoName: created!.name,
-        discountPercent: created!.discountPercent ?? undefined,
-        discountFixedCents: created!.discountFixedCents ?? undefined,
-        quantityLimit: created!.quantityLimit ?? undefined,
+        promoName: created.name,
+        discountPercent: created.discountPercent ?? undefined,
+        discountFixedCents: created.discountFixedCents ?? undefined,
+        quantityLimit: created.quantityLimit ?? undefined,
       },
     });
   }
@@ -76,7 +80,7 @@ router.post('/', zValidator('json', PromotionSchema), async (c) => {
     actorId: user.id,
     action: 'promotion.created',
     resourceType: 'promotion',
-    resourceId: created!.id,
+    resourceId: created.id,
     changes: { after: created },
     ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
   });
@@ -112,19 +116,23 @@ router.patch('/:id', zValidator('json', PromotionSchema.partial()), async (c) =>
     .where(eq(promotions.id, id))
     .returning();
 
+  if (!updated) {
+    return c.json({ error: 'Failed to update promotion', code: 'UPDATE_FAILED' }, 500);
+  }
+
   broadcastInvalidate(['buyables']);
 
   // Emit feed event if isActive state changed AND it's not a scheduled promotion
-  if (!updated!.startTime && body.isActive !== undefined && body.isActive !== existing.isActive) {
+  if (!updated.startTime && body.isActive !== undefined && body.isActive !== existing.isActive) {
     if (body.isActive) {
       emitFeedEvent({
         type: 'promotion_started',
         userId: user.id,
         metadata: {
-          promoName: updated!.name,
-          discountPercent: updated!.discountPercent ?? undefined,
-          discountFixedCents: updated!.discountFixedCents ?? undefined,
-          quantityLimit: updated!.quantityLimit ?? undefined,
+          promoName: updated.name,
+          discountPercent: updated.discountPercent ?? undefined,
+          discountFixedCents: updated.discountFixedCents ?? undefined,
+          quantityLimit: updated.quantityLimit ?? undefined,
         },
       });
     } else {
@@ -132,7 +140,7 @@ router.patch('/:id', zValidator('json', PromotionSchema.partial()), async (c) =>
         type: 'promotion_ended',
         userId: user.id,
         metadata: {
-          promoName: updated!.name,
+          promoName: updated.name,
         },
       });
     }

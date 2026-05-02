@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, Trash2, Play, Square, Edit2, Calendar } from 'lucide-react';
 import { AdminLayout } from './AdminLayout';
 import { Modal } from '../../components/Modal';
@@ -20,7 +20,7 @@ function PromotionModal({
   open: boolean;
   onClose: () => void;
   promotion?: Promotion | null;
-}) {
+}): React.JSX.Element {
   const { mutate: create, isPending: creating } = useCreatePromotion();
   const { mutate: update, isPending: updating } = useUpdatePromotion();
   const { data: buyables } = useAllBuyables();
@@ -35,12 +35,21 @@ function PromotionModal({
   const [quantityLimit, setQuantityLimit] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  // Sync state when promotion or open state changes without using useEffect for internal resets
+  const [lastSyncId, setLastSyncId] = useState<string | null>(null);
+  const syncId = open ? (promotion?.id ?? 'new') : null;
+
+  if (syncId !== lastSyncId) {
+    setLastSyncId(syncId);
     if (open) {
       setName(promotion?.name ?? '');
-      setType(promotion?.discountFixedCents != null ? 'fixed' : 'percent');
+      setType(
+        promotion?.discountFixedCents !== null && promotion?.discountFixedCents !== undefined
+          ? 'fixed'
+          : 'percent',
+      );
       setValue(
-        promotion?.discountFixedCents != null
+        promotion?.discountFixedCents !== null && promotion?.discountFixedCents !== undefined
           ? (promotion.discountFixedCents / 100).toString()
           : (promotion?.discountPercent ?? '0').toString(),
       );
@@ -51,21 +60,39 @@ function PromotionModal({
       setQuantityLimit(promotion?.quantityLimit?.toString() ?? '');
       setError('');
     }
-  }, [open, promotion]);
+  }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
-    if (!name.trim()) { setError('Name ist erforderlich'); return; }
+    if (!name.trim()) {
+      setError('Name ist erforderlich');
+      return;
+    }
 
     const numericValue = parseFloat(value.replace(',', '.'));
-    if (isNaN(numericValue)) { setError('Ungültiger Wert'); return; }
+    if (isNaN(numericValue)) {
+      setError('Ungültiger Wert');
+      return;
+    }
 
     const parsedQty = quantityLimit.trim() ? parseInt(quantityLimit, 10) : null;
     if (parsedQty !== null && (isNaN(parsedQty) || parsedQty < 1)) {
-      setError('Kontingent muss eine positive Zahl sein'); return;
+      setError('Kontingent muss eine positive Zahl sein');
+      return;
     }
 
-    const body: any = {
+    interface PromotionPayload {
+      name: string;
+      discountPercent: number | null;
+      discountFixedCents: number | null;
+      startTime: string | null;
+      endTime: string | null;
+      appliesTo: { buyableId: string; variantId?: string } | null;
+      isActive: boolean;
+      quantityLimit: number | null;
+    }
+
+    const body: PromotionPayload = {
       name: name.trim(),
       discountPercent: type === 'percent' ? Math.round(numericValue) : null,
       discountFixedCents: type === 'fixed' ? Math.round(numericValue * 100) : null,
@@ -77,7 +104,7 @@ function PromotionModal({
             variantId: targetVariantId || undefined,
           }
         : null,
-      isActive: promotion ? promotion.isActive : true,
+      isActive: promotion?.isActive ?? true,
       quantityLimit: parsedQty,
     };
 
@@ -86,13 +113,17 @@ function PromotionModal({
         { id: promotion.id, ...body },
         {
           onSuccess: onClose,
-          onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
+          onError: (err) => {
+            setError(err instanceof Error ? err.message : 'Fehler');
+          },
         },
       );
     } else {
       create(body, {
         onSuccess: onClose,
-        onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Fehler');
+        },
       });
     }
   };
@@ -107,7 +138,9 @@ function PromotionModal({
           <input
             type="text"
             value={name}
-            onChange={(e) => { setName(e.target.value); }}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Happy Hour"
           />
@@ -118,7 +151,9 @@ function PromotionModal({
             <label className="block text-sm font-medium mb-1">Typ</label>
             <select
               value={type}
-              onChange={(e) => { setType(e.target.value as any); }}
+              onChange={(e) => {
+                setType(e.target.value as 'percent' | 'fixed');
+              }}
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="percent">Prozent (%)</option>
@@ -133,7 +168,9 @@ function PromotionModal({
               type="number"
               step={type === 'percent' ? '1' : '0.01'}
               value={value}
-              onChange={(e) => { setValue(e.target.value); }}
+              onChange={(e) => {
+                setValue(e.target.value);
+              }}
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -145,7 +182,9 @@ function PromotionModal({
             <input
               type="datetime-local"
               value={startTime}
-              onChange={(e) => { setStartTime(e.target.value); }}
+              onChange={(e) => {
+                setStartTime(e.target.value);
+              }}
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -154,7 +193,9 @@ function PromotionModal({
             <input
               type="datetime-local"
               value={endTime}
-              onChange={(e) => { setEndTime(e.target.value); }}
+              onChange={(e) => {
+                setEndTime(e.target.value);
+              }}
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -179,12 +220,16 @@ function PromotionModal({
           </select>
         </div>
 
-        {targetBuyableId && selectedBuyable && selectedBuyable.variants.length > 0 && (
+        {targetBuyableId !== '' &&
+        selectedBuyable !== undefined &&
+        selectedBuyable.variants.length > 0 ? (
           <div>
             <label className="block text-sm font-medium mb-1">Variante (optional)</label>
             <select
               value={targetVariantId}
-              onChange={(e) => { setTargetVariantId(e.target.value); }}
+              onChange={(e) => {
+                setTargetVariantId(e.target.value);
+              }}
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">Alle Varianten von {selectedBuyable.name}</option>
@@ -195,7 +240,7 @@ function PromotionModal({
               ))}
             </select>
           </div>
-        )}
+        ) : null}
 
         <div>
           <label className="block text-sm font-medium mb-1">Kontingent (optional)</label>
@@ -204,7 +249,9 @@ function PromotionModal({
             min="1"
             step="1"
             value={quantityLimit}
-            onChange={(e) => { setQuantityLimit(e.target.value); }}
+            onChange={(e) => {
+              setQuantityLimit(e.target.value);
+            }}
             placeholder="z.B. 20 (leer = unbegrenzt)"
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -214,21 +261,21 @@ function PromotionModal({
           </p>
         </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
 
         <button
           type="submit"
           disabled={creating || updating}
           className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
         >
-          {promotion ? 'Aktualisieren' : 'Rabatt erstellen'}
+          {promotion !== null && promotion !== undefined ? 'Aktualisieren' : 'Rabatt erstellen'}
         </button>
       </form>
     </Modal>
   );
 }
 
-export function AdminPromotions() {
+export function AdminPromotions(): React.JSX.Element {
   const { data: promotions, isLoading } = usePromotions();
   const { mutate: update } = useUpdatePromotion();
   const { mutate: remove } = useDeletePromotion();
@@ -237,16 +284,16 @@ export function AdminPromotions() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPromo, setSelectedPromo] = useState<Promotion | null>(null);
 
-  const handleEdit = (p: Promotion) => {
+  const handleEdit = (p: Promotion): void => {
     setSelectedPromo(p);
     setModalOpen(true);
   };
 
-  const handleToggle = (p: Promotion) => {
+  const handleToggle = (p: Promotion): void => {
     update({ id: p.id, isActive: !p.isActive });
   };
 
-  const getTargetLabel = (p: Promotion) => {
+  const getTargetLabel = (p: Promotion): string => {
     if (!p.appliesTo) return 'Alle Produkte';
     const b = buyables?.find((b) => b.id === p.appliesTo?.buyableId);
     if (!b) return 'Unbekanntes Produkt';
@@ -325,7 +372,7 @@ export function AdminPromotions() {
                         </span>
                       </div>
                     )}
-                    {(p.startTime || p.endTime) && (
+                    {p.startTime || p.endTime ? (
                       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                         <Calendar size={10} />
                         <span>
@@ -350,12 +397,14 @@ export function AdminPromotions() {
                             : '∞'}
                         </span>
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => { handleToggle(p); }}
+                      onClick={() => {
+                        handleToggle(p);
+                      }}
                       className={cn(
                         'p-2 rounded-lg transition-colors',
                         p.isActive
@@ -367,7 +416,9 @@ export function AdminPromotions() {
                       {p.isActive ? <Square size={16} /> : <Play size={16} />}
                     </button>
                     <button
-                      onClick={() => { handleEdit(p); }}
+                      onClick={() => {
+                        handleEdit(p);
+                      }}
                       className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                       title="Bearbeiten"
                     >
@@ -386,11 +437,11 @@ export function AdminPromotions() {
                 </div>
               </div>
             ))}
-            {promotions?.length === 0 && (
+            {(promotions?.length ?? 0) === 0 ? (
               <div className="text-center py-12 text-muted-foreground text-sm border-2 border-dashed border-border rounded-2xl">
                 Keine Rabatte konfiguriert
               </div>
-            )}
+            ) : null}
           </div>
         )}
       </div>

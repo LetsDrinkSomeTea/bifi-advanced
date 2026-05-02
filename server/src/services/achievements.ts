@@ -1,4 +1,4 @@
-import { and, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import {
   buyables,
@@ -10,12 +10,13 @@ import {
 } from '../db/schema.ts';
 import { emitFeedEvent } from './feed.ts';
 import { type AchievementEvent, type AchievementKey } from '../../../shared/src/achievements.ts';
+import { type BuyableCategory } from '../../../shared/src/types.ts';
 import { createNotification } from './notifications.ts';
 import { ACHIEVEMENT_REGISTRY } from './achievements/registry.ts';
 
 // ─── Timezone helpers (respects TZ env var) ──────────────────────────────────
 
-export const APP_TZ = process.env.TZ || 'Europe/Berlin';
+export const APP_TZ = process.env.TZ ?? 'Europe/Berlin';
 
 /** Converts any date to a Date object representing the same wall clock time in the configured TZ */
 export function toLocalTime(d: Date): Date {
@@ -82,9 +83,9 @@ export function isAllSevens(n: number): boolean {
 
 // ─── Reusable counters ────────────────────────────────────────────────────────
 
-const countQ = async (q: Promise<{ n: number }[]>) => (await q)[0]?.n ?? 0;
+const countQ = async (q: Promise<{ n: number }[]>): Promise<number> => (await q)[0]?.n ?? 0;
 
-export const purchaseCount = (userId: string) =>
+export const purchaseCount = (userId: string): Promise<number> =>
   countQ(
     db
       .select({ n: sql<number>`count(*)::int` })
@@ -98,7 +99,7 @@ export const purchaseCount = (userId: string) =>
       ),
   );
 
-export const prostSentCount = (userId: string) =>
+export const prostSentCount = (userId: string): Promise<number> =>
   countQ(
     db
       .select({ n: sql<number>`count(*)::int` })
@@ -106,7 +107,7 @@ export const prostSentCount = (userId: string) =>
       .where(eq(prostVouchers.fromUserId, userId)),
   );
 
-export const prostReceivedCount = (userId: string) =>
+export const prostReceivedCount = (userId: string): Promise<number> =>
   countQ(
     db
       .select({ n: sql<number>`count(*)::int` })
@@ -114,7 +115,7 @@ export const prostReceivedCount = (userId: string) =>
       .where(eq(prostVouchers.toUserId, userId)),
   );
 
-export const donationCount = (userId: string) =>
+export const donationCount = (userId: string): Promise<number> =>
   countQ(
     db
       .select({ n: sql<number>`count(*)::int` })
@@ -122,7 +123,7 @@ export const donationCount = (userId: string) =>
       .where(eq(donationContributions.userId, userId)),
   );
 
-export const unlockedAchievementCount = (userId: string) =>
+export const unlockedAchievementCount = (userId: string): Promise<number> =>
   countQ(
     db
       .select({ n: sql<number>`count(*)::int` })
@@ -130,7 +131,7 @@ export const unlockedAchievementCount = (userId: string) =>
       .where(eq(userAchievements.userId, userId)),
   );
 
-export const categoryItemCount = (userId: string, category: string) =>
+export const categoryItemCount = (userId: string, category: BuyableCategory): Promise<number> =>
   countQ(
     db
       .select({
@@ -144,7 +145,7 @@ export const categoryItemCount = (userId: string, category: string) =>
           eq(transactions.userId, userId),
           eq(transactions.type, 'purchase'),
           isNull(transactions.cancelledAt),
-          eq(buyables.category, category as any),
+          eq(buyables.category, category),
         ),
       ),
   );
@@ -163,7 +164,7 @@ export const purchasesOnBiFiDay = async (userId: string, bifiDay: string): Promi
   return rows.filter((r) => getBiFiDay(r.createdAt) === bifiDay).length;
 };
 
-export const globalPurchaseCount = () =>
+export const globalPurchaseCount = (): Promise<number> =>
   countQ(
     db
       .select({ n: sql<number>`count(*)::int` })
@@ -251,7 +252,7 @@ async function tryAward(userId: string, key: AchievementKey): Promise<void> {
   }
 }
 
-export const jackpotPlayCount = (userId: string) =>
+export const jackpotPlayCount = (userId: string): Promise<number> =>
   countQ(
     db
       .select({ n: sql<number>`count(*)::int` })
@@ -265,7 +266,7 @@ export const jackpotPlayCount = (userId: string) =>
       ),
   );
 
-export const jackpotWinCount = (userId: string) =>
+export const jackpotWinCount = (userId: string): Promise<number> =>
   countQ(
     db
       .select({ n: sql<number>`count(*)::int` })
@@ -280,7 +281,7 @@ export const jackpotWinCount = (userId: string) =>
       ),
   );
 
-export const jackpotLossCount = (userId: string) =>
+export const jackpotLossCount = (userId: string): Promise<number> =>
   countQ(
     db
       .select({ n: sql<number>`count(*)::int` })
@@ -295,7 +296,7 @@ export const jackpotLossCount = (userId: string) =>
       ),
   );
 
-export const discountedItemCount = (userId: string) =>
+export const discountedItemCount = (userId: string): Promise<number> =>
   countQ(
     db
       .select({
@@ -313,7 +314,7 @@ export const discountedItemCount = (userId: string) =>
       ),
   );
 
-export const totalSavedCents = (userId: string) =>
+export const totalSavedCents = (userId: string): Promise<number> =>
   countQ(
     db
       .select({

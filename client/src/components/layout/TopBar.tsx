@@ -28,13 +28,13 @@ function notificationHref(n: AppNotification): string | null {
   }
 }
 
-function NotificationDropdown({ onClose }: { onClose: () => void }) {
+function NotificationDropdown({ onClose }: { onClose: () => void }): React.JSX.Element {
   const { data: notifs } = useNotifications();
   const { mutate: markRead } = useMarkRead();
   const { mutate: markAll } = useMarkAllRead();
   const [, navigate] = useLocation();
 
-  const handleNavigate = (n: AppNotification) => {
+  const handleNavigate = (n: AppNotification): void => {
     markRead(n.id);
     const href = notificationHref(n);
     if (href) {
@@ -71,7 +71,9 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
           return (
             <div key={n.id} className="flex items-start border-b border-border last:border-0">
               <button
-                onClick={() => { handleNavigate(n); }}
+                onClick={() => {
+                  handleNavigate(n);
+                }}
                 className={cn(
                   'flex-1 text-left px-4 py-3 hover:bg-accent transition-colors min-w-0',
                   href && 'cursor-pointer',
@@ -85,7 +87,9 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
                 </p>
               </button>
               <button
-                onClick={() => { markRead(n.id); }}
+                onClick={() => {
+                  markRead(n.id);
+                }}
                 title="Als gelesen markieren"
                 className="flex-shrink-0 p-3 pt-3.5 text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -99,12 +103,12 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
   );
 }
 
-function AvatarMenuDropdown({ onClose }: { onClose: () => void }) {
+function AvatarMenuDropdown({ onClose }: { onClose: () => void }): React.JSX.Element {
   const { isModerator } = useAuth();
   const logout = useLogout();
   const [, navigate] = useLocation();
 
-  const go = (path: string) => {
+  const go = (path: string): void => {
     navigate(path);
     onClose();
   };
@@ -113,27 +117,31 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }) {
     <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-border bg-popover shadow-xl ring-1 ring-black/5 z-50 overflow-hidden">
       <div className="py-1.5">
         <button
-          onClick={() => { go('/profile'); }}
+          onClick={() => {
+            go('/profile');
+          }}
           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors"
         >
           <UserCircle size={16} className="text-muted-foreground flex-shrink-0" />
           Profil
         </button>
-        {isModerator && (
+        {isModerator ? (
           <button
-            onClick={() => { go('/admin/users'); }}
+            onClick={() => {
+              go('/admin/users');
+            }}
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors"
           >
             <ShieldCheck size={16} className="text-muted-foreground flex-shrink-0" />
             Admin
           </button>
-        )}
+        ) : null}
       </div>
       <div className="border-t border-border" />
       <div className="py-1.5">
         <button
           onClick={() => {
-            logout();
+            void logout();
             onClose();
           }}
           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
@@ -146,7 +154,7 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function TopBar() {
+export function TopBar(): React.JSX.Element {
   const { user } = useAuth();
   const { unreadCount, setUnreadCount } = useSSE();
   const { data: notifs } = useNotifications();
@@ -161,12 +169,14 @@ export function TopBar() {
 
   useEffect(() => {
     if (!notifOpen && !menuOpen) return;
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent): void => {
       if (notifOpen && !notifRef.current?.contains(e.target as Node)) setNotifOpen(false);
       if (menuOpen && !menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
     };
     document.addEventListener('mousedown', handler);
-    return () => { document.removeEventListener('mousedown', handler); };
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
   }, [notifOpen, menuOpen]);
 
   return (
@@ -174,14 +184,14 @@ export function TopBar() {
       <span className="font-bold text-base tracking-tight">🍺 BiFi</span>
 
       <div className="flex items-center gap-3">
-        {user && (
+        {user ? (
           <span
             title="Dein aktuelles Guthaben"
             className={cn('text-sm font-semibold tabular-nums', balanceColor(user.balance))}
           >
             {formatCents(user.balance)}
           </span>
-        )}
+        ) : null}
 
         {/* Notification bell */}
         <div ref={notifRef} className="relative">
@@ -200,11 +210,17 @@ export function TopBar() {
               </span>
             )}
           </button>
-          {notifOpen && <NotificationDropdown onClose={() => { setNotifOpen(false); }} />}
+          {notifOpen ? (
+            <NotificationDropdown
+              onClose={() => {
+                setNotifOpen(false);
+              }}
+            />
+          ) : null}
         </div>
 
         {/* Avatar menu */}
-        {user && (
+        {user ? (
           <div ref={menuRef} className="relative">
             <button
               onClick={() => {
@@ -220,9 +236,15 @@ export function TopBar() {
                 <span>{user.displayName[0]?.toUpperCase()}</span>
               )}
             </button>
-            {menuOpen && <AvatarMenuDropdown onClose={() => { setMenuOpen(false); }} />}
+            {menuOpen ? (
+              <AvatarMenuDropdown
+                onClose={() => {
+                  setMenuOpen(false);
+                }}
+              />
+            ) : null}
           </div>
-        )}
+        ) : null}
       </div>
     </header>
   );

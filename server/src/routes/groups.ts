@@ -109,8 +109,12 @@ router.post('/', requireAuth, zValidator('json', CreateGroupSchema), async (c) =
     })
     .returning();
 
+  if (!group) {
+    throw new Error('Failed to create group');
+  }
+
   await db.insert(groupMembers).values({
-    groupId: group!.id,
+    groupId: group.id,
     userId: user.id,
     role: 'owner',
   });
@@ -118,7 +122,7 @@ router.post('/', requireAuth, zValidator('json', CreateGroupSchema), async (c) =
   emitFeedEvent({
     type: 'group_created',
     userId: user.id,
-    targetGroupId: group!.id,
+    targetGroupId: group.id,
     metadata: { groupName: name },
   });
 
@@ -129,7 +133,7 @@ router.post('/', requireAuth, zValidator('json', CreateGroupSchema), async (c) =
 
 // ─── POST /api/groups/join ────────────────────────────────────────────────────
 
-const joinRateLimit = rateLimit(10, 300, (c) => `rl:join:${c.get('user')?.id ?? 'anon'}`);
+const joinRateLimit = rateLimit(10, 300, (c) => `rl:join:${c.get('user').id}`);
 
 router.post(
   '/join',

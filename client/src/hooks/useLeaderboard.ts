@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import type { LeaderboardEntry } from '@shared/types';
 
@@ -10,7 +10,10 @@ type LeaderboardType =
   | 'jackpot_spins';
 type LeaderboardPeriod = 'week' | 'month' | 'alltime';
 
-export function useLeaderboard(type: LeaderboardType, period: LeaderboardPeriod) {
+export function useLeaderboard(
+  type: LeaderboardType,
+  period: LeaderboardPeriod,
+): UseQueryResult<LeaderboardEntry[]> {
   return useQuery<LeaderboardEntry[]>({
     queryKey: ['leaderboard', type, period],
     queryFn: () => api.get<LeaderboardEntry[]>(`/api/leaderboard?type=${type}&period=${period}`),

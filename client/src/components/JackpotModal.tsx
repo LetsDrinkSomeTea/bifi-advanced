@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { X } from 'lucide-react';
 import { Modal } from './Modal';
 import { useSpinJackpot, type SpinResult } from '../hooks/useJackpot';
 import { formatCents, cn } from '../lib/utils';
@@ -13,7 +12,7 @@ const MULTIPLIERS: number[] = [
 const SEGMENT_DEG = 360 / MULTIPLIERS.length; // 18°
 
 function segmentColor(val: number): string {
-  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+  const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
   if (val <= 100) {
     const t = val / 90;
     return `hsl(142,${lerp(75, 65, t).toFixed(1)}%,${lerp(35, 45, t).toFixed(1)}%)`;
@@ -37,12 +36,12 @@ function Wheel({
   rotationDeg: number;
   animating: boolean;
   basePrice?: number;
-}) {
+}): React.JSX.Element {
   const cx = 200;
   const cy = 200;
   const r = 185;
   const rText = 145;
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const toRad = (deg: number): number => (deg * Math.PI) / 180;
 
   return (
     <div className="relative w-full max-w-[280px] mx-auto select-none aspect-square">
@@ -118,7 +117,7 @@ export function JackpotModal({
   basePrice: number;
   productName: string;
   variantName: string;
-}) {
+}): React.JSX.Element {
   const { mutateAsync: spin } = useSpinJackpot();
   const queryClient = useQueryClient();
   const [phase, setPhase] = useState<'ready' | 'spinning' | 'result'>('ready');
@@ -126,7 +125,7 @@ export function JackpotModal({
   const [totalRotation, setTotalRotation] = useState(0);
   const [animating, setAnimating] = useState(false);
 
-  const handleSpin = async () => {
+  const handleSpin = async (): Promise<void> => {
     setPhase('spinning');
     try {
       const result = await spin({ buyableId, variantId });
@@ -142,7 +141,7 @@ export function JackpotModal({
       setTimeout(() => {
         setAnimating(false);
         setPhase('result');
-        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+        void queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       }, 4200);
     } catch {
       setPhase('ready');
@@ -150,7 +149,19 @@ export function JackpotModal({
   };
 
   return (
-    <Modal open={open} onClose={phase === 'spinning' ? () => {} : onClose} title="Jackpot Spin">
+    <Modal
+      open={open}
+      onClose={
+        phase === 'spinning'
+          ? (): void => {
+              /* spinning, no close allowed */
+            }
+          : () => {
+              onClose();
+            }
+      }
+      title="Jackpot Spin"
+    >
       <div className="space-y-6 py-2">
         <div className="text-center">
           <p className="text-sm font-semibold">{productName}</p>
@@ -161,7 +172,7 @@ export function JackpotModal({
 
         <div className="relative">
           <Wheel rotationDeg={totalRotation} animating={animating} basePrice={basePrice} />
-          {phase === 'result' && spinResult && (
+          {phase === 'result' && spinResult ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="bg-background/95 backdrop-blur-sm border border-border rounded-2xl p-5 text-center shadow-xl mx-4 space-y-3 w-full">
                 <p className="text-4xl font-black">
@@ -195,12 +206,14 @@ export function JackpotModal({
                 </button>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
 
         {phase === 'ready' && (
           <button
-            onClick={handleSpin}
+            onClick={() => {
+              void handleSpin();
+            }}
             className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-bold text-lg active:scale-95 transition-transform"
           >
             Drehen!

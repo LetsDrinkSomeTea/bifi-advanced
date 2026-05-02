@@ -1,6 +1,7 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/index.ts';
-import { notifications } from '../db/schema.ts';
+import { notifications, type Notification } from '../db/schema.ts';
+import { type NotificationType } from '../../../shared/src/types.ts';
 
 // ─── SSE client registry ─────────────────────────────────────────────────────
 // NOTE: sseClients is process-local. In a multi-instance deployment, broadcastInvalidate
@@ -10,19 +11,23 @@ import { notifications } from '../db/schema.ts';
 type SSEWriter = (event: string, data: unknown) => Promise<void>;
 const sseClients = new Map<string, Set<SSEWriter>>();
 
-export function addSSEClient(userId: string, writer: SSEWriter) {
-  if (!sseClients.has(userId)) sseClients.set(userId, new Set());
-  sseClients.get(userId)!.add(writer);
+export function addSSEClient(userId: string, writer: SSEWriter): void {
+  let clients = sseClients.get(userId);
+  if (!clients) {
+    clients = new Set();
+    sseClients.set(userId, clients);
+  }
+  clients.add(writer);
 }
 
-export function removeSSEClient(userId: string, writer: SSEWriter) {
+export function removeSSEClient(userId: string, writer: SSEWriter): void {
   const set = sseClients.get(userId);
   if (!set) return;
   set.delete(writer);
   if (set.size === 0) sseClients.delete(userId);
 }
 
-async function pushToUser(userId: string, event: string, data: unknown) {
+async function pushToUser(userId: string, event: string, data: unknown): Promise<void> {
   const set = sseClients.get(userId);
   if (!set) return;
   const dead: SSEWriter[] = [];
@@ -33,24 +38,28 @@ async function pushToUser(userId: string, event: string, data: unknown) {
       dead.push(writer);
     }
   }
-  dead.forEach((w) => set.delete(w));
+  dead.forEach((w) => {
+    set.delete(w);
+  });
   if (set.size === 0) sseClients.delete(userId);
 }
 
 export function pushInvalidate(userId: string, keys: string[]): void {
-  pushToUser(userId, 'invalidate', { keys }).catch(() => {});
+  void pushToUser(userId, 'invalidate', { keys }).catch((err: unknown) => {
+    console.error(`SSE invalidate failed for user ${userId}:`, err);
+  });
 }
 
 export function broadcastInvalidate(keys: string[]): void {
   const payload = { keys };
   for (const userId of sseClients.keys()) {
-    pushToUser(userId, 'invalidate', payload).catch(() => {});
+    void pushToUser(userId, 'invalidate', payload).catch((err: unknown) => {
+      console.error(`SSE global invalidate failed for user ${userId}:`, err);
+    });
   }
 }
 
 // ─── Notification creation ────────────────────────────────────────────────────
-
-type NotifType = (typeof notifications.$inferInsert)['type'];
 
 export async function createNotification({
   userId,
@@ -60,15 +69,19 @@ export async function createNotification({
   relatedId,
 }: {
   userId: string;
-  type: NotifType;
+  type: NotificationType;
   title: string;
   message: string;
-  relatedId?: string;
-}) {
+  relatedId?: string | null;
+}): Promise<Notification> {
   const [notif] = await db
     .insert(notifications)
     .values({ userId, type, title, message, relatedId: relatedId ?? null })
     .returning();
+
+  if (!notif) {
+    throw new Error('Failed to create notification');
+  }
 
   const [countRow] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -76,8 +89,12 @@ export async function createNotification({
     .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
 
   // Push new notification + updated unread count to any open SSE connections
-  await pushToUser(userId, 'notification', notif);
-  await pushToUser(userId, 'unread_count', { count: countRow?.count ?? 0 });
+  void pushToUser(userId, 'notification', notif).catch((err: unknown) => {
+    console.error('SSE notification push failed:', err);
+  });
+  void pushToUser(userId, 'unread_count', { count: countRow?.count ?? 0 }).catch((err: unknown) => {
+    console.error('SSE unread count push failed:', err);
+  });
 
-  return notif!;
+  return notif;
 }

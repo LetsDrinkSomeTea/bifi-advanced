@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
-import { and, desc, eq, gte, ilike, isNull, or, sql, sum, avg } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull, or, sql, type SQL } from 'drizzle-orm';
+import { type AnyPgTable, type PgColumn } from 'drizzle-orm/pg-core';
 import { db } from '../db/index.ts';
 import {
   buyables,
@@ -12,13 +13,57 @@ import {
   users,
 } from '../db/schema.ts';
 import { requireAuth } from '../middleware/auth.ts';
-import { getLocalHour, getLocalWeekday, toLocalTime } from '../services/achievements.ts';
+import { getLocalHour, getLocalWeekday } from '../services/achievements.ts';
+import { type BuyableCategory } from '../../../shared/src/types.ts';
 
 const router = new Hono();
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Interfaces ───────────────────────────────────────────────────────────────
 
-function getPeriodFilter(period: string | undefined) {
+interface FinanceStats {
+  totalSpent: number;
+  avgPerMonth: number;
+  avgPerTransaction: number;
+  biggestPurchase: number;
+  currentBalance: number;
+  totalSaved: number;
+  discountedItemCount: number;
+}
+
+interface ConsumptionStats {
+  topItems: { name: string; count: number }[];
+  categories: { category: BuyableCategory | null; count: number }[];
+  weekdayCounts: Record<number, number>;
+  hourCounts: Record<number, number>;
+  totalPurchases: number;
+}
+
+interface SocialStats {
+  prostSent: number;
+  prostReceived: number;
+  nudgeSent: number;
+  nudgeReceived: number;
+  topRecipient: { displayName: string; count: number } | null;
+  topSender: { displayName: string; count: number } | null;
+}
+
+interface JackpotStats {
+  totalSpins: number;
+  balance: number;
+  wins: number;
+  losses: number;
+  avgMultiplier: number;
+}
+
+interface UserStats {
+  finances: FinanceStats | null;
+  consumption: ConsumptionStats | null;
+  social: SocialStats | null;
+  jackpot: JackpotStats | null;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function getPeriodFilter(period: string | undefined): ReturnType<typeof gte> | null {
   const now = new Date();
   if (period === 'week') {
     const d = new Date(now);
@@ -33,7 +78,10 @@ function getPeriodFilter(period: string | undefined) {
   return null;
 }
 
-function getPeriodFilterGeneric(table: any, period: string | undefined) {
+function getPeriodFilterGeneric(
+  table: AnyPgTable & { createdAt: PgColumn },
+  period: string | undefined,
+): SQL | null {
   const now = new Date();
   let d: Date | null = null;
   if (period === 'week') {
@@ -76,9 +124,10 @@ router.get('/user/:id', requireAuth, async (c) => {
   const rel = await getRelationship(self.id, id);
 
   const txnFilter = getPeriodFilter(period);
-  const genericFilter = (table: any) => getPeriodFilterGeneric(table, period);
+  const genericFilter = (table: AnyPgTable & { createdAt: PgColumn }): SQL | null =>
+    getPeriodFilterGeneric(table, period);
 
-  const stats: any = {
+  const stats: UserStats = {
     finances: null,
     consumption: null,
     social: null,
@@ -100,7 +149,7 @@ router.get('/user/:id', requireAuth, async (c) => {
           eq(transactions.userId, id),
           eq(transactions.type, 'purchase'),
           isNull(transactions.cancelledAt),
-          txnFilter ? txnFilter : sql`true`,
+          txnFilter ?? sql`true`,
         ),
       );
 
@@ -116,16 +165,21 @@ router.get('/user/:id', requireAuth, async (c) => {
           eq(transactions.userId, id),
           eq(transactions.type, 'purchase'),
           isNull(transactions.cancelledAt),
-          txnFilter ? txnFilter : sql`true`,
+          txnFilter ?? sql`true`,
         ),
       );
 
-    stats.finances = {
-      ...financeData,
-      currentBalance: self.balance,
-      totalSaved: discountData?.totalSaved ?? 0,
-      discountedItemCount: discountData?.discountedItemCount ?? 0,
-    };
+    if (financeData) {
+      stats.finances = {
+        totalSpent: financeData.totalSpent,
+        avgPerMonth: financeData.avgPerMonth,
+        avgPerTransaction: financeData.avgPerTransaction,
+        biggestPurchase: financeData.biggestPurchase,
+        currentBalance: self.balance,
+        totalSaved: discountData?.totalSaved ?? 0,
+        discountedItemCount: discountData?.discountedItemCount ?? 0,
+      };
+    }
   }
 
   // 2. Consumption (Self & Friends)
@@ -140,14 +194,14 @@ router.get('/user/:id', requireAuth, async (c) => {
           eq(transactions.userId, id),
           eq(transactions.type, 'purchase'),
           isNull(transactions.cancelledAt),
-          txnFilter ? txnFilter : sql`true`,
+          txnFilter ?? sql`true`,
         ),
       )
       .groupBy(buyables.id, buyables.name)
       .orderBy(desc(sql`count(*)`))
       .limit(3);
 
-    const categories = await db
+    const categoriesResult = await db
       .select({ category: buyables.category, count: sql<number>`count(*)::int` })
       .from(transactionItems)
       .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
@@ -157,10 +211,15 @@ router.get('/user/:id', requireAuth, async (c) => {
           eq(transactions.userId, id),
           eq(transactions.type, 'purchase'),
           isNull(transactions.cancelledAt),
-          txnFilter ? txnFilter : sql`true`,
+          txnFilter ?? sql`true`,
         ),
       )
       .groupBy(buyables.category);
+
+    const categories = categoriesResult.map((r) => ({
+      category: r.category as BuyableCategory | null,
+      count: r.count,
+    }));
 
     const allTxns = await db
       .select({ createdAt: transactions.createdAt })
@@ -170,7 +229,7 @@ router.get('/user/:id', requireAuth, async (c) => {
           eq(transactions.userId, id),
           eq(transactions.type, 'purchase'),
           isNull(transactions.cancelledAt),
-          txnFilter ? txnFilter : sql`true`,
+          txnFilter ?? sql`true`,
         ),
       );
 
@@ -196,43 +255,41 @@ router.get('/user/:id', requireAuth, async (c) => {
   const nf = genericFilter(nudges);
   const pvf = genericFilter(prostVouchers);
 
-  const [prostSent] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(prostVouchers)
-    .where(and(eq(prostVouchers.fromUserId, id), pvf ? pvf : sql`true`));
-
-  const [prostReceived] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(prostVouchers)
-    .where(and(eq(prostVouchers.toUserId, id), pvf ? pvf : sql`true`));
-
-  const [nudgeSent] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(nudges)
-    .where(and(eq(nudges.senderId, id), nf ? nf : sql`true`));
-
-  const [nudgeReceived] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(nudges)
-    .where(and(eq(nudges.recipientId, id), nf ? nf : sql`true`));
-
-  const [topRecipient] = await db
-    .select({ displayName: users.displayName, count: sql<number>`count(*)::int` })
-    .from(prostVouchers)
-    .innerJoin(users, eq(prostVouchers.toUserId, users.id))
-    .where(and(eq(prostVouchers.fromUserId, id), pvf ? pvf : sql`true`))
-    .groupBy(users.id, users.displayName)
-    .orderBy(desc(sql`count(*)`))
-    .limit(1);
-
-  const [topSender] = await db
-    .select({ displayName: users.displayName, count: sql<number>`count(*)::int` })
-    .from(prostVouchers)
-    .innerJoin(users, eq(prostVouchers.fromUserId, users.id))
-    .where(and(eq(prostVouchers.toUserId, id), pvf ? pvf : sql`true`))
-    .groupBy(users.id, users.displayName)
-    .orderBy(desc(sql`count(*)`))
-    .limit(1);
+  const [[prostSent], [prostReceived], [nudgeSent], [nudgeReceived], [topRecipient], [topSender]] =
+    await Promise.all([
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(prostVouchers)
+        .where(and(eq(prostVouchers.fromUserId, id), pvf ?? sql`true`)),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(prostVouchers)
+        .where(and(eq(prostVouchers.toUserId, id), pvf ?? sql`true`)),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(nudges)
+        .where(and(eq(nudges.senderId, id), nf ?? sql`true`)),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(nudges)
+        .where(and(eq(nudges.recipientId, id), nf ?? sql`true`)),
+      db
+        .select({ displayName: users.displayName, count: sql<number>`count(*)::int` })
+        .from(prostVouchers)
+        .innerJoin(users, eq(prostVouchers.toUserId, users.id))
+        .where(and(eq(prostVouchers.fromUserId, id), pvf ?? sql`true`))
+        .groupBy(users.id, users.displayName)
+        .orderBy(desc(sql`count(*)`))
+        .limit(1),
+      db
+        .select({ displayName: users.displayName, count: sql<number>`count(*)::int` })
+        .from(prostVouchers)
+        .innerJoin(users, eq(prostVouchers.fromUserId, users.id))
+        .where(and(eq(prostVouchers.toUserId, id), pvf ?? sql`true`))
+        .groupBy(users.id, users.displayName)
+        .orderBy(desc(sql`count(*)`))
+        .limit(1),
+    ]);
 
   stats.social = {
     prostSent: prostSent?.count ?? 0,
@@ -260,7 +317,7 @@ router.get('/user/:id', requireAuth, async (c) => {
           eq(transactions.userId, id),
           eq(transactions.type, 'jackpot'),
           isNull(transactions.cancelledAt),
-          txnFilter ? txnFilter : sql`true`,
+          txnFilter ?? sql`true`,
         ),
       );
 
@@ -281,7 +338,8 @@ router.get('/user/:id', requireAuth, async (c) => {
 router.get('/system', requireAuth, async (c) => {
   const period = c.req.query('period');
   const txnFilter = getPeriodFilter(period);
-  const genericFilter = (table: any) => getPeriodFilterGeneric(table, period);
+  const genericFilter = (table: AnyPgTable & { createdAt: PgColumn }): SQL | null =>
+    getPeriodFilterGeneric(table, period);
 
   const [userCount] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -290,19 +348,19 @@ router.get('/system', requireAuth, async (c) => {
   const [txnCount] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(transactions)
-    .where(and(isNull(transactions.cancelledAt), txnFilter ? txnFilter : sql`true`));
+    .where(and(isNull(transactions.cancelledAt), txnFilter ?? sql`true`));
 
   const nf = genericFilter(nudges);
   const [nudgeCount] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(nudges)
-    .where(nf ? nf : sql`true`);
+    .where(nf ?? sql`true`);
 
   const gf = genericFilter(groups);
   const [groupCount] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(groups)
-    .where(gf ? gf : sql`true`);
+    .where(gf ?? sql`true`);
 
   const [financeStats] = await db
     .select({
@@ -315,7 +373,7 @@ router.get('/system', requireAuth, async (c) => {
       and(
         eq(transactions.type, 'purchase'),
         isNull(transactions.cancelledAt),
-        txnFilter ? txnFilter : sql`true`,
+        txnFilter ?? sql`true`,
       ),
     );
 
@@ -328,7 +386,7 @@ router.get('/system', requireAuth, async (c) => {
       and(
         isNull(transactions.cancelledAt),
         or(eq(buyables.category, 'alcoholic'), eq(buyables.category, 'soft_drink')),
-        txnFilter ? txnFilter : sql`true`,
+        txnFilter ?? sql`true`,
       ),
     );
 
@@ -337,7 +395,7 @@ router.get('/system', requireAuth, async (c) => {
     .from(transactionItems)
     .innerJoin(buyables, eq(transactionItems.buyableId, buyables.id))
     .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
-    .where(and(isNull(transactions.cancelledAt), txnFilter ? txnFilter : sql`true`))
+    .where(and(isNull(transactions.cancelledAt), txnFilter ?? sql`true`))
     .groupBy(buyables.id, buyables.name)
     .orderBy(desc(sql`sum(${transactionItems.quantity})`))
     .limit(1);
@@ -353,7 +411,7 @@ router.get('/system', requireAuth, async (c) => {
       and(
         eq(transactions.type, 'jackpot'),
         isNull(transactions.cancelledAt),
-        txnFilter ? txnFilter : sql`true`,
+        txnFilter ?? sql`true`,
       ),
     );
 
@@ -361,7 +419,7 @@ router.get('/system', requireAuth, async (c) => {
   const [totalProst] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(prostVouchers)
-    .where(pvf ? pvf : sql`true`);
+    .where(pvf ?? sql`true`);
 
   const [systemDiscountData] = await db
     .select({
@@ -370,7 +428,7 @@ router.get('/system', requireAuth, async (c) => {
     })
     .from(transactionItems)
     .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
-    .where(and(isNull(transactions.cancelledAt), txnFilter ? txnFilter : sql`true`));
+    .where(and(isNull(transactions.cancelledAt), txnFilter ?? sql`true`));
 
   const revenue = financeStats?.totalRevenue ?? 0;
   const usersActive = userCount?.count ?? 1;
@@ -382,7 +440,7 @@ router.get('/system', requireAuth, async (c) => {
     totalGroups: groupCount?.count ?? 0,
     totalRevenue: revenue,
     avgTransactionAmount: financeStats?.avgTransaction ?? 0,
-    avgRevenuePerMember: Math.round(revenue / usersActive),
+    avgRevenuePerMember: Math.round(revenue / (usersActive || 1)),
     totalDrinksConsumed: drinkCount?.count ?? 0,
     mostPopularItem: topItem ?? null,
     biggestPurchase: financeStats?.biggestPurchase ?? 0,

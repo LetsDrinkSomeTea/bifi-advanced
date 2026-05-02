@@ -1,9 +1,9 @@
+import { type MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { db } from '../db/index.ts';
 import { users } from '../db/schema.ts';
 import { eq } from 'drizzle-orm';
-
-export type Role = 'admin' | 'moderator' | 'member';
+import { type Role } from '../../../shared/src/types.ts';
 
 const ROLE_LEVEL: Record<Role, number> = {
   member: 0,
@@ -17,7 +17,7 @@ declare module 'hono' {
   }
 }
 
-export const requireAuth = createMiddleware(async (c, next) => {
+export const requireAuth: MiddlewareHandler = createMiddleware(async (c, next) => {
   const session = c.get('session');
 
   if (!session.userId) {
@@ -33,21 +33,17 @@ export const requireAuth = createMiddleware(async (c, next) => {
   }
 
   c.set('user', user);
-  return next();
+  await next();
 });
 
-export function requireRole(minRole: Role) {
+export function requireRole(minRole: Role): MiddlewareHandler {
   return createMiddleware(async (c, next) => {
     const user = c.get('user');
 
-    if (!user) {
-      return c.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, 401);
-    }
-
-    if (ROLE_LEVEL[user.role] < ROLE_LEVEL[minRole]) {
+    if (ROLE_LEVEL[user.role as Role] < ROLE_LEVEL[minRole]) {
       return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
     }
 
-    return next();
+    await next();
   });
 }

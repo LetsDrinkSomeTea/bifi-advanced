@@ -1,3 +1,4 @@
+import React from 'react';
 import { Switch, Route, Redirect } from 'wouter';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
@@ -19,15 +20,7 @@ import { AdminPromotions } from './pages/admin/Promotions';
 import { AdminSettlement } from './pages/admin/Settlement';
 import { JoinGroup } from './pages/JoinGroup';
 
-function Placeholder({ title }: { title: string }) {
-  return (
-    <div className="flex items-center justify-center min-h-[50vh] text-muted-foreground text-sm">
-      {title} — kommt bald
-    </div>
-  );
-}
-
-export function App() {
+export function App(): React.JSX.Element {
   return (
     <QueryClientProvider client={queryClient}>
       <Switch>
@@ -55,14 +48,14 @@ export function App() {
           </ProtectedRoute>
         </Route>
         <Route path="/profile/:userId">
-          {(params) => (
+          {(): React.JSX.Element => (
             <ProtectedRoute>
               <ProfileDetail />
             </ProtectedRoute>
           )}
         </Route>
         <Route path="/profile/:userId/stats">
-          {(params) => (
+          {(): React.JSX.Element => (
             <ProtectedRoute>
               <ProfileStats />
             </ProtectedRoute>
@@ -80,14 +73,14 @@ export function App() {
           </ProtectedRoute>
         </Route>
         <Route path="/groups/:groupId">
-          {(params) => (
+          {(): React.JSX.Element => (
             <ProtectedRoute>
               <GroupDetail />
             </ProtectedRoute>
           )}
         </Route>
         <Route path="/join/:code">
-          {() => (
+          {(): React.JSX.Element => (
             <ProtectedRoute>
               <JoinGroup />
             </ProtectedRoute>
@@ -102,7 +95,7 @@ export function App() {
           </ProtectedRoute>
         </Route>
         <Route path="/achievements/:userId">
-          {() => (
+          {(): React.JSX.Element => (
             <ProtectedRoute>
               <AllAchievements />
             </ProtectedRoute>

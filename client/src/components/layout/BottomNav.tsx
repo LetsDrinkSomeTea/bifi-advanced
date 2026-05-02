@@ -1,7 +1,6 @@
-import { Home, ShoppingBag, Users, Dices, User } from 'lucide-react';
+import { Home, ShoppingBag, Users, User } from 'lucide-react';
 import { useLocation, Link } from 'wouter';
 import { useFriendRequests } from '../../hooks/useFriends';
-import { useJackpotEligibility } from '../../hooks/useJackpot';
 import { cn } from '../../lib/utils';
 
 const NAV_ITEMS = [
@@ -11,7 +10,7 @@ const NAV_ITEMS = [
   { href: '/profile', label: 'Profil', icon: User },
 ];
 
-export function BottomNav() {
+export function BottomNav(): React.JSX.Element {
   const [location] = useLocation();
   const { data: requests } = useFriendRequests();
   const requestCount = requests?.length ?? 0;

@@ -1,4 +1,4 @@
-import { and, gte, isNull, lte, or, eq, lt, sql } from 'drizzle-orm';
+import { and, gte, isNull, lte, or, eq, lt } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import { promotions } from '../db/schema.ts';
 
@@ -15,6 +15,7 @@ export interface ActiveDiscount {
   endTime: string | null;
   quantityRemaining: number | null;
   promoId: string;
+  startTime?: Date | null;
 }
 
 export async function getActiveDiscount(
@@ -40,7 +41,6 @@ export async function getActiveDiscount(
   if (active.length === 0) return null;
 
   // Sort by specificity: variant > buyable > category > global
-  // Within same level: quantity-based promotions take priority over time-based
   let bestDiscount: ActiveDiscount | null = null;
   let bestPriority = -1;
   let bestIsQuantity = false;
@@ -62,18 +62,21 @@ export async function getActiveDiscount(
         } else {
           continue;
         }
-      } else if (category && appliesTo.categoryIds?.includes(category)) {
+      } else if (category && (appliesTo.categoryIds?.includes(category) ?? false)) {
         priority = 1;
       } else {
         continue;
       }
     }
 
-    const isQuantityBased = promo.quantityLimit != null;
-    const quantityRemaining = isQuantityBased ? promo.quantityLimit! - promo.quantityUsed : null;
+    const isQuantityBased = promo.quantityLimit !== null;
+    const quantityRemaining =
+      isQuantityBased && promo.quantityLimit !== null
+        ? promo.quantityLimit - promo.quantityUsed
+        : null;
 
     const current: ActiveDiscount | null =
-      promo.discountFixedCents != null
+      promo.discountFixedCents !== null
         ? {
             type: 'fixed',
             value: promo.discountFixedCents,
@@ -81,8 +84,9 @@ export async function getActiveDiscount(
             endTime: promo.endTime?.toISOString() ?? null,
             quantityRemaining,
             promoId: promo.id,
+            startTime: promo.startTime,
           }
-        : promo.discountPercent != null
+        : promo.discountPercent !== null
           ? {
               type: 'percent',
               value: promo.discountPercent,
@@ -90,22 +94,21 @@ export async function getActiveDiscount(
               endTime: promo.endTime?.toISOString() ?? null,
               quantityRemaining,
               promoId: promo.id,
+              startTime: promo.startTime,
             }
           : null;
 
-    if (!current) continue;
+    if (current === null) continue;
 
     if (priority > bestPriority) {
       bestPriority = priority;
       bestDiscount = current;
       bestIsQuantity = isQuantityBased;
     } else if (priority === bestPriority) {
-      // Quantity-based beats non-quantity at same specificity level
       if (isQuantityBased && !bestIsQuantity) {
         bestDiscount = current;
         bestIsQuantity = true;
       } else if (isQuantityBased === bestIsQuantity) {
-        // Same type: prefer fixed over percent, or higher percent
         if (current.type === 'fixed') {
           bestDiscount = current;
         } else if (bestDiscount?.type === 'percent' && current.value > bestDiscount.value) {
@@ -115,6 +118,10 @@ export async function getActiveDiscount(
     }
   }
 
+  if (bestDiscount !== null && bestDiscount.quantityRemaining !== null) {
+    // quantityRemaining is already calculated.
+    return bestDiscount;
+  }
   return bestDiscount;
 }
 
@@ -139,7 +146,9 @@ export async function consumeQuantityPromotion(
     .where(eq(promotions.id, promoId))
     .for('update');
 
-  if (promo?.quantityLimit == null) {
+  if (!promo) throw new Error('Promotion not found');
+
+  if (promo.quantityLimit === null) {
     return { consumed: requestedQty, isNowExhausted: false, wasFirst: false };
   }
 

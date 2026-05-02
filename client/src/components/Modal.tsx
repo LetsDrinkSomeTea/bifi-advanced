@@ -7,7 +7,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-export function Modal({ open, onClose, title, children }: Props) {
+export function Modal({ open, onClose, title, children }: Props): React.JSX.Element | null {
   if (!open) return null;
   return (
     <>

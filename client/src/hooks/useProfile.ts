@@ -1,10 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import { api } from '../lib/api';
 import type { PublicProfile } from '@shared/types';
 
 export type { PublicProfile };
 
-export function usePublicProfile(userId: string | undefined) {
+export function usePublicProfile(userId: string | undefined): UseQueryResult<PublicProfile> {
   return useQuery<PublicProfile>({
     queryKey: ['profile', userId],
     queryFn: () => api.get<PublicProfile>(`/api/users/${userId}/profile`),
@@ -12,7 +18,15 @@ export function usePublicProfile(userId: string | undefined) {
   });
 }
 
-export function useUpdateProfile() {
+export function useUpdateProfile(): UseMutationResult<
+  void,
+  Error,
+  {
+    displayName?: string;
+    username?: string | null;
+    avatarUrl?: string | null;
+  }
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: {
@@ -21,8 +35,8 @@ export function useUpdateProfile() {
       avatarUrl?: string | null;
     }) => api.patch('/api/users/me', body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
-      qc.invalidateQueries({ queryKey: ['profile'] });
+      void qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+      void qc.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 }
