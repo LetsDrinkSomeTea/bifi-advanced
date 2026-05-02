@@ -114,13 +114,13 @@ auth.get('/callback', async (c) => {
     return c.redirect('/login?error=no_claims');
   }
 
-  const sub = claims['sub'] as string;
-  const email = (claims['email'] as string | undefined) ?? '';
+  const sub = claims.sub;
+  const email = (claims.email as string | undefined) ?? '';
   const displayName =
-    (claims['preferred_username'] as string | undefined) ??
-    (claims['name'] as string | undefined) ??
+    (claims.preferred_username as string | undefined) ??
+    (claims.name as string | undefined) ??
     email;
-  const avatarUrl = (claims['picture'] as string | undefined) ?? null;
+  const avatarUrl = (claims.picture as string | undefined) ?? null;
   const groupsClaim = process.env.OIDC_GROUPS_CLAIM ?? 'groups';
   const groups = (claims[groupsClaim] as string[] | undefined) ?? [];
   const ip =

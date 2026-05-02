@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
-export type JackpotEligibility = {
+export interface JackpotEligibility {
   eligible: boolean;
   reason: 'disabled' | 'not_allowed' | null;
-};
+}
 
-export type SpinResult = {
+export interface SpinResult {
   transactionId: string;
   multiplierPct: number;
   multiplierDecimal: number;
@@ -14,7 +14,7 @@ export type SpinResult = {
   pricePaid: number;
   productName: string;
   variantName: string;
-};
+}
 
 export function useJackpotEligibility() {
   return useQuery<JackpotEligibility>({

@@ -170,7 +170,7 @@ export function Shop() {
     };
     update();
     el.addEventListener('scroll', update, { passive: true });
-    return () => el.removeEventListener('scroll', update);
+    return () => { el.removeEventListener('scroll', update); };
   }, [categories]);
 
   const openSheet = (item: BuyableWithVariants, variantId: string) => {
@@ -194,7 +194,7 @@ export function Shop() {
             type="search"
             placeholder="Produkt oder Variante suchen…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); }}
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -210,7 +210,7 @@ export function Shop() {
             )}
             <div ref={filterRef} className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin-x">
               <button
-                onClick={() => setActiveCategory(null)}
+                onClick={() => { setActiveCategory(null); }}
                 className={cn(
                   'flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
                   !activeCategory
@@ -223,7 +223,7 @@ export function Shop() {
               {categories.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setActiveCategory(cat === activeCategory ? null : cat)}
+                  onClick={() => { setActiveCategory(cat === activeCategory ? null : cat); }}
                   className={cn(
                     'flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
                     activeCategory === cat
@@ -231,7 +231,7 @@ export function Shop() {
                       : 'bg-muted text-muted-foreground',
                   )}
                 >
-                  {CATEGORY_LABELS[cat as BuyableCategory]}
+                  {CATEGORY_LABELS[cat]}
                 </button>
               ))}
             </div>
@@ -299,7 +299,7 @@ export function Shop() {
                               className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group"
                             >
                               <button
-                                onClick={() => openSheet(item, v.id)}
+                                onClick={() => { openSheet(item, v.id); }}
                                 className="flex-1 min-w-0 flex items-center gap-3 text-left"
                               >
                                 <div className="flex-1 min-w-0">
@@ -363,7 +363,7 @@ export function Shop() {
                                   />
                                 </button>
                                 <button
-                                  onClick={() => openSheet(item, v.id)}
+                                  onClick={() => { openSheet(item, v.id); }}
                                   className="p-2 rounded-lg text-muted-foreground group-hover:text-primary group-hover:bg-primary/5 transition-all"
                                 >
                                   <Plus size={20} />

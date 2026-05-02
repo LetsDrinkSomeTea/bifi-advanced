@@ -201,7 +201,7 @@ router.post(
     const body = c.req.valid('json');
 
     const [parent] = await db.select().from(buyables).where(eq(buyables.id, id));
-    if (!parent || !parent.isActive)
+    if (!parent?.isActive)
       return c.json({ error: 'Buyable not found', code: 'NOT_FOUND' }, 404);
 
     const [created] = await db

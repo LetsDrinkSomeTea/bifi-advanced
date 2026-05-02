@@ -47,7 +47,7 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
         ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         : null;
 
-  type Row = { userId: string; displayName: string; avatarUrl: string | null; value: number };
+  interface Row { userId: string; displayName: string; avatarUrl: string | null; value: number }
 
   let rows: Row[];
 

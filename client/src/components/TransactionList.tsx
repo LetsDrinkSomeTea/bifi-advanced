@@ -133,7 +133,7 @@ export function TransactionList({
 
               {canCancel && (
                 <button
-                  onClick={() => cancel(txn.id)}
+                  onClick={() => { cancel(txn.id); }}
                   disabled={cancelling}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
                   title="Stornieren"

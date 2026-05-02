@@ -60,7 +60,7 @@ function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => voi
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); }}
             maxLength={60}
             autoFocus
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -73,7 +73,7 @@ function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => voi
           <input
             type="text"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => { setDescription(e.target.value); }}
             maxLength={200}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -113,7 +113,7 @@ function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () => void 
           <input
             type="text"
             value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            onChange={(e) => { setCode(e.target.value.toUpperCase()); }}
             maxLength={8}
             placeholder="A1B2C3D4"
             autoFocus
@@ -122,7 +122,7 @@ function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () => void 
         </div>
         {error && (
           <p className="text-sm text-destructive">
-            {(error as Error).message ?? 'Ungültiger Code'}
+            {(error).message ?? 'Ungültiger Code'}
           </p>
         )}
         <button
@@ -260,14 +260,14 @@ function FriendsSection() {
                 </Link>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <button
-                    onClick={() => accept(r.id)}
+                    onClick={() => { accept(r.id); }}
                     className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                     title="Annehmen"
                   >
                     <UserCheck size={15} />
                   </button>
                   <button
-                    onClick={() => remove(r.id)}
+                    onClick={() => { remove(r.id); }}
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     title="Ablehnen"
                   >
@@ -399,7 +399,7 @@ function SearchResults({
             </Link>
             {item.kind === 'new_person' && (
               <button
-                onClick={() => sendRequest(item.id)}
+                onClick={() => { sendRequest(item.id); }}
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                 title="Freundschaft anfragen"
               >
@@ -536,7 +536,7 @@ function LeaderboardTab() {
         {(Object.keys(PERIOD_LABELS) as LeaderboardPeriod[]).map((p) => (
           <button
             key={p}
-            onClick={() => setPeriod(p)}
+            onClick={() => { setPeriod(p); }}
             className={cn(
               'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
               period === p
@@ -630,8 +630,8 @@ export function Social() {
 
   useEffect(() => {
     if (tab !== 'social') return;
-    const t = setTimeout(() => setDebouncedQuery(query), 300);
-    return () => clearTimeout(t);
+    const t = setTimeout(() => { setDebouncedQuery(query); }, 300);
+    return () => { clearTimeout(t); };
   }, [query, tab]);
 
   const isSearching = debouncedQuery.length >= 2;
@@ -650,7 +650,7 @@ export function Social() {
           ).map(([value, label]) => (
             <button
               key={value}
-              onClick={() => changeTab(value)}
+              onClick={() => { changeTab(value); }}
               className={cn(
                 'flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors',
                 tab === value
@@ -674,13 +674,13 @@ export function Social() {
               <input
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => { setQuery(e.target.value); }}
                 placeholder="Gruppen und Personen suchen…"
                 className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
               {query && (
                 <button
-                  onClick={() => setQuery('')}
+                  onClick={() => { setQuery(''); }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   <X size={14} />
@@ -693,8 +693,8 @@ export function Social() {
             ) : (
               <>
                 <GroupsSection
-                  onCreateOpen={() => setCreateOpen(true)}
-                  onJoinOpen={() => setJoinOpen(true)}
+                  onCreateOpen={() => { setCreateOpen(true); }}
+                  onJoinOpen={() => { setJoinOpen(true); }}
                 />
                 <FriendsSection />
               </>
@@ -707,8 +707,8 @@ export function Social() {
         )}
       </div>
 
-      <CreateGroupModal open={createOpen} onClose={() => setCreateOpen(false)} />
-      <JoinGroupModal open={joinOpen} onClose={() => setJoinOpen(false)} />
+      <CreateGroupModal open={createOpen} onClose={() => { setCreateOpen(false); }} />
+      <JoinGroupModal open={joinOpen} onClose={() => { setJoinOpen(false); }} />
     </Layout>
   );
 }

@@ -105,7 +105,7 @@ export function ProfileStats() {
           {showSystemTab && (
             <div className="flex p-1 rounded-xl bg-muted">
               <button
-                onClick={() => setTab('personal')}
+                onClick={() => { setTab('personal'); }}
                 className={cn(
                   'flex-1 py-2 text-sm font-medium rounded-lg transition-all',
                   activeTab === 'personal'
@@ -116,7 +116,7 @@ export function ProfileStats() {
                 Persönlich
               </button>
               <button
-                onClick={() => setTab('system')}
+                onClick={() => { setTab('system'); }}
                 className={cn(
                   'flex-1 py-2 text-sm font-medium rounded-lg transition-all',
                   activeTab === 'system'
@@ -130,10 +130,10 @@ export function ProfileStats() {
           )}
 
           <div className="flex gap-2">
-            {(Object.keys(PERIOD_LABELS) as Array<'week' | 'month' | 'alltime'>).map((p) => (
+            {(Object.keys(PERIOD_LABELS) as ('week' | 'month' | 'alltime')[]).map((p) => (
               <button
                 key={p}
-                onClick={() => setPeriod(p)}
+                onClick={() => { setPeriod(p); }}
                 className={cn(
                   'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
                   period === p

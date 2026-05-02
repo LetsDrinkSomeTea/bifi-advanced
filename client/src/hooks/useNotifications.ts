@@ -59,23 +59,23 @@ export function useSSE() {
       esRef.current = es;
 
       es.addEventListener('connected', (e) => {
-        const data = JSON.parse((e as MessageEvent).data) as { unreadCount: number };
+        const data = JSON.parse((e).data) as { unreadCount: number };
         setUnreadCount(data.unreadCount);
       });
 
       es.addEventListener('notification', (e) => {
-        const notif = JSON.parse((e as MessageEvent).data) as AppNotification;
+        const notif = JSON.parse((e).data) as AppNotification;
         qc.setQueryData<AppNotification[]>(['notifications'], (old) => [notif, ...(old ?? [])]);
         setUnreadCount((c) => c + 1);
       });
 
       es.addEventListener('unread_count', (e) => {
-        const { count } = JSON.parse((e as MessageEvent).data) as { count: number };
+        const { count } = JSON.parse((e).data) as { count: number };
         setUnreadCount(count);
       });
 
       es.addEventListener('invalidate', (e) => {
-        const { keys } = JSON.parse((e as MessageEvent).data) as { keys: string[] };
+        const { keys } = JSON.parse((e).data) as { keys: string[] };
         for (const key of keys) {
           if (key === 'feed') qc.invalidateQueries({ queryKey: ['feed'] });
           else if (key === 'balance') qc.invalidateQueries({ queryKey: ['auth', 'me'] });

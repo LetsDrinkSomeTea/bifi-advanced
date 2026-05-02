@@ -55,14 +55,14 @@ function PromotionModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return setError('Name ist erforderlich');
+    if (!name.trim()) { setError('Name ist erforderlich'); return; }
 
     const numericValue = parseFloat(value.replace(',', '.'));
-    if (isNaN(numericValue)) return setError('Ungültiger Wert');
+    if (isNaN(numericValue)) { setError('Ungültiger Wert'); return; }
 
     const parsedQty = quantityLimit.trim() ? parseInt(quantityLimit, 10) : null;
     if (parsedQty !== null && (isNaN(parsedQty) || parsedQty < 1)) {
-      return setError('Kontingent muss eine positive Zahl sein');
+      setError('Kontingent muss eine positive Zahl sein'); return;
     }
 
     const body: any = {
@@ -86,13 +86,13 @@ function PromotionModal({
         { id: promotion.id, ...body },
         {
           onSuccess: onClose,
-          onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
+          onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
         },
       );
     } else {
       create(body, {
         onSuccess: onClose,
-        onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
+        onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
       });
     }
   };
@@ -107,7 +107,7 @@ function PromotionModal({
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); }}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Happy Hour"
           />
@@ -118,7 +118,7 @@ function PromotionModal({
             <label className="block text-sm font-medium mb-1">Typ</label>
             <select
               value={type}
-              onChange={(e) => setType(e.target.value as any)}
+              onChange={(e) => { setType(e.target.value as any); }}
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="percent">Prozent (%)</option>
@@ -133,7 +133,7 @@ function PromotionModal({
               type="number"
               step={type === 'percent' ? '1' : '0.01'}
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(e) => { setValue(e.target.value); }}
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -145,7 +145,7 @@ function PromotionModal({
             <input
               type="datetime-local"
               value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              onChange={(e) => { setStartTime(e.target.value); }}
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -154,7 +154,7 @@ function PromotionModal({
             <input
               type="datetime-local"
               value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
+              onChange={(e) => { setEndTime(e.target.value); }}
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -184,7 +184,7 @@ function PromotionModal({
             <label className="block text-sm font-medium mb-1">Variante (optional)</label>
             <select
               value={targetVariantId}
-              onChange={(e) => setTargetVariantId(e.target.value)}
+              onChange={(e) => { setTargetVariantId(e.target.value); }}
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">Alle Varianten von {selectedBuyable.name}</option>
@@ -204,7 +204,7 @@ function PromotionModal({
             min="1"
             step="1"
             value={quantityLimit}
-            onChange={(e) => setQuantityLimit(e.target.value)}
+            onChange={(e) => { setQuantityLimit(e.target.value); }}
             placeholder="z.B. 20 (leer = unbegrenzt)"
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -355,7 +355,7 @@ export function AdminPromotions() {
 
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => handleToggle(p)}
+                      onClick={() => { handleToggle(p); }}
                       className={cn(
                         'p-2 rounded-lg transition-colors',
                         p.isActive
@@ -367,7 +367,7 @@ export function AdminPromotions() {
                       {p.isActive ? <Square size={16} /> : <Play size={16} />}
                     </button>
                     <button
-                      onClick={() => handleEdit(p)}
+                      onClick={() => { handleEdit(p); }}
                       className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                       title="Bearbeiten"
                     >

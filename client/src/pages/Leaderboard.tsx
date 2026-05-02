@@ -65,7 +65,7 @@ export function Leaderboard() {
           {(Object.keys(TYPE_LABELS) as LeaderboardType[]).map((t) => (
             <button
               key={t}
-              onClick={() => setType(t)}
+              onClick={() => { setType(t); }}
               className={cn(
                 'flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors',
                 type === t
@@ -83,7 +83,7 @@ export function Leaderboard() {
           {(Object.keys(PERIOD_LABELS) as LeaderboardPeriod[]).map((p) => (
             <button
               key={p}
-              onClick={() => setPeriod(p)}
+              onClick={() => { setPeriod(p); }}
               className={cn(
                 'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
                 period === p

@@ -131,7 +131,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                 {variants.map((v) => (
                   <button
                     key={v.id}
-                    onClick={() => setVariantId(v.id)}
+                    onClick={() => { setVariantId(v.id); }}
                     className={cn(
                       'px-4 py-2 rounded-xl border text-sm transition-all relative overflow-hidden',
                       variantId === v.id
@@ -214,14 +214,14 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
             </div>
             <div className="flex items-center gap-4 bg-muted/50 p-1 rounded-2xl border border-border">
               <button
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                onClick={() => { setQuantity((q) => Math.max(1, q - 1)); }}
                 className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
               >
                 <Minus size={18} />
               </button>
               <span className="w-8 text-center font-black text-lg">{quantity}</span>
               <button
-                onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+                onClick={() => { setQuantity((q) => Math.min(99, q + 1)); }}
                 className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
               >
                 <Plus size={18} />
@@ -240,7 +240,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => setGroupId(null)}
+                  onClick={() => { setGroupId(null); }}
                   className={cn(
                     'px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm',
                     !groupId
@@ -253,7 +253,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                 {groups.map((g) => (
                   <button
                     key={g.id}
-                    onClick={() => setGroupId(g.id === groupId ? null : g.id)}
+                    onClick={() => { setGroupId(g.id === groupId ? null : g.id); }}
                     className={cn(
                       'px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm',
                       groupId === g.id

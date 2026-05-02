@@ -34,7 +34,7 @@ export interface BuyableWithVariants {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
-  variants: Array<{
+  variants: {
     id: string;
     buyableId: string;
     name: string;
@@ -43,7 +43,7 @@ export interface BuyableWithVariants {
     sortOrder: number;
     activeDiscount: ActiveDiscount | null;
     discountedPrice: number;
-  }>;
+  }[];
 }
 
 export interface Favorite {
@@ -93,7 +93,7 @@ export interface TransactionWithItems {
   cancelledBy: string | null;
   jackpotMultiplier: string | null;
   createdAt: string;
-  items: Array<{
+  items: {
     id: string;
     buyableId: string;
     variantId: string | null;
@@ -102,7 +102,7 @@ export interface TransactionWithItems {
     totalPrice: number;
     buyableName: string;
     variantName: string | null;
-  }>;
+  }[];
 }
 
 export interface PublicProfile {
@@ -120,7 +120,7 @@ export interface PublicProfile {
     favoriteProduct: { name: string; count: number } | null;
     friendCount: number;
   };
-  achievements: Array<{ key: string; unlockedAt: string }>;
+  achievements: { key: string; unlockedAt: string }[];
   achievementProgress: Record<string, number>;
 }
 

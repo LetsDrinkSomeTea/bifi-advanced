@@ -53,7 +53,7 @@ function EditProfileModal({
     }
     update(body, {
       onSuccess: onClose,
-      onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
+      onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
     });
   };
 
@@ -221,7 +221,7 @@ export function Profile() {
             </div>
           </div>
           <button
-            onClick={() => setEditOpen(true)}
+            onClick={() => { setEditOpen(true); }}
             className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0"
             title="Profil bearbeiten"
           >
@@ -297,7 +297,7 @@ export function Profile() {
 
       <EditProfileModal
         open={editOpen}
-        onClose={() => setEditOpen(false)}
+        onClose={() => { setEditOpen(false); }}
         hasSso={profile?.hasSso ?? false}
       />
     </Layout>

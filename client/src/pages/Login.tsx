@@ -116,7 +116,7 @@ export function Login() {
               <input
                 type="text"
                 value={login}
-                onChange={(e) => setLogin(e.target.value)}
+                onChange={(e) => { setLogin(e.target.value); }}
                 className={cn(
                   'w-full px-3 py-2 rounded-md border bg-background text-sm',
                   'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
@@ -134,7 +134,7 @@ export function Login() {
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); }}
                 className={cn(
                   'w-full px-3 py-2 rounded-md border bg-background text-sm',
                   'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',

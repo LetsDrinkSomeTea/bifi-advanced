@@ -82,7 +82,7 @@ export function isAllSevens(n: number): boolean {
 
 // ─── Reusable counters ────────────────────────────────────────────────────────
 
-const countQ = async (q: Promise<Array<{ n: number }>>) => (await q)[0]?.n ?? 0;
+const countQ = async (q: Promise<{ n: number }[]>) => (await q)[0]?.n ?? 0;
 
 export const purchaseCount = (userId: string) =>
   countQ(

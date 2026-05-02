@@ -41,13 +41,13 @@ export type AchievementEvent =
       type: 'purchase';
       userId: string;
       now: Date;
-      items: Array<{
+      items: {
         buyableId: string;
         variantId: string;
         category: string | null;
         quantity: number;
         buyableName: string;
-      }>;
+      }[];
       groupId?: string;
     }
   | { type: 'prost_sent'; userId: string }

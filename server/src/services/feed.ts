@@ -8,7 +8,7 @@ import { broadcastInvalidate } from './notifications.ts';
 //   2. Call emitFeedEvent({ type: '...', ... }) from the relevant route/service
 //   3. Add a case to feedText() in client/src/components/FeedItem.tsx
 
-type PurchaseItem = { name: string; variantName: string; count: number };
+interface PurchaseItem { name: string; variantName: string; count: number }
 
 export type FeedEvent =
   | {
@@ -107,7 +107,7 @@ export function emitFeedEvent(event: FeedEvent): void {
     type: event.type,
     targetUserId: 'targetUserId' in event ? event.targetUserId : null,
     targetGroupId: 'targetGroupId' in event ? event.targetGroupId : null,
-    metadata: 'metadata' in event ? (event.metadata as Record<string, unknown>) : null,
+    metadata: 'metadata' in event ? (event.metadata) : null,
   };
   db.insert(activityFeed)
     .values(values)
@@ -122,5 +122,5 @@ export function emitFeedEvent(event: FeedEvent): void {
       }
       broadcastInvalidate(keys);
     })
-    .catch((err) => console.error('[feed] emit failed:', event.type, err));
+    .catch((err) => { console.error('[feed] emit failed:', event.type, err); });
 }

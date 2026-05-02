@@ -1,10 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-// Vite will replace this string at build time
-const VITE_TZ = process.env.TZ;
-
-export const APP_TZ = VITE_TZ || 'Europe/Berlin';
+export const APP_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

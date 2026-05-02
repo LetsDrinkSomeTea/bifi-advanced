@@ -22,9 +22,9 @@ interface Props {
 
 // ─── Card types ───────────────────────────────────────────────────────────────
 
-type TierEntry = { tier: AchievementTier; key: string; description: string; unlocked: boolean };
+interface TierEntry { tier: AchievementTier; key: string; description: string; unlocked: boolean }
 
-type GroupCard = {
+interface GroupCard {
   kind: 'group';
   groupKey: string;
   name: string;
@@ -34,9 +34,9 @@ type GroupCard = {
   anyUnlocked: boolean;
   highestUnlocked: AchievementTier | null;
   latestUnlockedAt: Date | null;
-};
+}
 
-type StandaloneCard = {
+interface StandaloneCard {
   kind: 'standalone';
   key: string;
   name: string;
@@ -45,7 +45,7 @@ type StandaloneCard = {
   hidden: boolean;
   unlocked: boolean;
   unlockedAt: Date | null;
-};
+}
 
 type Card = GroupCard | StandaloneCard;
 
@@ -149,7 +149,7 @@ function ProgressBar({
     const id = requestAnimationFrame(() => {
       setAnimWidth(Math.min(value / max, 1) * 100);
     });
-    return () => cancelAnimationFrame(id);
+    return () => { cancelAnimationFrame(id); };
   }, [value, max]);
 
   const fmt = (v: number) => (format === 'cents' ? formatCents(v) : v.toLocaleString('de-DE'));

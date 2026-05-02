@@ -30,7 +30,7 @@ function CreateProductModal({ open, onClose }: { open: boolean; onClose: () => v
       setForm({ name: '', category: '', variantName: '', variantPrice: '' });
       onClose();
     },
-    onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
+    onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -50,7 +50,7 @@ function CreateProductModal({ open, onClose }: { open: boolean; onClose: () => v
           <label className="block text-sm font-medium mb-1">Produktname *</label>
           <input
             value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            onChange={(e) => { setForm((f) => ({ ...f, name: e.target.value })); }}
             required
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -59,7 +59,7 @@ function CreateProductModal({ open, onClose }: { open: boolean; onClose: () => v
           <label className="block text-sm font-medium mb-1">Kategorie</label>
           <select
             value={form.category}
-            onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+            onChange={(e) => { setForm((f) => ({ ...f, category: e.target.value })); }}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">Keine Kategorie</option>
@@ -77,14 +77,14 @@ function CreateProductModal({ open, onClose }: { open: boolean; onClose: () => v
           <div className="space-y-2">
             <input
               value={form.variantName}
-              onChange={(e) => setForm((f) => ({ ...f, variantName: e.target.value }))}
+              onChange={(e) => { setForm((f) => ({ ...f, variantName: e.target.value })); }}
               required
               placeholder="Name (z.B. 0,5l) *"
               className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <input
               value={form.variantPrice}
-              onChange={(e) => setForm((f) => ({ ...f, variantPrice: e.target.value }))}
+              onChange={(e) => { setForm((f) => ({ ...f, variantPrice: e.target.value })); }}
               required
               type="number"
               step="0.01"
@@ -132,7 +132,7 @@ function AddVariantModal({
       setPrice('');
       onClose();
     },
-    onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
+    onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -152,7 +152,7 @@ function AddVariantModal({
           <label className="block text-sm font-medium mb-1">Name *</label>
           <input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); }}
             required
             autoFocus
             placeholder="z.B. 0,3l"
@@ -163,7 +163,7 @@ function AddVariantModal({
           <label className="block text-sm font-medium mb-1">Preis (€) *</label>
           <input
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={(e) => { setPrice(e.target.value); }}
             required
             type="number"
             step="0.01"
@@ -208,7 +208,7 @@ function VariantRow({
     update(
       { buyableId, variantId: variant.id, name, price: p },
       {
-        onSuccess: () => setIsEditing(false),
+        onSuccess: () => { setIsEditing(false); },
       },
     );
   };
@@ -220,7 +220,7 @@ function VariantRow({
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border/50 bg-accent/30">
         <input
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => { setName(e.target.value); }}
           className="flex-1 min-w-0 px-2 py-1 rounded border border-input bg-background text-sm"
           autoFocus
         />
@@ -229,7 +229,7 @@ function VariantRow({
             type="number"
             step="0.01"
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={(e) => { setPrice(e.target.value); }}
             className="w-full px-2 py-1 rounded border border-input bg-background text-sm pr-4"
           />
           <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
@@ -244,7 +244,7 @@ function VariantRow({
           <Check size={16} />
         </button>
         <button
-          onClick={() => setIsEditing(false)}
+          onClick={() => { setIsEditing(false); }}
           className="p-1.5 text-red-500 hover:bg-red-500/10rounded"
         >
           <X size={16} />
@@ -269,7 +269,7 @@ function VariantRow({
           )}
         </div>
         <button
-          onClick={() => setIsEditing(true)}
+          onClick={() => { setIsEditing(true); }}
           disabled={!parentActive}
           className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-all ml-1 disabled:opacity-0"
         >
@@ -279,7 +279,7 @@ function VariantRow({
       <div className="flex items-center gap-1">
         <button
           onClick={() =>
-            toggleActive({ buyableId, variantId: variant.id, isActive: !variant.isActive })
+            { toggleActive({ buyableId, variantId: variant.id, isActive: !variant.isActive }); }
           }
           disabled={!parentActive}
           className={cn(
@@ -320,7 +320,7 @@ function ProductRow({
     update(
       { id: item.id, name, category: category || null },
       {
-        onSuccess: () => setIsEditing(false),
+        onSuccess: () => { setIsEditing(false); },
       },
     );
   };
@@ -335,7 +335,7 @@ function ProductRow({
       {/* Product header */}
       <div className="flex items-center gap-2 px-4 py-3 group">
         <button
-          onClick={() => setExpanded((e) => !e)}
+          onClick={() => { setExpanded((e) => !e); }}
           className="flex items-center gap-2 flex-1 min-w-0 text-left"
         >
           {expanded ? (
@@ -345,11 +345,11 @@ function ProductRow({
           )}
 
           {isEditing ? (
-            <div className="flex flex-col gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col gap-2 flex-1" onClick={(e) => { e.stopPropagation(); }}>
               <div className="flex items-center gap-2">
                 <input
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => { setName(e.target.value); }}
                   className="flex-1 min-w-0 px-2 py-1 rounded border border-input bg-background text-sm"
                   autoFocus
                 />
@@ -361,7 +361,7 @@ function ProductRow({
                   <Check size={16} />
                 </button>
                 <button
-                  onClick={() => setIsEditing(false)}
+                  onClick={() => { setIsEditing(false); }}
                   className="p-1.5 text-muted-foreground hover:bg-muted rounded"
                 >
                   <X size={16} />
@@ -369,7 +369,7 @@ function ProductRow({
               </div>
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => { setCategory(e.target.value); }}
                 className="px-2 py-1 rounded border border-input bg-background text-xs w-full"
               >
                 <option value="">Keine Kategorie</option>
@@ -408,7 +408,7 @@ function ProductRow({
 
         {!isEditing && (
           <button
-            onClick={() => toggleActive({ id: item.id, isActive: !item.isActive })}
+            onClick={() => { toggleActive({ id: item.id, isActive: !item.isActive }); }}
             className={cn(
               'p-2 rounded-lg border transition-colors flex-shrink-0',
               item.isActive
@@ -454,7 +454,7 @@ export function AdminProducts() {
       <div className="space-y-2">
         <div className="flex justify-end">
           <button
-            onClick={() => setCreateOpen(true)}
+            onClick={() => { setCreateOpen(true); }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
           >
             <Plus size={15} />
@@ -471,7 +471,7 @@ export function AdminProducts() {
         )}
 
         {items?.map((item) => (
-          <ProductRow key={item.id} item={item} onAddVariant={() => setAddVariantTarget(item)} />
+          <ProductRow key={item.id} item={item} onAddVariant={() => { setAddVariantTarget(item); }} />
         ))}
 
         {!isLoading && items?.length === 0 && (
@@ -479,8 +479,8 @@ export function AdminProducts() {
         )}
       </div>
 
-      <CreateProductModal open={createOpen} onClose={() => setCreateOpen(false)} />
-      <AddVariantModal buyable={addVariantTarget} onClose={() => setAddVariantTarget(null)} />
+      <CreateProductModal open={createOpen} onClose={() => { setCreateOpen(false); }} />
+      <AddVariantModal buyable={addVariantTarget} onClose={() => { setAddVariantTarget(null); }} />
     </AdminLayout>
   );
 }

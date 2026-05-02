@@ -12,8 +12,8 @@ export interface UserStats {
     discountedItemCount: number;
   } | null;
   consumption: {
-    topItems: Array<{ name: string; count: number }>;
-    categories: Array<{ category: string; count: number }>;
+    topItems: { name: string; count: number }[];
+    categories: { category: string; count: number }[];
     weekdayCounts: Record<string, number>;
     hourCounts: Record<string, number>;
     totalPurchases: number;

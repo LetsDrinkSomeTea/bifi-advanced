@@ -46,7 +46,7 @@ function DepositModal({ user, onClose }: { user: AdminUser | null; onClose: () =
       { userId: user!.id, amount: cents, note: note || undefined },
       {
         onSuccess: onClose,
-        onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
+        onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
       },
     );
   };
@@ -76,7 +76,7 @@ function DepositModal({ user, onClose }: { user: AdminUser | null; onClose: () =
             type="text"
             placeholder="z.B. Bareinzahlung"
             value={note}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={(e) => { setNote(e.target.value); }}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -123,9 +123,9 @@ function UserRow({
     if (!window.confirm(`Möchtest du ${user.displayName} wirklich löschen?`)) return;
     deleteUser(user.id, {
       onError: (err) =>
-        setDeleteError(
+        { setDeleteError(
           err instanceof Error ? err.message : 'Löschen fehlgeschlagen. Nutzer hat evtl. Historie.',
-        ),
+        ); },
     });
   };
 
@@ -133,7 +133,7 @@ function UserRow({
     <div className={cn('rounded-xl border border-border bg-card overflow-hidden')}>
       <div
         className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/50 transition-colors"
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => { setExpanded(!expanded); }}
       >
         {/* Avatar & Info with conditional opacity */}
         <div
@@ -192,7 +192,7 @@ function UserRow({
         </div>
 
         {/* Quick Actions (always full opacity) */}
-        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => { e.stopPropagation(); }}>
           {isModerator && (
             <button
               onClick={onDeposit}
@@ -211,7 +211,7 @@ function UserRow({
             </button>
           )}
           <button
-            onClick={() => setExpanded(!expanded)}
+            onClick={() => { setExpanded(!expanded); }}
             className="p-1.5 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
             title={expanded ? 'Einklappen' : 'Ausklappen'}
           >
@@ -236,7 +236,7 @@ function UserRow({
                 </label>
                 <select
                   value={user.role}
-                  onChange={(e) => handleUpdate({ role: e.target.value as any })}
+                  onChange={(e) => { handleUpdate({ role: e.target.value as any }); }}
                   disabled={isUpdating || !canChangeRole}
                   className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
@@ -253,7 +253,7 @@ function UserRow({
               </label>
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => handleUpdate({ jackpotAllowed: !user.jackpotAllowed })}
+                  onClick={() => { handleUpdate({ jackpotAllowed: !user.jackpotAllowed }); }}
                   disabled={isUpdating}
                   className={cn(
                     'flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold',
@@ -275,7 +275,7 @@ function UserRow({
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <button
-                onClick={() => handleUpdate({ isActive: !user.isActive })}
+                onClick={() => { handleUpdate({ isActive: !user.isActive }); }}
                 disabled={isUpdating}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold',
@@ -328,7 +328,7 @@ function CreateUserModal({ open, onClose }: { open: boolean; onClose: () => void
 
   const set =
     (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }));
+      { setForm((f) => ({ ...f, [k]: e.target.value })); };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -339,7 +339,7 @@ function CreateUserModal({ open, onClose }: { open: boolean; onClose: () => void
           setForm({ email: '', username: '', displayName: '', password: '', role: 'member' });
           onClose();
         },
-        onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
+        onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
       },
     );
   };
@@ -415,7 +415,7 @@ function ResetPasswordModal({ user, onClose }: { user: AdminUser | null; onClose
           setConfirm('');
           onClose();
         },
-        onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
+        onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
       },
     );
   };
@@ -493,11 +493,11 @@ export function AdminUsers() {
             type="search"
             placeholder="Suchen…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); }}
             className="flex-1 px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <button
-            onClick={() => setCreateOpen(true)}
+            onClick={() => { setCreateOpen(true); }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
           >
             <Plus size={15} />
@@ -520,8 +520,8 @@ export function AdminUsers() {
             canChangeRole={canChangeRole(u)}
             isModerator={isModerator}
             isAdmin={isAdmin}
-            onDeposit={() => setDepositTarget(u)}
-            onResetPassword={() => setResetTarget(u)}
+            onDeposit={() => { setDepositTarget(u); }}
+            onResetPassword={() => { setResetTarget(u); }}
           />
         ))}
 
@@ -530,9 +530,9 @@ export function AdminUsers() {
         )}
       </div>
 
-      <DepositModal user={depositTarget} onClose={() => setDepositTarget(null)} />
-      <ResetPasswordModal user={resetTarget} onClose={() => setResetTarget(null)} />
-      <CreateUserModal open={createOpen} onClose={() => setCreateOpen(false)} />
+      <DepositModal user={depositTarget} onClose={() => { setDepositTarget(null); }} />
+      <ResetPasswordModal user={resetTarget} onClose={() => { setResetTarget(null); }} />
+      <CreateUserModal open={createOpen} onClose={() => { setCreateOpen(false); }} />
     </AdminLayout>
   );
 }

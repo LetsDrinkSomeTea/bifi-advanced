@@ -71,7 +71,7 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
           return (
             <div key={n.id} className="flex items-start border-b border-border last:border-0">
               <button
-                onClick={() => handleNavigate(n)}
+                onClick={() => { handleNavigate(n); }}
                 className={cn(
                   'flex-1 text-left px-4 py-3 hover:bg-accent transition-colors min-w-0',
                   href && 'cursor-pointer',
@@ -85,7 +85,7 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
                 </p>
               </button>
               <button
-                onClick={() => markRead(n.id)}
+                onClick={() => { markRead(n.id); }}
                 title="Als gelesen markieren"
                 className="flex-shrink-0 p-3 pt-3.5 text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -113,7 +113,7 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }) {
     <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-border bg-popover shadow-xl ring-1 ring-black/5 z-50 overflow-hidden">
       <div className="py-1.5">
         <button
-          onClick={() => go('/profile')}
+          onClick={() => { go('/profile'); }}
           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors"
         >
           <UserCircle size={16} className="text-muted-foreground flex-shrink-0" />
@@ -121,7 +121,7 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }) {
         </button>
         {isModerator && (
           <button
-            onClick={() => go('/admin/users')}
+            onClick={() => { go('/admin/users'); }}
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors"
           >
             <ShieldCheck size={16} className="text-muted-foreground flex-shrink-0" />
@@ -166,7 +166,7 @@ export function TopBar() {
       if (menuOpen && !menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => { document.removeEventListener('mousedown', handler); };
   }, [notifOpen, menuOpen]);
 
   return (
@@ -200,7 +200,7 @@ export function TopBar() {
               </span>
             )}
           </button>
-          {notifOpen && <NotificationDropdown onClose={() => setNotifOpen(false)} />}
+          {notifOpen && <NotificationDropdown onClose={() => { setNotifOpen(false); }} />}
         </div>
 
         {/* Avatar menu */}
@@ -220,7 +220,7 @@ export function TopBar() {
                 <span>{user.displayName[0]?.toUpperCase()}</span>
               )}
             </button>
-            {menuOpen && <AvatarMenuDropdown onClose={() => setMenuOpen(false)} />}
+            {menuOpen && <AvatarMenuDropdown onClose={() => { setMenuOpen(false); }} />}
           </div>
         )}
       </div>

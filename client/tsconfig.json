@@ -3,6 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "outDir": "../dist/client",
+    "types": ["vite-plugin-pwa/client"],
     "paths": {
       "@shared/*": ["../shared/src/*"],
       "@/*": ["./src/*"]

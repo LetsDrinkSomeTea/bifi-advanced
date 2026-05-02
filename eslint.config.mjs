@@ -7,7 +7,15 @@ import globals from 'globals';
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'dev-dist', 'node_modules', 'drizzle'],
+    ignores: [
+      '**/dist/**',
+      '**/dev-dist/**',
+      'node_modules/**',
+      'drizzle/**',
+      '*.config.{js,mjs,ts}',
+      'postcss.config.js',
+      'tailwind.config.ts',
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.strictTypeChecked,

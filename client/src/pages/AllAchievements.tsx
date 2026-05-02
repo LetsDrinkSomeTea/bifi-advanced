@@ -19,7 +19,7 @@ export function AllAchievements() {
       <div className="px-4 py-4 max-w-lg mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <button
-            onClick={() => navigate(isOwn ? '/profile' : `/profile/${userId}`)}
+            onClick={() => { navigate(isOwn ? '/profile' : `/profile/${userId}`); }}
             className="p-1 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft size={20} />

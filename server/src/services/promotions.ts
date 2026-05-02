@@ -139,7 +139,7 @@ export async function consumeQuantityPromotion(
     .where(eq(promotions.id, promoId))
     .for('update');
 
-  if (!promo || promo.quantityLimit == null) {
+  if (promo?.quantityLimit == null) {
     return { consumed: requestedQty, isNowExhausted: false, wasFirst: false };
   }
 

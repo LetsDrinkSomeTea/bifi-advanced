@@ -26,7 +26,7 @@ export const requireAuth = createMiddleware(async (c, next) => {
 
   const [user] = await db.select().from(users).where(eq(users.id, session.userId));
 
-  if (!user || !user.isActive) {
+  if (!user?.isActive) {
     const s = c.get('session');
     delete s.userId;
     return c.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, 401);

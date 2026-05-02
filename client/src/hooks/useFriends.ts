@@ -40,7 +40,7 @@ export function useSendFriendRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (userId: string) => api.post(`/api/friends/${userId}/request`, {}),
-    onSuccess: (_, userId) => invalidateAfter(userId, qc),
+    onSuccess: (_, userId) => { invalidateAfter(userId, qc); },
   });
 }
 
@@ -48,7 +48,7 @@ export function useAcceptFriendRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (userId: string) => api.post(`/api/friends/${userId}/accept`, {}),
-    onSuccess: (_, userId) => invalidateAfter(userId, qc),
+    onSuccess: (_, userId) => { invalidateAfter(userId, qc); },
   });
 }
 
@@ -56,6 +56,6 @@ export function useRemoveFriend() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (userId: string) => api.delete(`/api/friends/${userId}`),
-    onSuccess: (_, userId) => invalidateAfter(userId, qc),
+    onSuccess: (_, userId) => { invalidateAfter(userId, qc); },
   });
 }

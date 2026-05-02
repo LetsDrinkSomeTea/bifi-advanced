@@ -129,32 +129,32 @@ router.get('/', requireAuth, zValidator('query', HistoryQuerySchema), async (c) 
 
 async function resolveItems(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  items: Array<{ buyableId: string; variantId?: string; quantity: number }>,
+  items: { buyableId: string; variantId?: string; quantity: number }[],
 ) {
-  type ItemRow = {
+  interface ItemRow {
     buyableId: string;
     variantId: string;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
     discountSavedCents: number;
-  };
+  }
   const toInsert: ItemRow[] = [];
-  const feedItems: Array<{ name: string; variantName: string; count: number }> = [];
-  const achievementItems: Array<{
+  const feedItems: { name: string; variantName: string; count: number }[] = [];
+  const achievementItems: {
     buyableId: string;
     variantId: string;
     category: string | null;
     quantity: number;
     buyableName: string;
-  }> = [];
-  const consumedQuantityPromos: Array<{
+  }[] = [];
+  const consumedQuantityPromos: {
     promoId: string;
     name: string;
     consumed: number;
     isNowExhausted: boolean;
     wasFirst: boolean;
-  }> = [];
+  }[] = [];
   let cost = 0;
 
   for (const item of items) {
@@ -272,14 +272,14 @@ async function redeemVouchers(
   txnId: string,
 ): Promise<{
   credit: number;
-  vouchers: Array<{ id: string; fromUserId: string; refundAmount: number }>;
+  vouchers: { id: string; fromUserId: string; refundAmount: number }[];
 }> {
   let totalCredit = 0;
-  const redeemedVouchers: Array<{
+  const redeemedVouchers: {
     id: string;
     fromUserId: string;
     refundAmount: number;
-  }> = [];
+  }[] = [];
 
   for (const vid of variantIds) {
     const [v] = await tx
@@ -351,8 +351,8 @@ router.post(
         db
           .select({ userId: groupMembers.userId })
           .from(groupMembers)
-          .where(and(eq(groupMembers.groupId, body.groupId!), isNull(groupMembers.leftAt))),
-        db.select({ name: groups.name }).from(groups).where(eq(groups.id, body.groupId!)),
+          .where(and(eq(groupMembers.groupId, body.groupId), isNull(groupMembers.leftAt))),
+        db.select({ name: groups.name }).from(groups).where(eq(groups.id, body.groupId)),
       ]);
 
       if (members.length === 0)
@@ -404,11 +404,11 @@ router.post(
         primary!.totalAmount = -buyerShare;
 
         // Other members' split transactions (no items)
-        const splitNotifications: Array<{
+        const splitNotifications: {
           memberId: string;
           netShare: number;
           txnId: string;
-        }> = [];
+        }[] = [];
         for (const memberId of memberIds) {
           if (memberId === user.id) continue;
           const [splitTxn] = await tx

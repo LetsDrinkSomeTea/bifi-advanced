@@ -34,7 +34,7 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
             type="text"
             placeholder="Gruppenname"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); }}
             maxLength={60}
             required
             className="w-full px-3 py-2.5 rounded-xl border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -43,7 +43,7 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
             type="text"
             placeholder="Beschreibung (optional)"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => { setDescription(e.target.value); }}
             maxLength={200}
             className="w-full px-3 py-2.5 rounded-xl border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
@@ -86,7 +86,7 @@ function JoinGroupModal({ onClose }: { onClose: () => void }) {
             type="text"
             placeholder="Einladungscode"
             value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            onChange={(e) => { setCode(e.target.value.toUpperCase()); }}
             maxLength={8}
             required
             className="w-full px-3 py-2.5 rounded-xl border border-border bg-card text-sm font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -121,13 +121,13 @@ export function Groups() {
           <h1 className="text-xl font-bold">Gruppen</h1>
           <div className="flex gap-2">
             <button
-              onClick={() => setJoinOpen(true)}
+              onClick={() => { setJoinOpen(true); }}
               className="px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
             >
               Beitreten
             </button>
             <button
-              onClick={() => setCreateOpen(true)}
+              onClick={() => { setCreateOpen(true); }}
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <Plus size={15} />
@@ -177,8 +177,8 @@ export function Groups() {
         )}
       </div>
 
-      {createOpen && <CreateGroupModal onClose={() => setCreateOpen(false)} />}
-      {joinOpen && <JoinGroupModal onClose={() => setJoinOpen(false)} />}
+      {createOpen && <CreateGroupModal onClose={() => { setCreateOpen(false); }} />}
+      {joinOpen && <JoinGroupModal onClose={() => { setJoinOpen(false); }} />}
     </Layout>
   );
 }

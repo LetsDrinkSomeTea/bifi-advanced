@@ -3,7 +3,7 @@ import { FeedItem, type GroupedFeedEntry } from './FeedItem';
 import { APP_TZ } from '../lib/utils';
 export type { GroupedFeedEntry };
 
-type Item = { name: string; variantName: string; count: number };
+interface Item { name: string; variantName: string; count: number }
 
 type TimelineItem =
   | { kind: 'entry'; entry: GroupedFeedEntry }

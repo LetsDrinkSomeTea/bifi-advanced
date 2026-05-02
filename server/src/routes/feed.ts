@@ -81,7 +81,7 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
       .from(groupMembers)
       .where(
         and(
-          eq(groupMembers.groupId, activityFeed.targetGroupId!),
+          eq(groupMembers.groupId, activityFeed.targetGroupId),
           eq(groupMembers.userId, user.id),
           lte(groupMembers.joinedAt, activityFeed.createdAt),
           or(isNull(groupMembers.leftAt), gt(groupMembers.leftAt, activityFeed.createdAt)),

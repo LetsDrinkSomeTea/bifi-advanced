@@ -52,12 +52,12 @@ function defineTieredAchievement(config: {
   events: AchievementEventType[];
   hidden?: boolean;
   progressFormat?: 'count' | 'cents';
-  tiers: Array<{
+  tiers: {
     tier: AchievementTier;
     description: string;
     threshold: number;
     hidden?: boolean;
-  }>;
+  }[];
   check?: (event: AchievementEvent) => Promise<number> | number;
   progress?: (userId: string) => Promise<number> | number;
 }): ServerAchievementDef[] {

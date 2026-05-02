@@ -39,11 +39,11 @@ export function Home() {
       {
         onSuccess: () => {
           setCardState({ variantId: fav.variantId, status: 'done' });
-          setTimeout(() => setCardState(null), 900);
+          setTimeout(() => { setCardState(null); }, 900);
         },
         onError: () => {
           setCardState({ variantId: fav.variantId, status: 'error' });
-          setTimeout(() => setCardState(null), 1200);
+          setTimeout(() => { setCardState(null); }, 1200);
         },
       },
     );
@@ -85,7 +85,7 @@ export function Home() {
                   <div key={fav.variantId} className="relative group">
                     <button
                       key={fav.variantId}
-                      onClick={() => handleBuy(fav)}
+                      onClick={() => { handleBuy(fav); }}
                       disabled={!!cardState || !fav.isAvailable}
                       className={cn(
                         'w-full h-full relative flex flex-col justify-between p-4 rounded-2xl border text-left transition-all overflow-hidden',

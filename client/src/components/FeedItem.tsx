@@ -4,7 +4,7 @@ import type { AchievementDef } from '@shared/achievements';
 import { ActivityItem, type ActivityUser, ProfileLink } from './ActivityItem';
 import { useAchievementMeta } from '@/hooks/useAchievements';
 
-type Item = { name: string; variantName: string; count: number };
+interface Item { name: string; variantName: string; count: number }
 
 export interface GroupedFeedEntry extends FeedEntry {
   mergedItems?: Item[];

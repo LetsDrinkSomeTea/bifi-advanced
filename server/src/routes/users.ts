@@ -176,8 +176,11 @@ router.get('/:id/profile', requireAuth, async (c) => {
     Promise.all(progressPromises),
   ]);
 
-  type RankRow = { category: string; rank: number };
-  const rankRows = allRankResults.rows as RankRow[];
+  interface RankRow {
+    category: string;
+    rank: number;
+  }
+  const rankRows = allRankResults.rows as unknown as RankRow[];
   let leaderboardRank: { rank: number; categories: string[] } | null = null;
   if (rankRows.length > 0) {
     const best = Math.min(...rankRows.map((r) => r.rank));

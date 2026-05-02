@@ -32,7 +32,7 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
   if (status === 'friends') {
     return (
       <button
-        onClick={() => remove(userId)}
+        onClick={() => { remove(userId); }}
         disabled={removing}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors disabled:opacity-50"
       >
@@ -45,7 +45,7 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
   if (status === 'pending_sent') {
     return (
       <button
-        onClick={() => remove(userId)}
+        onClick={() => { remove(userId); }}
         disabled={removing}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground transition-colors disabled:opacity-50"
         title="Anfrage zurückziehen"
@@ -60,7 +60,7 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
     return (
       <div className="flex gap-2">
         <button
-          onClick={() => accept(userId)}
+          onClick={() => { accept(userId); }}
           disabled={accepting}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
@@ -68,7 +68,7 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
           Annehmen
         </button>
         <button
-          onClick={() => remove(userId)}
+          onClick={() => { remove(userId); }}
           disabled={removing}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors disabled:opacity-50"
         >
@@ -81,7 +81,7 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
 
   return (
     <button
-      onClick={() => send(userId)}
+      onClick={() => { send(userId); }}
       disabled={sending}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
     >
@@ -124,7 +124,7 @@ function NudgeSheet({
           {presets?.map((p) => (
             <button
               key={p.key}
-              onClick={() => handleSend(p.key)}
+              onClick={() => { handleSend(p.key); }}
               disabled={isPending}
               className="w-full text-left px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-sm disabled:opacity-50"
             >
@@ -139,7 +139,7 @@ function NudgeSheet({
             type="text"
             placeholder="Eigene Nachricht (privat)…"
             value={freetext}
-            onChange={(e) => setFreetext(e.target.value)}
+            onChange={(e) => { setFreetext(e.target.value); }}
             maxLength={200}
             className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             onKeyDown={(e) =>
@@ -147,7 +147,7 @@ function NudgeSheet({
             }
           />
           <button
-            onClick={() => handleSend(undefined, freetext.trim())}
+            onClick={() => { handleSend(undefined, freetext.trim()); }}
             disabled={isPending || !freetext.trim()}
             className="px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40"
           >
@@ -206,7 +206,7 @@ function ProstSheet({
             {variants.map((v) => (
               <button
                 key={v.id}
-                onClick={() => send({ toUserId, variantId: v.id }, { onSuccess: onClose })}
+                onClick={() => { send({ toUserId, variantId: v.id }, { onSuccess: onClose }); }}
                 disabled={isPending}
                 className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-sm disabled:opacity-50"
               >
@@ -295,14 +295,14 @@ export function ProfileDetail() {
                   <FriendButton userId={profile.id} status={profile.friendshipStatus} />
                 )}
                 <button
-                  onClick={() => setProstOpen(true)}
+                  onClick={() => { setProstOpen(true); }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Beer size={15} />
                   Prost
                 </button>
                 <button
-                  onClick={() => setNudgeOpen(true)}
+                  onClick={() => { setNudgeOpen(true); }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Bell size={15} />
@@ -352,14 +352,14 @@ export function ProfileDetail() {
         <ProstSheet
           toUserId={profile.id}
           displayName={profile.displayName}
-          onClose={() => setProstOpen(false)}
+          onClose={() => { setProstOpen(false); }}
         />
       )}
       {nudgeOpen && (
         <NudgeSheet
           userId={profile.id}
           displayName={profile.displayName}
-          onClose={() => setNudgeOpen(false)}
+          onClose={() => { setNudgeOpen(false); }}
         />
       )}
     </Layout>

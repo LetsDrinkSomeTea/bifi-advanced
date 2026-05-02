@@ -23,7 +23,7 @@ function DepositModal({ user, onClose }: { user: SettlementEntry | null; onClose
       { userId: user!.id, amount: cents, note: note || undefined },
       {
         onSuccess: onClose,
-        onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
+        onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); },
       },
     );
   };
@@ -57,7 +57,7 @@ function DepositModal({ user, onClose }: { user: SettlementEntry | null; onClose
             type="text"
             placeholder="z.B. Bareinzahlung"
             value={note}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={(e) => { setNote(e.target.value); }}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -86,7 +86,7 @@ export function AdminSettlement() {
     sendReminder(userId, {
       onSuccess: () => {
         setLastNudgeId(userId);
-        setTimeout(() => setLastNudgeId(null), 3000);
+        setTimeout(() => { setLastNudgeId(null); }, 3000);
       },
     });
   };
@@ -140,7 +140,7 @@ export function AdminSettlement() {
                 {formatCents(u.balance)}
               </span>
               <button
-                onClick={() => handleNudge(u.id)}
+                onClick={() => { handleNudge(u.id); }}
                 disabled={isReminding || lastNudgeId === u.id}
                 className={cn(
                   'p-2 rounded-lg border transition-all',
@@ -153,7 +153,7 @@ export function AdminSettlement() {
                 <Bell size={15} className={lastNudgeId === u.id ? 'fill-current' : ''} />
               </button>
               <button
-                onClick={() => setDepositTarget(u)}
+                onClick={() => { setDepositTarget(u); }}
                 className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent transition-colors"
               >
                 + €
@@ -163,7 +163,7 @@ export function AdminSettlement() {
         ))}
       </div>
 
-      <DepositModal user={depositTarget} onClose={() => setDepositTarget(null)} />
+      <DepositModal user={depositTarget} onClose={() => { setDepositTarget(null); }} />
     </AdminLayout>
   );
 }
