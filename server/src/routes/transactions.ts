@@ -9,6 +9,7 @@ import {
   groupMembers,
   groups,
   productVariants,
+  promotions,
   prostVouchers,
   transactionItems,
   transactions,
@@ -20,9 +21,11 @@ import { purchaseRateLimit } from "../middleware/rateLimit.ts";
 import {
   getActiveDiscount,
   calculateDiscountedPrice,
+  consumeQuantityPromotion,
 } from "../services/promotions.ts";
 import { writeAuditLog } from "../services/audit.ts";
 import {
+  broadcastInvalidate,
   createNotification,
   pushInvalidate,
 } from "../services/notifications.ts";
@@ -161,6 +164,12 @@ async function resolveItems(
     quantity: number;
     buyableName: string;
   }> = [];
+  const consumedQuantityPromos: Array<{
+    promoId: string;
+    name: string;
+    consumed: number;
+    isNowExhausted: boolean;
+  }> = [];
   let cost = 0;
 
   for (const item of items) {
@@ -200,23 +209,65 @@ async function resolveItems(
       });
     }
 
-    let unitPrice = variant.price;
     const discount = await getActiveDiscount(
       buyable.id,
       variant.id,
       buyable.category,
     );
-    unitPrice = calculateDiscountedPrice(unitPrice, discount);
 
-    const totalPrice = unitPrice * item.quantity;
-    cost += totalPrice;
-    toInsert.push({
-      buyableId: buyable.id,
-      variantId: variant.id,
-      quantity: item.quantity,
-      unitPrice,
-      totalPrice,
-    });
+    if (discount?.quantityRemaining !== null && discount != null) {
+      // Quantity-based promotion: consume atomically inside the transaction
+      const { consumed, isNowExhausted } = await consumeQuantityPromotion(
+        tx,
+        discount.promoId,
+        item.quantity,
+      );
+
+      if (consumed > 0) {
+        const discountedPrice = calculateDiscountedPrice(variant.price, discount);
+        const discountedTotal = discountedPrice * consumed;
+        cost += discountedTotal;
+        toInsert.push({
+          buyableId: buyable.id,
+          variantId: variant.id,
+          quantity: consumed,
+          unitPrice: discountedPrice,
+          totalPrice: discountedTotal,
+        });
+        consumedQuantityPromos.push({
+          promoId: discount.promoId,
+          name: discount.name,
+          consumed,
+          isNowExhausted,
+        });
+      }
+
+      const fullQty = item.quantity - consumed;
+      if (fullQty > 0) {
+        const fullTotal = variant.price * fullQty;
+        cost += fullTotal;
+        toInsert.push({
+          buyableId: buyable.id,
+          variantId: variant.id,
+          quantity: fullQty,
+          unitPrice: variant.price,
+          totalPrice: fullTotal,
+        });
+      }
+    } else {
+      // Regular (time-based or no) promotion
+      const unitPrice = calculateDiscountedPrice(variant.price, discount);
+      const totalPrice = unitPrice * item.quantity;
+      cost += totalPrice;
+      toInsert.push({
+        buyableId: buyable.id,
+        variantId: variant.id,
+        quantity: item.quantity,
+        unitPrice,
+        totalPrice,
+      });
+    }
+
     feedItems.push({
       name: buyable.name,
       variantName: variant.name,
@@ -231,7 +282,7 @@ async function resolveItems(
     });
   }
 
-  return { toInsert, feedItems, achievementItems, cost };
+  return { toInsert, feedItems, achievementItems, cost, consumedQuantityPromos };
 }
 
 // ─── Shared: redeem prost vouchers for a user ─────────────────────────────────
@@ -354,7 +405,7 @@ router.post(
 
       // resolveItems runs inside the same transaction as balance deduction (fixes TOCTOU)
       const primaryTxn = await db.transaction(async (tx) => {
-        const { toInsert, feedItems, achievementItems, cost } =
+        const { toInsert, feedItems, achievementItems, cost, consumedQuantityPromos } =
           await resolveItems(tx, body.items);
 
         // Distribute cost: each member pays ceil(cost/n), buyer absorbs rounding
@@ -439,6 +490,7 @@ router.post(
           achievementItems,
           cost,
           splitNotifications,
+          consumedQuantityPromos,
         };
       });
 
@@ -456,6 +508,24 @@ router.post(
           message: `${user.displayName} hat eine Gruppenbestellung aufgegeben. Dein Anteil: ${(netShare / 100).toFixed(2)} €`,
           relatedId: txnId,
         }).catch(console.error);
+      }
+
+      // Handle exhausted quantity promotions
+      if (primaryTxn.consumedQuantityPromos.length > 0) {
+        broadcastInvalidate(["buyables"]);
+        for (const cp of primaryTxn.consumedQuantityPromos) {
+          if (cp.isNowExhausted) {
+            await db
+              .update(promotions)
+              .set({ isActive: false })
+              .where(eq(promotions.id, cp.promoId));
+            emitFeedEvent({
+              type: "promotion_ended",
+              userId: user.id,
+              metadata: { promoName: cp.name },
+            });
+          }
+        }
       }
 
       emitFeedEvent({
@@ -489,8 +559,9 @@ router.post(
       voucherCredit,
       feedItems,
       achievementItems,
+      consumedQuantityPromos,
     } = await db.transaction(async (tx) => {
-      const { toInsert, feedItems, achievementItems, cost } =
+      const { toInsert, feedItems, achievementItems, cost, consumedQuantityPromos } =
         await resolveItems(tx, body.items);
 
       const [created] = await tx
@@ -545,8 +616,27 @@ router.post(
         voucherCredit: credit,
         feedItems,
         achievementItems,
+        consumedQuantityPromos,
       };
     });
+
+    // Handle exhausted quantity promotions
+    if (consumedQuantityPromos.length > 0) {
+      broadcastInvalidate(["buyables"]);
+      for (const cp of consumedQuantityPromos) {
+        if (cp.isNowExhausted) {
+          await db
+            .update(promotions)
+            .set({ isActive: false })
+            .where(eq(promotions.id, cp.promoId));
+          emitFeedEvent({
+            type: "promotion_ended",
+            userId: user.id,
+            metadata: { promoName: cp.name },
+          });
+        }
+      }
+    }
 
     emitFeedEvent({
       type: "purchase",

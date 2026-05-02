@@ -224,6 +224,8 @@ export const promotions = pgTable('promotions', {
   endTime: timestamp('end_time'),
   appliesTo: jsonb('applies_to'),
   isActive: boolean('is_active').notNull().default(true),
+  quantityLimit: integer('quantity_limit'),
+  quantityUsed: integer('quantity_used').notNull().default(0),
   createdAt: createdAt(),
 })
 

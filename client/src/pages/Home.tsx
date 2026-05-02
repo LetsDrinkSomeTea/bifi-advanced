@@ -101,8 +101,11 @@ export function Home() {
                       )}
                     >
                       {fav.isAvailable && fav.activeDiscount && !state && (
-                        <div className="absolute top-0 right-0 bg-orange-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg pointer-events-none uppercase tracking-tighter">
-                          {fav.activeDiscount.type === 'percent' ? `-${fav.activeDiscount.value}%` : 'SALE'}
+                        <div className="absolute top-0 right-0 bg-orange-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg pointer-events-none uppercase tracking-tighter text-center leading-tight">
+                          <div>{fav.activeDiscount.type === 'percent' ? `-${fav.activeDiscount.value}%` : 'SALE'}</div>
+                          {fav.activeDiscount.quantityRemaining !== null && (
+                            <div className="normal-case">noch {fav.activeDiscount.quantityRemaining}x</div>
+                          )}
                         </div>
                       )}
                       {fav.category && (

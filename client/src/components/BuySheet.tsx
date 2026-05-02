@@ -151,9 +151,16 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                   </div>
                 </div>
                 {selectedVariant.activeDiscount && (
-                  <span className="px-2 py-1 rounded-lg bg-orange-500 text-white text-[10px] font-black uppercase tracking-tighter shadow-sm shadow-orange-500/20">
-                    {selectedVariant.activeDiscount.type === 'percent' ? `-${selectedVariant.activeDiscount.value}% Rabatt` : 'Sonderpreis'}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="px-2 py-1 rounded-lg bg-orange-500 text-white text-[10px] font-black uppercase tracking-tighter shadow-sm shadow-orange-500/20">
+                      {selectedVariant.activeDiscount.type === 'percent' ? `-${selectedVariant.activeDiscount.value}% Rabatt` : 'Sonderpreis'}
+                    </span>
+                    {selectedVariant.activeDiscount.quantityRemaining !== null && (
+                      <span className="text-[10px] font-semibold text-blue-500">
+                        noch {selectedVariant.activeDiscount.quantityRemaining}x verfügbar
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -264,15 +271,16 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
               )}
             </button>
 
-            {showJackpot && (
-              <button
-                onClick={handleJackpot}
-                className="w-full py-3.5 rounded-2xl border-2 border-dashed border-amber-500/50 text-amber-600 dark:text-amber-400 font-black text-sm flex items-center justify-center gap-2 hover:bg-amber-500/5 transition-all active:scale-[0.98]"
-              >
-                <Dices size={18} />
-                Jackpot (0 € - {formatCents(2 * discountedUnitPrice)})
-              </button>
-            )}
+            <button
+              onClick={showJackpot ? handleJackpot : undefined}
+              className={cn(
+                "w-full py-3.5 rounded-2xl border-2 border-dashed border-amber-500/50 text-amber-600 dark:text-amber-400 font-black text-sm flex items-center justify-center gap-2 hover:bg-amber-500/5 transition-all active:scale-[0.98]",
+                !showJackpot && "invisible pointer-events-none"
+              )}
+            >
+              <Dices size={18} />
+              Jackpot (0 € - {formatCents(2 * discountedUnitPrice)})
+            </button>
           </div>
         </div>
       </div>

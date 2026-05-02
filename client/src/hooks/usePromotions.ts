@@ -14,6 +14,8 @@ export interface Promotion {
     categoryIds?: string[]
   } | null
   isActive: boolean
+  quantityLimit: number | null
+  quantityUsed: number
   createdAt: string
 }
 

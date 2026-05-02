@@ -1,18 +1,20 @@
-import { and, gte, isNull, lte, or, eq } from 'drizzle-orm'
+import { and, gte, isNull, lte, or, eq, lt, sql } from 'drizzle-orm'
 import { db } from '../db/index.ts'
 import { promotions } from '../db/schema.ts'
 
 interface AppliesToConfig {
   buyableId?: string
   variantId?: string
-  categoryIds?: string[] // Kept for backward compatibility or future use
+  categoryIds?: string[]
 }
 
 export interface ActiveDiscount {
   type: 'percent' | 'fixed'
-  value: number // Percent (0-100) or Fixed price in Cents
+  value: number
   name: string
   endTime: string | null
+  quantityRemaining: number | null
+  promoId: string
 }
 
 export async function getActiveDiscount(
@@ -30,15 +32,21 @@ export async function getActiveDiscount(
         eq(promotions.isActive, true),
         or(isNull(promotions.startTime), lte(promotions.startTime, now)),
         or(isNull(promotions.endTime), gte(promotions.endTime, now)),
+        // Exclude exhausted quantity promotions
+        or(
+          isNull(promotions.quantityLimit),
+          lt(promotions.quantityUsed, promotions.quantityLimit),
+        ),
       ),
     )
 
   if (active.length === 0) return null
 
   // Sort by specificity: variant > buyable > category > global
-  // And prefer fixed price over percentage if both apply to the same level
+  // Within same level: quantity-based promotions take priority over time-based
   let bestDiscount: ActiveDiscount | null = null
   let bestPriority = -1
+  let bestIsQuantity = false
 
   for (const promo of active) {
     const appliesTo = promo.appliesTo as AppliesToConfig | null
@@ -47,37 +55,45 @@ export async function getActiveDiscount(
     if (appliesTo) {
       if (appliesTo.variantId) {
         if (appliesTo.variantId === variantId) {
-          priority = 3 // Matches specific variant
+          priority = 3
         } else {
-          continue // Targeted at a different variant, skip
+          continue
         }
       } else if (appliesTo.buyableId) {
         if (appliesTo.buyableId === buyableId) {
-          priority = 2 // Matches product
+          priority = 2
         } else {
-          continue // Targeted at a different product, skip
+          continue
         }
       } else if (category && appliesTo.categoryIds?.includes(category)) {
-        priority = 1 // Specific category
+        priority = 1
       } else {
-        // Targeted at something else, skip
         continue
       }
     }
 
+    const isQuantityBased = promo.quantityLimit != null
+    const quantityRemaining = isQuantityBased
+      ? promo.quantityLimit! - promo.quantityUsed
+      : null
+
     const current: ActiveDiscount | null = promo.discountFixedCents != null
-      ? { 
-          type: 'fixed', 
+      ? {
+          type: 'fixed',
           value: promo.discountFixedCents,
           name: promo.name,
-          endTime: promo.endTime?.toISOString() ?? null 
+          endTime: promo.endTime?.toISOString() ?? null,
+          quantityRemaining,
+          promoId: promo.id,
         }
       : promo.discountPercent != null
-        ? { 
-            type: 'percent', 
+        ? {
+            type: 'percent',
             value: promo.discountPercent,
             name: promo.name,
-            endTime: promo.endTime?.toISOString() ?? null 
+            endTime: promo.endTime?.toISOString() ?? null,
+            quantityRemaining,
+            promoId: promo.id,
           }
         : null
 
@@ -86,13 +102,19 @@ export async function getActiveDiscount(
     if (priority > bestPriority) {
       bestPriority = priority
       bestDiscount = current
+      bestIsQuantity = isQuantityBased
     } else if (priority === bestPriority) {
-      // Tie-breaker at same level: prefer lower absolute price (hard to calculate here without base price)
-      // For simplicity: prefer fixed price over percent, or higher percent
-      if (current.type === 'fixed') {
+      // Quantity-based beats non-quantity at same specificity level
+      if (isQuantityBased && !bestIsQuantity) {
         bestDiscount = current
-      } else if (bestDiscount?.type === 'percent' && current.value > bestDiscount.value) {
-        bestDiscount = current
+        bestIsQuantity = true
+      } else if (isQuantityBased === bestIsQuantity) {
+        // Same type: prefer fixed over percent, or higher percent
+        if (current.type === 'fixed') {
+          bestDiscount = current
+        } else if (bestDiscount?.type === 'percent' && current.value > bestDiscount.value) {
+          bestDiscount = current
+        }
       }
     }
   }
@@ -105,4 +127,32 @@ export function calculateDiscountedPrice(basePrice: number, discount: ActiveDisc
   if (discount.type === 'fixed') return Math.max(0, discount.value)
   const factor = (100 - discount.value) / 100
   return Math.max(0, Math.round(basePrice * factor))
+}
+
+export async function consumeQuantityPromotion(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  promoId: string,
+  requestedQty: number,
+): Promise<{ consumed: number; isNowExhausted: boolean }> {
+  const [promo] = await tx
+    .select()
+    .from(promotions)
+    .where(eq(promotions.id, promoId))
+    .for('update')
+
+  if (!promo || promo.quantityLimit == null) {
+    return { consumed: requestedQty, isNowExhausted: false }
+  }
+
+  const remaining = promo.quantityLimit - promo.quantityUsed
+  const consumed = Math.min(requestedQty, Math.max(0, remaining))
+  const newUsed = promo.quantityUsed + consumed
+  const isNowExhausted = newUsed >= promo.quantityLimit
+
+  await tx
+    .update(promotions)
+    .set({ quantityUsed: newUsed })
+    .where(eq(promotions.id, promoId))
+
+  return { consumed, isNowExhausted }
 }

@@ -21,6 +21,8 @@ export interface ActiveDiscount {
   value: number
   name: string
   endTime: string | null
+  quantityRemaining: number | null
+  promoId: string
 }
 
 export interface BuyableWithVariants {

@@ -25,13 +25,14 @@ function formatTimeLeft(endTime: string | null): string | null {
 }
 
 function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
-  const { title, summary, timeLeft } = useMemo(() => {
+  const { title, summary, badge } = useMemo(() => {
     const discountedLabels: string[] = []
     let earliestEnd: number | null = null
+    let minQuantityRemaining: number | null = null
 
     items.forEach(item => {
       const discountedVariants = item.variants.filter(v => v.activeDiscount)
-      
+
       if (discountedVariants.length === 1) {
         discountedLabels.push(`${item.name} (${discountedVariants[0]!.name})`)
       } else if (discountedVariants.length > 1) {
@@ -39,14 +40,18 @@ function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
       }
 
       discountedVariants.forEach(v => {
-        if (v.activeDiscount?.endTime) {
+        if (v.activeDiscount?.quantityRemaining !== null && v.activeDiscount?.quantityRemaining !== undefined) {
+          if (minQuantityRemaining === null || v.activeDiscount.quantityRemaining < minQuantityRemaining) {
+            minQuantityRemaining = v.activeDiscount.quantityRemaining
+          }
+        } else if (v.activeDiscount?.endTime) {
           const time = new Date(v.activeDiscount.endTime).getTime()
           if (earliestEnd === null || time < earliestEnd) earliestEnd = time
         }
       })
     })
 
-    if (discountedLabels.length === 0) return { title: '', summary: '', timeLeft: '' }
+    if (discountedLabels.length === 0) return { title: '', summary: '', badge: '' }
 
     let summaryStr = ''
     if (discountedLabels.length <= 2) {
@@ -55,10 +60,17 @@ function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
       summaryStr = `${discountedLabels.length} Produkte reduziert`
     }
 
+    let badge = ''
+    if (minQuantityRemaining !== null) {
+      badge = `noch ${minQuantityRemaining}x`
+    } else {
+      badge = earliestEnd ? (formatTimeLeft(new Date(earliestEnd).toISOString()) ?? '') : 'zeitlich unbegrenzt'
+    }
+
     return {
       title: discountedLabels.length > 1 ? "Rabatte verfügbar" : "Rabatt verfügbar",
       summary: summaryStr,
-      timeLeft: earliestEnd ? formatTimeLeft(new Date(earliestEnd).toISOString()) : 'zeitlich unbegrenzt'
+      badge,
     }
   }, [items])
 
@@ -75,8 +87,8 @@ function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           <h3 className="font-black text-lg leading-tight uppercase tracking-tighter italic">{title}</h3>
-          {timeLeft && <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-bold whitespace-nowrap">
-            {timeLeft}
+          {badge && <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-bold whitespace-nowrap">
+            {badge}
           </span>}
         </div>
         <p className="text-sm font-medium opacity-95 truncate">
@@ -292,6 +304,11 @@ export function Shop() {
                                       <span className="text-[10px] font-black text-orange-500 uppercase tracking-tighter">
                                         {v.activeDiscount!.type === 'percent' ? `-${v.activeDiscount!.value}%` : 'Aktion'}
                                       </span>
+                                      {v.activeDiscount!.quantityRemaining !== null && (
+                                        <span className="text-[10px] font-medium text-blue-500">
+                                          noch {v.activeDiscount!.quantityRemaining}x
+                                        </span>
+                                      )}
                                     </>
                                   ) : (
                                     <span className="text-sm font-medium text-foreground/80">

@@ -160,7 +160,12 @@ function feedText(
     }
     case 'promotion_started': {
       const name = metadata?.promoName as string | undefined
-      return <>Eine neue Aktion wurde gestartet: <span className="font-bold text-orange-500 uppercase tracking-tighter">„{name ?? 'Sonderangebot'}"</span> 🔥</>
+      const qty = metadata?.quantityLimit as number | undefined
+      return <>
+        Eine neue Aktion wurde gestartet: <span className="font-bold text-orange-500 uppercase tracking-tighter">„{name ?? 'Sonderangebot'}"</span>
+        {qty != null ? <> – nur <span className="font-bold">{qty}x</span> verfügbar!</> : null}
+        {' '}🔥
+      </>
     }
     case 'promotion_ended': {
       const name = metadata?.promoName as string | undefined

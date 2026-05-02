@@ -32,6 +32,7 @@ const PromotionSchema = z.object({
     categoryIds: z.array(z.string()).optional(),
   }).nullable().optional(),
   isActive: z.boolean().default(true),
+  quantityLimit: z.number().int().min(1).nullable().optional(),
 })
 
 router.get('/', async (c) => {
@@ -56,10 +57,11 @@ router.post('/', zValidator('json', PromotionSchema), async (c) => {
     emitFeedEvent({
         type: 'promotion_started',
         userId: user.id,
-        metadata: { 
+        metadata: {
             promoName: created!.name,
             discountPercent: created!.discountPercent ?? undefined,
-            discountFixedCents: created!.discountFixedCents ?? undefined
+            discountFixedCents: created!.discountFixedCents ?? undefined,
+            quantityLimit: created!.quantityLimit ?? undefined,
         }
     })
   }
@@ -102,10 +104,11 @@ router.patch('/:id', zValidator('json', PromotionSchema.partial()), async (c) =>
       emitFeedEvent({
           type: 'promotion_started',
           userId: user.id,
-          metadata: { 
+          metadata: {
               promoName: updated!.name,
               discountPercent: updated!.discountPercent ?? undefined,
-              discountFixedCents: updated!.discountFixedCents ?? undefined
+              discountFixedCents: updated!.discountFixedCents ?? undefined,
+              quantityLimit: updated!.quantityLimit ?? undefined,
           }
       })
     } else {

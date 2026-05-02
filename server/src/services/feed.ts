@@ -75,7 +75,7 @@ export type FeedEvent =
   | {
       type: 'promotion_started'
       userId: string
-      metadata: { promoName: string; discountPercent?: number; discountFixedCents?: number }
+      metadata: { promoName: string; discountPercent?: number; discountFixedCents?: number; quantityLimit?: number }
     }
   | {
       type: 'promotion_ended'

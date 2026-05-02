@@ -26,6 +26,7 @@ function PromotionModal({
   const [endTime, setEndTime] = useState('')
   const [targetBuyableId, setTargetBuyableId] = useState('')
   const [targetVariantId, setTargetVariantId] = useState('')
+  const [quantityLimit, setQuantityLimit] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -33,14 +34,15 @@ function PromotionModal({
       setName(promotion?.name ?? '')
       setType(promotion?.discountFixedCents != null ? 'fixed' : 'percent')
       setValue(
-        promotion?.discountFixedCents != null 
-          ? (promotion.discountFixedCents / 100).toString() 
+        promotion?.discountFixedCents != null
+          ? (promotion.discountFixedCents / 100).toString()
           : (promotion?.discountPercent ?? '0').toString()
       )
       setStartTime(toLocalISO(promotion?.startTime))
       setEndTime(toLocalISO(promotion?.endTime))
       setTargetBuyableId(promotion?.appliesTo?.buyableId ?? '')
       setTargetVariantId(promotion?.appliesTo?.variantId ?? '')
+      setQuantityLimit(promotion?.quantityLimit?.toString() ?? '')
       setError('')
     }
   }, [open, promotion])
@@ -52,6 +54,11 @@ function PromotionModal({
     const numericValue = parseFloat(value.replace(',', '.'))
     if (isNaN(numericValue)) return setError('Ungültiger Wert')
 
+    const parsedQty = quantityLimit.trim() ? parseInt(quantityLimit, 10) : null
+    if (parsedQty !== null && (isNaN(parsedQty) || parsedQty < 1)) {
+      return setError('Kontingent muss eine positive Zahl sein')
+    }
+
     const body: any = {
       name: name.trim(),
       discountPercent: type === 'percent' ? Math.round(numericValue) : null,
@@ -62,7 +69,8 @@ function PromotionModal({
         buyableId: targetBuyableId,
         variantId: targetVariantId || undefined
       } : null,
-      isActive: promotion ? promotion.isActive : true
+      isActive: promotion ? promotion.isActive : true,
+      quantityLimit: parsedQty,
     }
 
     if (promotion) {
@@ -163,8 +171,24 @@ function PromotionModal({
           </div>
         )}
 
+        <div>
+          <label className="block text-sm font-medium mb-1">Kontingent (optional)</label>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={quantityLimit}
+            onChange={(e) => setQuantityLimit(e.target.value)}
+            placeholder="z.B. 20 (leer = unbegrenzt)"
+            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Wenn gesetzt, gilt der Rabatt nur für die ersten N Einheiten global. Danach wird die Aktion automatisch deaktiviert.
+          </p>
+        </div>
+
         {error && <p className="text-sm text-destructive">{error}</p>}
-        
+
         <button
           type="submit"
           disabled={creating || updating}
@@ -243,6 +267,18 @@ export function AdminPromotions() {
                     <p className="text-xs text-muted-foreground mb-2">
                       Target: <span className="text-foreground font-medium">{getTargetLabel(p)}</span>
                     </p>
+                    {p.quantityLimit != null && (
+                      <div className="flex items-center gap-1.5 text-[10px] mt-1">
+                        <span className={cn(
+                          "font-semibold",
+                          p.quantityUsed >= p.quantityLimit ? "text-destructive" : "text-blue-500"
+                        )}>
+                          {p.quantityUsed >= p.quantityLimit
+                            ? 'Kontingent aufgebraucht'
+                            : `Kontingent: ${p.quantityLimit - p.quantityUsed} von ${p.quantityLimit} übrig`}
+                        </span>
+                      </div>
+                    )}
                     {(p.startTime || p.endTime) && (
                       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                         <Calendar size={10} />
