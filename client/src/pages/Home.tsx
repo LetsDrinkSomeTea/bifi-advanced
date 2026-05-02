@@ -1,16 +1,16 @@
 import { useState } from 'react'
-import { Star, ChevronRight } from 'lucide-react'
+import { Star, ChevronRight, X } from 'lucide-react'
 import { Link } from 'wouter'
 import { Layout } from '../components/layout/Layout'
 import { TransactionList } from '../components/TransactionList'
 import { FeedTimeline, groupEntries } from '../components/FeedTimeline'
-import { useFavorites } from '../hooks/useFavorites'
+import { useFavorites, useToggleFavorite } from '../hooks/useFavorites'
 import { useFeed } from '../hooks/useFeed'
 import { usePurchase, useTransactionHistory } from '../hooks/useTransactions'
 import { useVoucherMap } from '../hooks/useProst'
 import type { Favorite } from '@shared/types'
 import { formatCents, cn } from '../lib/utils'
-import { CATEGORY_LABELS } from '@shared/schemas'
+import { CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas'
 
 type CardState = { variantId: string; status: 'buying' | 'done' | 'error' } | null
 
@@ -25,6 +25,7 @@ export function Home() {
   const { data: favorites, isLoading } = useFavorites()
   const { data: txnData, isLoading: txnLoading } = useTransactionHistory()
   const { mutate: purchase } = usePurchase()
+  const { mutate: toggleFav } = useToggleFavorite()
   const voucherMap = useVoucherMap()
   const [cardState, setCardState] = useState<CardState>(null)
 
@@ -84,43 +85,75 @@ export function Home() {
                 const state = cardState?.variantId === fav.variantId ? cardState.status : null
 
                 return (
-                  <button
-                    key={fav.variantId}
-                    onClick={() => handleBuy(fav)}
-                    disabled={!!cardState || !fav.isAvailable}
-                    className={cn(
-                      'relative flex flex-col justify-between p-4 rounded-2xl border text-left transition-all',
-                      fav.isAvailable && 'active:scale-95',
-                      state === 'done' && 'border-green-500 bg-green-500/10',
-                      state === 'error' && 'border-destructive bg-destructive/10',
-                      !state && fav.isAvailable && 'border-border bg-card hover:bg-accent',
-                      !fav.isAvailable && 'border-border bg-muted/30 opacity-60 cursor-default',
-                      fav.isAvailable && !!cardState && !state && 'opacity-50',
-                    )}
-                  >
-                    {fav.category && (
-                      <span className="text-xs text-muted-foreground">{CATEGORY_LABELS[fav.category]}</span>
-                    )}
-                    <span className="font-semibold text-sm leading-tight">
-                      {fav.buyableName}
-                    </span>
-                    <div className="flex items-end justify-between mt-1">
-                      <span className="text-xs text-muted-foreground">{fav.variantName}</span>
-                      <div className="flex items-center gap-1">
-                        {fav.isAvailable && voucherMap.has(fav.variantId) && state !== 'buying' && state !== 'done' && state !== 'error' && (
-                          <span className="text-sm">🎁</span>
-                        )}
-                        <span className={cn('text-sm font-bold', !fav.isAvailable && 'text-muted-foreground', voucherMap.has(fav.variantId) && "line-through text-muted-foreground")}>
-                          {!fav.isAvailable
-                            ? 'Nicht verfügbar'
-                            : state === 'buying' ? '…'
-                              : state === 'done' ? '✓'
-                                : state === 'error' ? '✕'
-                                  : formatCents(fav.price)}
-                        </span>
+                  <div key={fav.variantId} className="relative group">
+                    <button
+                      key={fav.variantId}
+                      onClick={() => handleBuy(fav)}
+                      disabled={!!cardState || !fav.isAvailable}
+                      className={cn(
+                        'w-full h-full relative flex flex-col justify-between p-4 rounded-2xl border text-left transition-all overflow-hidden',
+                        fav.isAvailable && 'active:scale-95',
+                        state === 'done' && 'border-green-500 bg-green-500/10',
+                        state === 'error' && 'border-destructive bg-destructive/10',
+                        !state && fav.isAvailable && 'border-border bg-card hover:bg-accent',
+                        !fav.isAvailable && 'border-border bg-muted/30 opacity-60 cursor-default',
+                        fav.isAvailable && !!cardState && !state && 'opacity-50',
+                      )}
+                    >
+                      {fav.isAvailable && fav.activeDiscount && !state && (
+                        <div className="absolute top-0 right-0 bg-orange-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg pointer-events-none uppercase tracking-tighter">
+                          {fav.activeDiscount.type === 'percent' ? `-${fav.activeDiscount.value}%` : 'SALE'}
+                        </div>
+                      )}
+                      {fav.category && (
+                        <span className="text-xs text-muted-foreground">{CATEGORY_LABELS[fav.category as BuyableCategory]}</span>
+                      )}
+                      <span className="font-semibold text-sm leading-tight pr-4">
+                        {fav.buyableName}
+                      </span>
+                      <div className="flex items-end justify-between mt-1">
+                        <span className="text-xs text-muted-foreground">{fav.variantName}</span>
+                        <div className="flex items-center gap-1">
+                          {fav.isAvailable && voucherMap.has(fav.variantId) && !state && (
+                            <span className="text-sm">🎁</span>
+                          )}
+                          <span className={cn(
+                            'text-sm font-bold tabular-nums',
+                            !fav.isAvailable && 'text-muted-foreground',
+                            fav.isAvailable && fav.activeDiscount && !state && 'text-orange-500',
+                            voucherMap.has(fav.variantId) && !state && "line-through text-muted-foreground opacity-50"
+                          )}>
+                            {!fav.isAvailable
+                              ? 'Nicht verfügbar'
+                              : state === 'buying' ? '…'
+                                : state === 'done' ? '✓'
+                                  : state === 'error' ? '✕'
+                                    : formatCents(fav.activeDiscount ? fav.discountedPrice : fav.price)}
+                          </span>
+                          {fav.isAvailable && fav.activeDiscount && !state && !voucherMap.has(fav.variantId) && (
+                            <span className="text-[10px] text-muted-foreground line-through decoration-muted-foreground/30 font-normal">
+                              {formatCents(fav.price)}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+
+                    {/* Remove Favorite Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleFav({ variantId: fav.variantId, isFav: true })
+                      }}
+                      className={cn(
+                        "absolute -top-1 -right-1 p-1 rounded-full bg-background border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all opacity-0 group-hover:opacity-100 shadow-sm z-10",
+                        !fav.isAvailable && "opacity-100"
+                      )}
+                      title="Aus Favoriten entfernen"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
                 )
               })}
             </div>

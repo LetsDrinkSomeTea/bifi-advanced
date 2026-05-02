@@ -72,6 +72,16 @@ export type FeedEvent =
       userId: string
       metadata: { multiplier: number; multiplierPct: number; productName: string; variantName: string }
     }
+  | {
+      type: 'promotion_started'
+      userId: string
+      metadata: { promoName: string; discountPercent?: number; discountFixedCents?: number }
+    }
+  | {
+      type: 'promotion_ended'
+      userId: string
+      metadata: { promoName: string }
+    }
 
 // ─── Emit ──────────────────────────────────────────────────────────────────────
 

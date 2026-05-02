@@ -12,7 +12,7 @@ import {
   users
 } from '../db/schema.ts'
 import { requireAuth } from '../middleware/auth.ts'
-import { getBerlinHour, getBerlinWeekday, toBerlin } from '../services/achievements.ts'
+import { getLocalHour, getLocalWeekday, toLocalTime } from '../services/achievements.ts'
 
 const router = new Hono()
 
@@ -148,8 +148,8 @@ router.get('/user/:id', requireAuth, async (c) => {
     const weekdayCounts: Record<number, number> = {}
     const hourCounts: Record<number, number> = {}
     allTxns.forEach((t) => {
-      const w = getBerlinWeekday(t.createdAt)
-      const h = getBerlinHour(t.createdAt)
+      const w = getLocalWeekday(t.createdAt)
+      const h = getLocalHour(t.createdAt)
       weekdayCounts[w] = (weekdayCounts[w] ?? 0) + 1
       hourCounts[h] = (hourCounts[h] ?? 0) + 1
     })

@@ -1,5 +1,6 @@
 import type { FeedEntry } from '../hooks/useFeed'
 import { FeedItem, type GroupedFeedEntry } from './FeedItem'
+import { APP_TZ } from '../lib/utils'
 export type { GroupedFeedEntry }
 
 type Item = { name: string; variantName: string; count: number }
@@ -15,7 +16,7 @@ function getDateLabel(dateStr: string): string {
   yesterday.setDate(today.getDate() - 1)
   if (d.toDateString() === today.toDateString()) return 'Heute'
   if (d.toDateString() === yesterday.toDateString()) return 'Gestern'
-  return d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })
+  return d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: APP_TZ })
 }
 
 function mergeItems(a: Item[], b: Item[]): Item[] {

@@ -24,6 +24,8 @@ const TYPE_EMOJI: Record<string, string> = {
   friendship_started: '🤝',
   goal_reached: '🎯',
   jackpot_win: '🎰',
+  promotion_started: '🔥',
+  promotion_ended: '⌛',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -155,6 +157,14 @@ function feedText(
       ) : (
         <><Actor user={user} currentUserId={currentUserId} /> hat {product} im Jackpot {outcome} erspielt.</>
       );
+    }
+    case 'promotion_started': {
+      const name = metadata?.promoName as string | undefined
+      return <>Eine neue Aktion wurde gestartet: <span className="font-bold text-orange-500 uppercase tracking-tighter">„{name ?? 'Sonderangebot'}"</span> 🔥</>
+    }
+    case 'promotion_ended': {
+      const name = metadata?.promoName as string | undefined
+      return <>Die Aktion <span className="font-medium italic">„{name ?? 'Sonderangebot'}"</span> ist nun beendet. ⌛</>
     }
     default:
       return isMe

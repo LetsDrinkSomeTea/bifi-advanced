@@ -51,6 +51,8 @@ export const feedTypeEnum = pgEnum('feed_type', [
   'friendship_started',
   'goal_reached',
   'jackpot_win',
+  'promotion_started',
+  'promotion_ended',
 ])
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

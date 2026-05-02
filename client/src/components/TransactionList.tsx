@@ -18,9 +18,15 @@ function txnLabel(txn: TransactionWithItems): string {
     const items = txn.items
       .map((i) => `${i.quantity}× ${i.variantName ? `${i.buyableName} (${i.variantName})` : i.buyableName}`)
       .join(', ')
-    const prefix = txn.note ? `${txn.note} ` : ''
+    const prefix = txn.note ? `${txn.note}: ` : ''
     return `${prefix}${items} ausgegeben`
   }
+
+  if (txn.type === 'correction' || txn.type === 'deposit') {
+    const label = TYPE_LABEL[txn.type] ?? txn.type
+    return txn.note ? `${label} (${txn.note})` : label
+  }
+
   if (txn.items.length > 0) {
     return txn.items
       .map((i) => `${i.quantity}× ${i.variantName ? `${i.buyableName} (${i.variantName})` : i.buyableName}`)

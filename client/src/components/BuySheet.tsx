@@ -270,17 +270,10 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props) {
                 className="w-full py-3.5 rounded-2xl border-2 border-dashed border-amber-500/50 text-amber-600 dark:text-amber-400 font-black text-sm flex items-center justify-center gap-2 hover:bg-amber-500/5 transition-all active:scale-[0.98]"
               >
                 <Dices size={18} />
-                Jackpot-Zock ({formatCents(discountedUnitPrice)})
+                Jackpot (0 € - {formatCents(2 * discountedUnitPrice)})
               </button>
             )}
           </div>
-
-          {/* Voucher savings note */}
-          {hasVoucher && effectiveTotal > 0 && (
-            <p className="text-xs text-center text-amber-600 dark:text-amber-400">
-              🎁 {vouchersApplied} Gutschein{vouchersApplied > 1 ? 'e' : ''} angewendet · du sparst {formatCents(discountedUnitPrice * vouchersApplied)}
-            </p>
-          )}
         </div>
       </div>
 

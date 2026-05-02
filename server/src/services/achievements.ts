@@ -16,20 +16,26 @@ import {
 import { createNotification } from "./notifications.ts";
 import { ACHIEVEMENT_REGISTRY } from "./achievements/registry.ts";
 
-// ─── Timezone helpers (Intl-based, no date-fns-tz needed) ────────────────────
+// ─── Timezone helpers (respects TZ env var) ──────────────────────────────────
 
-export function toBerlin(d: Date): Date {
+export const APP_TZ = process.env.TZ || "Europe/Berlin";
+
+/** Converts any date to a Date object representing the same wall clock time in the configured TZ */
+export function toLocalTime(d: Date): Date {
   const str = d.toLocaleString("en-CA", {
-    timeZone: "Europe/Berlin",
+    timeZone: APP_TZ,
     hour12: false,
   });
   return new Date(str.replace(",", ""));
 }
 
+/** Legacy alias for toLocalTime */
+export const toBerlin = toLocalTime;
+
 export function getBiFiDay(date: Date): string {
-  const berlin = toBerlin(date);
-  const h = berlin.getUTCHours();
-  const d = new Date(berlin);
+  const local = toLocalTime(date);
+  const h = local.getUTCHours();
+  const d = new Date(local);
   if (h < 4) d.setUTCDate(d.getUTCDate() - 1);
   const y = d.getUTCFullYear();
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
@@ -37,33 +43,37 @@ export function getBiFiDay(date: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-export function getBerlinHour(date: Date): number {
-  return toBerlin(date).getUTCHours();
+export function getLocalHour(date: Date): number {
+  return toLocalTime(date).getUTCHours();
 }
+export const getBerlinHour = getLocalHour;
 
-export function getBerlinMinute(date: Date): number {
-  return toBerlin(date).getUTCMinutes();
+export function getLocalMinute(date: Date): number {
+  return toLocalTime(date).getUTCMinutes();
 }
+export const getBerlinMinute = getLocalMinute;
 
-export function getBerlinSecond(date: Date): number {
-  return toBerlin(date).getUTCSeconds();
+export function getLocalSecond(date: Date): number {
+  return toLocalTime(date).getUTCSeconds();
 }
+export const getBerlinSecond = getLocalSecond;
 
-/** Returns ISO weekday: Monday=1 ... Sunday=7 */
-export function getBerlinWeekday(date: Date): number {
-  const berlin = toBerlin(date);
-  const d = berlin.getUTCDay(); // 0=Sun
+/** Returns ISO weekday: Monday=1 ... Sunday=7 in local time */
+export function getLocalWeekday(date: Date): number {
+  const local = toLocalTime(date);
+  const d = local.getUTCDay(); // 0=Sun
   return d === 0 ? 7 : d;
 }
+export const getBerlinWeekday = getLocalWeekday;
 
-/** Returns ISO week number for a Berlin-local date */
+/** Returns ISO week number for a local date */
 export function getISOWeek(date: Date): { year: number; week: number } {
-  const berlin = toBerlin(date);
+  const local = toLocalTime(date);
   const d = new Date(
     Date.UTC(
-      berlin.getUTCFullYear(),
-      berlin.getUTCMonth(),
-      berlin.getUTCDate(),
+      local.getUTCFullYear(),
+      local.getUTCMonth(),
+      local.getUTCDate(),
     ),
   );
   const day = d.getUTCDay() || 7;

@@ -17,7 +17,10 @@ import {
 import { emitFeedEvent } from "../services/feed.ts";
 import { requireAuth } from "../middleware/auth.ts";
 import { purchaseRateLimit } from "../middleware/rateLimit.ts";
-import { getActiveDiscount, calculateDiscountedPrice } from "../services/promotions.ts";
+import {
+  getActiveDiscount,
+  calculateDiscountedPrice,
+} from "../services/promotions.ts";
 import { writeAuditLog } from "../services/audit.ts";
 import {
   createNotification,
@@ -26,6 +29,12 @@ import {
 import { checkAchievements } from "../services/achievements.ts";
 
 const router = new Hono();
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatCents(cents: number): string {
+  return (cents / 100).toFixed(2).replace(".", ",") + " €";
+}
 
 // ─── Cursor helpers ───────────────────────────────────────────────────────────
 
@@ -192,7 +201,11 @@ async function resolveItems(
     }
 
     let unitPrice = variant.price;
-    const discount = await getActiveDiscount(buyable.id, variant.id, buyable.category);
+    const discount = await getActiveDiscount(
+      buyable.id,
+      variant.id,
+      buyable.category,
+    );
     unitPrice = calculateDiscountedPrice(unitPrice, discount);
 
     const totalPrice = unitPrice * item.quantity;
@@ -227,10 +240,19 @@ async function redeemVouchers(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   userId: string,
   variantIds: string[],
+  prices: Map<string, number>,
   txnId: string,
-): Promise<{ credit: number; ids: string[] }> {
-  let credit = 0;
-  const ids: string[] = [];
+): Promise<{
+  credit: number;
+  vouchers: Array<{ id: string; fromUserId: string; refundAmount: number }>;
+}> {
+  let totalCredit = 0;
+  const redeemedVouchers: Array<{
+    id: string;
+    fromUserId: string;
+    refundAmount: number;
+  }> = [];
+
   for (const vid of variantIds) {
     const [v] = await tx
       .select()
@@ -244,16 +266,46 @@ async function redeemVouchers(
         ),
       )
       .limit(1);
+
     if (v) {
-      credit += v.amount;
-      ids.push(v.id);
+      const currentPrice = prices.get(vid) ?? 0;
+      const credit = Math.min(v.amount, currentPrice);
+      const refundAmount = Math.max(0, v.amount - currentPrice);
+
+      totalCredit += credit;
+      redeemedVouchers.push({
+        id: v.id,
+        fromUserId: v.fromUserId,
+        refundAmount,
+      });
+
       await tx
         .update(prostVouchers)
         .set({ redeemedAt: new Date(), redeemedTransactionId: txnId })
         .where(eq(prostVouchers.id, v.id));
+
+      if (refundAmount > 0) {
+        // Credit refund back to donor
+        await tx
+          .update(users)
+          .set({
+            balance: sql`balance + ${refundAmount}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, v.fromUserId));
+
+        // Create correction transaction for the donor
+        await tx.insert(transactions).values({
+          userId: v.fromUserId,
+          initiatedBy: userId, // Initiated by the person redeeming
+          type: "correction",
+          totalAmount: refundAmount,
+          note: `Gutschein-Differenz`,
+        });
+      }
     }
   }
-  return { credit, ids };
+  return { credit: totalCredit, vouchers: redeemedVouchers };
 }
 
 router.post(
@@ -271,8 +323,16 @@ router.post(
         db
           .select({ userId: groupMembers.userId })
           .from(groupMembers)
-          .where(and(eq(groupMembers.groupId, body.groupId!), isNull(groupMembers.leftAt))),
-        db.select({ name: groups.name }).from(groups).where(eq(groups.id, body.groupId!)),
+          .where(
+            and(
+              eq(groupMembers.groupId, body.groupId!),
+              isNull(groupMembers.leftAt),
+            ),
+          ),
+        db
+          .select({ name: groups.name })
+          .from(groups)
+          .where(eq(groups.id, body.groupId!)),
       ]);
 
       if (members.length === 0)
@@ -294,10 +354,8 @@ router.post(
 
       // resolveItems runs inside the same transaction as balance deduction (fixes TOCTOU)
       const primaryTxn = await db.transaction(async (tx) => {
-        const { toInsert, feedItems, achievementItems, cost } = await resolveItems(
-          tx,
-          body.items,
-        );
+        const { toInsert, feedItems, achievementItems, cost } =
+          await resolveItems(tx, body.items);
 
         // Distribute cost: each member pays ceil(cost/n), buyer absorbs rounding
         const sharePerOther = Math.ceil(cost / n);
@@ -421,65 +479,74 @@ router.post(
         groupId: body.groupId,
       }).catch(console.error);
 
-      return c.json(
-        { ...primaryTxn.txn, voucherRedeemed: false },
-        201,
-      );
+      return c.json({ ...primaryTxn.txn, voucherRedeemed: false }, 201);
     }
 
     // ── Solo purchase ─────────────────────────────────────────────────────────
-    const { txn, redeemedVoucherIds, voucherCredit, feedItems, achievementItems } =
-      await db.transaction(async (tx) => {
-        const { toInsert, feedItems, achievementItems, cost } = await resolveItems(
-          tx,
-          body.items,
-        );
+    const {
+      txn,
+      redeemedVouchers,
+      voucherCredit,
+      feedItems,
+      achievementItems,
+    } = await db.transaction(async (tx) => {
+      const { toInsert, feedItems, achievementItems, cost } =
+        await resolveItems(tx, body.items);
 
-        const [created] = await tx
-          .insert(transactions)
-          .values({
-            userId: user.id,
-            initiatedBy: user.id,
-            type: "purchase",
-            totalAmount: -cost,
-            groupId: null,
-            note: body.note ?? null,
-          })
-          .returning();
+      const [created] = await tx
+        .insert(transactions)
+        .values({
+          userId: user.id,
+          initiatedBy: user.id,
+          type: "purchase",
+          totalAmount: -cost,
+          groupId: null,
+          note: body.note ?? null,
+        })
+        .returning();
 
-        await tx
-          .insert(transactionItems)
-          .values(toInsert.map((i) => ({ transactionId: created!.id, ...i })));
+      await tx
+        .insert(transactionItems)
+        .values(toInsert.map((i) => ({ transactionId: created!.id, ...i })));
 
-        const variantIds = toInsert.map((i) => i.variantId);
-        const { credit, ids } = await redeemVouchers(
-          tx,
-          user.id,
-          variantIds,
-          created!.id,
-        );
-        const netCost = Math.max(0, cost - credit);
-
-        await tx
-          .update(users)
-          .set({ balance: sql`balance - ${netCost}`, updatedAt: new Date() })
-          .where(eq(users.id, user.id));
-        if (credit > 0) {
-          await tx
-            .update(transactions)
-            .set({ totalAmount: -netCost })
-            .where(eq(transactions.id, created!.id));
-          created!.totalAmount = -netCost;
+      const variantIds: string[] = [];
+      const variantPrices = new Map<string, number>();
+      for (const i of toInsert) {
+        variantPrices.set(i.variantId, i.unitPrice);
+        for (let q = 0; q < i.quantity; q++) {
+          variantIds.push(i.variantId);
         }
+      }
 
-        return {
-          txn: created!,
-          redeemedVoucherIds: ids,
-          voucherCredit: credit,
-          feedItems,
-          achievementItems,
-        };
-      });
+      const { credit, vouchers } = await redeemVouchers(
+        tx,
+        user.id,
+        variantIds,
+        variantPrices,
+        created!.id,
+      );
+      const netCost = Math.max(0, cost - credit);
+
+      await tx
+        .update(users)
+        .set({ balance: sql`balance - ${netCost}`, updatedAt: new Date() })
+        .where(eq(users.id, user.id));
+      if (credit > 0) {
+        await tx
+          .update(transactions)
+          .set({ totalAmount: -netCost })
+          .where(eq(transactions.id, created!.id));
+        created!.totalAmount = -netCost;
+      }
+
+      return {
+        txn: created!,
+        redeemedVouchers: vouchers,
+        voucherCredit: credit,
+        feedItems,
+        achievementItems,
+      };
+    });
 
     emitFeedEvent({
       type: "purchase",
@@ -496,7 +563,7 @@ router.post(
 
     if (voucherCredit > 0) {
       (async () => {
-        for (const voucherId of redeemedVoucherIds) {
+        for (const rv of redeemedVouchers) {
           const [v] = await db
             .select({
               fromUserId: prostVouchers.fromUserId,
@@ -509,15 +576,26 @@ router.post(
               eq(prostVouchers.variantId, productVariants.id),
             )
             .innerJoin(buyables, eq(productVariants.buyableId, buyables.id))
-            .where(eq(prostVouchers.id, voucherId));
+            .where(eq(prostVouchers.id, rv.id));
+
           if (v) {
+            const refundNote =
+              rv.refundAmount > 0
+                ? ` Da das Produkt günstiger war, wurden dir ${formatCents(rv.refundAmount)} erstattet.`
+                : "";
+
             createNotification({
               userId: v.fromUserId,
               type: "prost",
               title: `${user.displayName} hat deinen Gutschein eingelöst.`,
-              message: `Und sich ${v.productName} (${v.variantName}) gekauft.`,
+              message: `Und sich ${v.productName} (${v.variantName}) gekauft.${refundNote}`,
               relatedId: txn.id,
             }).catch(console.error);
+
+            // Also invalidate donor balance if they got a refund
+            if (rv.refundAmount > 0) {
+              pushInvalidate(v.fromUserId, ["balance", "transactions"]);
+            }
           }
         }
       })().catch(console.error);

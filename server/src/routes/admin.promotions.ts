@@ -7,6 +7,7 @@ import { promotions } from '../db/schema.ts'
 import { requireAuth } from '../middleware/auth.ts'
 import { writeAuditLog } from '../services/audit.ts'
 import { broadcastInvalidate } from '../services/notifications.ts'
+import { emitFeedEvent } from '../services/feed.ts'
 
 const router = new Hono()
 
@@ -50,6 +51,19 @@ router.post('/', zValidator('json', PromotionSchema), async (c) => {
 
   broadcastInvalidate(['buyables'])
 
+  // Emit feed event if it's an immediate promotion
+  if (!created!.startTime && created!.isActive) {
+    emitFeedEvent({
+        type: 'promotion_started',
+        userId: user.id,
+        metadata: { 
+            promoName: created!.name,
+            discountPercent: created!.discountPercent ?? undefined,
+            discountFixedCents: created!.discountFixedCents ?? undefined
+        }
+    })
+  }
+
   await writeAuditLog({
     actorId: user.id,
     action: 'promotion.created',
@@ -82,6 +96,29 @@ router.patch('/:id', zValidator('json', PromotionSchema.partial()), async (c) =>
 
   broadcastInvalidate(['buyables'])
 
+  // Emit feed event if isActive state changed AND it's not a scheduled promotion
+  if (!updated!.startTime && body.isActive !== undefined && body.isActive !== existing.isActive) {
+    if (body.isActive) {
+      emitFeedEvent({
+          type: 'promotion_started',
+          userId: user.id,
+          metadata: { 
+              promoName: updated!.name,
+              discountPercent: updated!.discountPercent ?? undefined,
+              discountFixedCents: updated!.discountFixedCents ?? undefined
+          }
+      })
+    } else {
+      emitFeedEvent({
+          type: 'promotion_ended',
+          userId: user.id,
+          metadata: { 
+              promoName: updated!.name
+          }
+      })
+    }
+  }
+
   await writeAuditLog({
     actorId: user.id,
     action: 'promotion.updated',
@@ -104,6 +141,17 @@ router.delete('/:id', async (c) => {
   await db.delete(promotions).where(eq(promotions.id, id))
 
   broadcastInvalidate(['buyables'])
+
+  // Emit feed event if it was an active immediate promotion
+  if (!existing.startTime && existing.isActive) {
+    emitFeedEvent({
+      type: 'promotion_ended',
+      userId: user.id,
+      metadata: { 
+          promoName: existing.name
+      }
+    })
+  }
 
   await writeAuditLog({
     actorId: user.id,

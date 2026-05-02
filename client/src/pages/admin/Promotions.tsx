@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Trash2, Play, Square, Edit2, Calendar } from 'lucide-react'
 import { AdminLayout } from './AdminLayout'
 import { Modal } from '../../components/Modal'
 import { usePromotions, useCreatePromotion, useUpdatePromotion, useDeletePromotion, type Promotion } from '../../hooks/usePromotions'
 import { useAllBuyables } from '../../hooks/useAdmin'
-import { formatCents, cn } from '../../lib/utils'
+import { formatCents, cn, toLocalISO, fromLocalISO, APP_TZ } from '../../lib/utils'
 
 function PromotionModal({ 
   open, 
@@ -19,18 +19,31 @@ function PromotionModal({
   const { mutate: update, isPending: updating } = useUpdatePromotion()
   const { data: buyables } = useAllBuyables()
 
-  const [name, setName] = useState(promotion?.name ?? '')
-  const [type, setType] = useState<'percent' | 'fixed'>(promotion?.discountFixedCents != null ? 'fixed' : 'percent')
-  const [value, setValue] = useState(
-    promotion?.discountFixedCents != null 
-      ? (promotion.discountFixedCents / 100).toString() 
-      : (promotion?.discountPercent ?? '0').toString()
-  )
-  const [startTime, setStartTime] = useState(promotion?.startTime ? promotion.startTime.slice(0, 16) : '')
-  const [endTime, setEndTime] = useState(promotion?.endTime ? promotion.endTime.slice(0, 16) : '')
-  const [targetBuyableId, setTargetBuyableId] = useState(promotion?.appliesTo?.buyableId ?? '')
-  const [targetVariantId, setTargetVariantId] = useState(promotion?.appliesTo?.variantId ?? '')
+  const [name, setName] = useState('')
+  const [type, setType] = useState<'percent' | 'fixed'>('percent')
+  const [value, setValue] = useState('0')
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
+  const [targetBuyableId, setTargetBuyableId] = useState('')
+  const [targetVariantId, setTargetVariantId] = useState('')
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (open) {
+      setName(promotion?.name ?? '')
+      setType(promotion?.discountFixedCents != null ? 'fixed' : 'percent')
+      setValue(
+        promotion?.discountFixedCents != null 
+          ? (promotion.discountFixedCents / 100).toString() 
+          : (promotion?.discountPercent ?? '0').toString()
+      )
+      setStartTime(toLocalISO(promotion?.startTime))
+      setEndTime(toLocalISO(promotion?.endTime))
+      setTargetBuyableId(promotion?.appliesTo?.buyableId ?? '')
+      setTargetVariantId(promotion?.appliesTo?.variantId ?? '')
+      setError('')
+    }
+  }, [open, promotion])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,8 +56,8 @@ function PromotionModal({
       name: name.trim(),
       discountPercent: type === 'percent' ? Math.round(numericValue) : null,
       discountFixedCents: type === 'fixed' ? Math.round(numericValue * 100) : null,
-      startTime: startTime ? new Date(startTime).toISOString() : null,
-      endTime: endTime ? new Date(endTime).toISOString() : null,
+      startTime: fromLocalISO(startTime),
+      endTime: fromLocalISO(endTime),
       appliesTo: targetBuyableId ? {
         buyableId: targetBuyableId,
         variantId: targetVariantId || undefined
@@ -234,9 +247,9 @@ export function AdminPromotions() {
                       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                         <Calendar size={10} />
                         <span>
-                          {p.startTime ? new Date(p.startTime).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '∞'}
+                          {p.startTime ? new Date(p.startTime).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: APP_TZ }) : '∞'}
                           {' – '}
-                          {p.endTime ? new Date(p.endTime).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '∞'}
+                          {p.endTime ? new Date(p.endTime).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: APP_TZ }) : '∞'}
                         </span>
                       </div>
                     )}

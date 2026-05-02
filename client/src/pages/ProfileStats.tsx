@@ -115,7 +115,7 @@ export function ProfileStats() {
           )}
 
           <div className="flex gap-2">
-            {(Object.keys(PERIOD_LABELS) as Array<keyof typeof PERIOD_LABELS>).map((p) => (
+            {(Object.keys(PERIOD_LABELS) as Array<'week' | 'month' | 'alltime'>).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}

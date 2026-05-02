@@ -10,10 +10,10 @@ import {
 import {
   categoryItemCount,
   donationCount,
-  getBerlinHour,
-  getBerlinMinute,
-  getBerlinSecond,
-  getBerlinWeekday,
+  getLocalHour,
+  getLocalMinute,
+  getLocalSecond,
+  getLocalWeekday,
   getBiFiDay,
   getISOWeek,
   globalPurchaseCount,
@@ -25,7 +25,7 @@ import {
   prostSentCount,
   purchaseCount,
   purchasesOnBiFiDay,
-  toBerlin,
+  toLocalTime,
   unlockedAchievementCount,
 } from "../achievements.ts";
 
@@ -375,7 +375,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     events: ["purchase"],
     check: (e) => {
       if (e.type !== "purchase") return false;
-      const h = getBerlinHour(e.now);
+      const h = getLocalHour(e.now);
       return h >= 6 && h < 10;
     },
   },
@@ -388,7 +388,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     events: ["purchase"],
     check: (e) => {
       if (e.type !== "purchase") return false;
-      const h = getBerlinHour(e.now);
+      const h = getLocalHour(e.now);
       return h >= 4 && h < 6;
     },
   },
@@ -401,9 +401,9 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     events: ["purchase"],
     check: (e) => {
       if (e.type !== "purchase") return false;
-      const h = getBerlinHour(e.now);
-      const m = getBerlinMinute(e.now);
-      const s = getBerlinSecond(e.now);
+      const h = getLocalHour(e.now);
+      const m = getLocalMinute(e.now);
+      const s = getLocalSecond(e.now);
       return (
         (h === 0 && m === 0 && s <= 10) || (h === 23 && m === 59 && s >= 50)
       );
@@ -417,7 +417,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     events: ["purchase"],
     check: (e) => {
       if (e.type !== "purchase") return false;
-      const h = getBerlinHour(e.now);
+      const h = getLocalHour(e.now);
       return h >= 16 && h < 18;
     },
   },
@@ -429,7 +429,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     events: ["purchase"],
     check: (e) => {
       if (e.type !== "purchase") return false;
-      const h = getBerlinHour(e.now);
+      const h = getLocalHour(e.now);
       return h >= 12 && h < 13;
     },
   },
@@ -442,7 +442,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     events: ["purchase"],
     check: async (e) => {
       if (e.type !== "purchase") return false;
-      if (getBerlinWeekday(e.now) !== 1) return false;
+      if (getLocalWeekday(e.now) !== 1) return false;
       const count = await purchasesOnBiFiDay(e.userId, getBiFiDay(e.now));
       return count > 3;
     },
@@ -637,7 +637,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     events: ["purchase"],
     check: async (e) => {
       if (e.type !== "purchase") return false;
-      const w = getBerlinWeekday(e.now);
+      const w = getLocalWeekday(e.now);
       if (w !== 6 && w !== 7) return false;
       const all = await db
         .select({ createdAt: transactions.createdAt })
@@ -667,7 +667,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
         .where(eq(transactions.userId, e.userId));
       const seasons = new Set<string>();
       for (const r of all) {
-        const m = toBerlin(r.createdAt).getUTCMonth() + 1;
+        const m = toLocalTime(r.createdAt).getUTCMonth() + 1;
         if (m >= 3 && m <= 5) seasons.add("spring");
         else if (m >= 6 && m <= 8) seasons.add("summer");
         else if (m >= 9 && m <= 11) seasons.add("autumn");
@@ -685,7 +685,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     events: ["purchase"],
     check: (e) => {
       if (e.type !== "purchase") return false;
-      const b = toBerlin(e.now);
+      const b = toLocalTime(e.now);
       const mm = b.getUTCMonth() + 1,
         dd = b.getUTCDate();
       return (

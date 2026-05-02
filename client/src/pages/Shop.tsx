@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Search, Star, Dices, Tag, Plus } from 'lucide-react'
+import { Search, Star, Sparkles, Tag, Plus } from 'lucide-react'
 import { Layout } from '../components/layout/Layout'
 import { BuySheet } from '../components/BuySheet'
 import { useBuyables } from '../hooks/useBuyables'
@@ -8,43 +8,84 @@ import type { BuyableWithVariants } from '@shared/types'
 import { formatCents, cn } from '../lib/utils'
 import { BUYABLE_CATEGORIES, CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas'
 import { useVoucherMap } from '@/hooks/useProst'
-import type { ActiveDiscount } from '@shared/types'
+
+function formatTimeLeft(endTime: string | null): string | null {
+  if (!endTime) return null
+  endTime = new Date(endTime).toISOString()
+  const diff = new Date(endTime).getTime() - Date.now()
+  if (diff <= 0) return 'beendet'
+
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+
+  if (days > 0) return `noch ${days} ${days === 1 ? 'Tag' : 'Tage'}`
+  if (hours > 0) return `noch ${hours} ${hours === 1 ? 'Stunde' : 'Stunden'}`
+  return `noch ${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'}`
+}
 
 function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
-  const activePromosCount = useMemo(() => {
-    const promoTypes = new Set<string>()
+  const { title, summary, timeLeft } = useMemo(() => {
+    const discountedLabels: string[] = []
+    let earliestEnd: number | null = null
+
     items.forEach(item => {
-      item.variants.forEach(v => {
-        if (v.activeDiscount) {
-          promoTypes.add(`${v.activeDiscount.type}-${v.activeDiscount.value}`)
+      const discountedVariants = item.variants.filter(v => v.activeDiscount)
+      
+      if (discountedVariants.length === 1) {
+        discountedLabels.push(`${item.name} (${discountedVariants[0]!.name})`)
+      } else if (discountedVariants.length > 1) {
+        discountedLabels.push(item.name)
+      }
+
+      discountedVariants.forEach(v => {
+        if (v.activeDiscount?.endTime) {
+          const time = new Date(v.activeDiscount.endTime).getTime()
+          if (earliestEnd === null || time < earliestEnd) earliestEnd = time
         }
       })
     })
-    return promoTypes.size
+
+    if (discountedLabels.length === 0) return { title: '', summary: '', timeLeft: '' }
+
+    let summaryStr = ''
+    if (discountedLabels.length <= 2) {
+      summaryStr = discountedLabels.join(' & ') + ' reduziert'
+    } else {
+      summaryStr = `${discountedLabels.length} Produkte reduziert`
+    }
+
+    return {
+      title: discountedLabels.length > 1 ? "Rabatte verfügbar" : "Rabatt verfügbar",
+      summary: summaryStr,
+      timeLeft: earliestEnd ? formatTimeLeft(new Date(earliestEnd).toISOString()) : 'zeitlich unbegrenzt'
+    }
   }, [items])
 
-  if (activePromosCount === 0) return null
+  if (!summary) return null
 
   return (
-    <div className="bg-orange-500 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/20 flex items-center gap-4 overflow-hidden relative group">
+    <div className="bg-orange-500 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/20 flex items-center gap-4 overflow-hidden relative group transition-all active:scale-[0.98]">
       <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
-        <Dices size={100} />
+        <Sparkles size={100} />
       </div>
-      <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 animate-pulse">
-        <Tag size={24} />
+      <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+        <Tag size={24} className="animate-bounce" />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="font-black text-lg leading-tight uppercase tracking-tighter italic">Happy Hour & Deals!</h3>
-        <p className="text-sm font-medium opacity-90 truncate">
-          {activePromosCount === 1
-            ? 'Aktuell sind Sonderpreise verfügbar. Schlag jetzt zu!'
-            : `Es gibt verschiedene Aktionen im Shop. Schlag jetzt zu!`}
+        <div className="flex items-center gap-2 mb-0.5">
+          <h3 className="font-black text-lg leading-tight uppercase tracking-tighter italic">{title}</h3>
+          {timeLeft && <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-bold whitespace-nowrap">
+            {timeLeft}
+          </span>}
+        </div>
+        <p className="text-sm font-medium opacity-95 truncate">
+          {summary}
         </p>
       </div>
     </div>
   )
 }
-
 export function Shop() {
   const { data: items, isLoading } = useBuyables()
   const { data: favorites } = useFavorites()

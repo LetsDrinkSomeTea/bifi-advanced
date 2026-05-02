@@ -19,6 +19,8 @@ export interface PaginatedResponse<T> {
 export interface ActiveDiscount {
   type: 'percent' | 'fixed'
   value: number
+  name: string
+  endTime: string | null
 }
 
 export interface BuyableWithVariants {
@@ -50,6 +52,8 @@ export interface Favorite {
   buyableName: string
   category: string | null
   isAvailable: boolean
+  activeDiscount: ActiveDiscount | null
+  discountedPrice: number
 }
 
 export interface AdminUser {
@@ -112,6 +116,7 @@ export interface PublicProfile {
     purchaseCount: number
     leaderboardRank: number | null
     favoriteProduct: { name: string; count: number } | null
+    friendCount: number
   }
   achievements: Array<{ key: string; unlockedAt: string }>
   achievementProgress: Record<string, number>
@@ -128,6 +133,8 @@ export interface FeedEvent {
     | 'prost_received'
     | 'goal_reached'
     | 'jackpot_win'
+    | 'promotion_started'
+    | 'promotion_ended'
   targetUserId: string | null
   targetGroupId: string | null
   metadata: Record<string, unknown> | null

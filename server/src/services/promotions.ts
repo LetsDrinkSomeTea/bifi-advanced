@@ -11,6 +11,8 @@ interface AppliesToConfig {
 export interface ActiveDiscount {
   type: 'percent' | 'fixed'
   value: number // Percent (0-100) or Fixed price in Cents
+  name: string
+  endTime: string | null
 }
 
 export async function getActiveDiscount(
@@ -43,22 +45,40 @@ export async function getActiveDiscount(
     let priority = 0 // Global
 
     if (appliesTo) {
-      if (variantId && appliesTo.variantId === variantId) {
-        priority = 3 // Specific variant
-      } else if (appliesTo.buyableId === buyableId) {
-        priority = 2 // Specific buyable
+      if (appliesTo.variantId) {
+        if (appliesTo.variantId === variantId) {
+          priority = 3 // Matches specific variant
+        } else {
+          continue // Targeted at a different variant, skip
+        }
+      } else if (appliesTo.buyableId) {
+        if (appliesTo.buyableId === buyableId) {
+          priority = 2 // Matches product
+        } else {
+          continue // Targeted at a different product, skip
+        }
       } else if (category && appliesTo.categoryIds?.includes(category)) {
         priority = 1 // Specific category
-      } else if (appliesTo.buyableId || appliesTo.variantId || appliesTo.categoryIds) {
+      } else {
         // Targeted at something else, skip
         continue
       }
     }
 
     const current: ActiveDiscount | null = promo.discountFixedCents != null
-      ? { type: 'fixed', value: promo.discountFixedCents }
+      ? { 
+          type: 'fixed', 
+          value: promo.discountFixedCents,
+          name: promo.name,
+          endTime: promo.endTime?.toISOString() ?? null 
+        }
       : promo.discountPercent != null
-        ? { type: 'percent', value: promo.discountPercent }
+        ? { 
+            type: 'percent', 
+            value: promo.discountPercent,
+            name: promo.name,
+            endTime: promo.endTime?.toISOString() ?? null 
+          }
         : null
 
     if (!current) continue

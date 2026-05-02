@@ -6,6 +6,7 @@ import { logger } from 'hono/logger'
 import { secureHeaders } from 'hono/secure-headers'
 import { apiReference } from '@scalar/hono-api-reference'
 import { sessionMiddleware } from './middleware/session.ts'
+import { APP_TZ } from './services/achievements.ts'
 import { globalRateLimit } from './middleware/rateLimit.ts'
 import { initOIDC } from './services/oidc.ts'
 import { initRedis } from './db/redis.ts'
@@ -106,8 +107,7 @@ if (process.env.NODE_ENV === 'production') {
 
 async function main() {
   await initRedis()
-  await initOIDC()
-
+  console.log(`Starting BiFi with TZ: ${APP_TZ}`)
   const port = parseInt(process.env.PORT ?? '3000')
   serve({ fetch: app.fetch, port }, () => {
     console.log(`Server running on http://localhost:${port}`)

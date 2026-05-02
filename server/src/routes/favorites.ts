@@ -3,6 +3,7 @@ import { and, asc, eq, sql } from 'drizzle-orm'
 import { db } from '../db/index.ts'
 import { buyables, productVariants, userFavorites } from '../db/schema.ts'
 import { requireAuth } from '../middleware/auth.ts'
+import { getActiveDiscount, calculateDiscountedPrice } from '../services/promotions.ts'
 
 const router = new Hono()
 
@@ -11,7 +12,7 @@ const router = new Hono()
 router.get('/', requireAuth, async (c) => {
   const user = c.get('user')
 
-  const favorites = await db
+  const rows = await db
     .select({
       variantId: userFavorites.variantId,
       variantName: productVariants.name,
@@ -26,6 +27,15 @@ router.get('/', requireAuth, async (c) => {
     .innerJoin(buyables, eq(productVariants.buyableId, buyables.id))
     .where(eq(userFavorites.userId, user.id))
     .orderBy(asc(buyables.name), asc(productVariants.name))
+
+  const favorites = await Promise.all(rows.map(async (row) => {
+    const discount = await getActiveDiscount(row.buyableId, row.variantId, row.category)
+    return {
+      ...row,
+      activeDiscount: discount,
+      discountedPrice: calculateDiscountedPrice(row.price, discount)
+    }
+  }))
 
   return c.json(favorites)
 })

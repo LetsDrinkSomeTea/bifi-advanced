@@ -49,6 +49,9 @@ export default defineConfig({
     })
   ],
   root: 'client',
+  define: {
+    'process.env.TZ': JSON.stringify(process.env.TZ || 'Europe/Berlin'),
+  },
   build: {
     outDir: '../dist/client',
     emptyOutDir: true,
