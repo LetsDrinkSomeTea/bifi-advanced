@@ -1,80 +1,88 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Search, Star, Sparkles, Tag, Plus } from 'lucide-react'
-import { Layout } from '../components/layout/Layout'
-import { BuySheet } from '../components/BuySheet'
-import { useBuyables } from '../hooks/useBuyables'
-import { useFavorites, useToggleFavorite } from '../hooks/useFavorites'
-import type { BuyableWithVariants } from '@shared/types'
-import { formatCents, cn } from '../lib/utils'
-import { BUYABLE_CATEGORIES, CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas'
-import { useVoucherMap } from '@/hooks/useProst'
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Search, Star, Sparkles, Tag, Plus } from 'lucide-react';
+import { Layout } from '../components/layout/Layout';
+import { BuySheet } from '../components/BuySheet';
+import { useBuyables } from '../hooks/useBuyables';
+import { useFavorites, useToggleFavorite } from '../hooks/useFavorites';
+import type { BuyableWithVariants } from '@shared/types';
+import { formatCents, cn } from '../lib/utils';
+import { BUYABLE_CATEGORIES, CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas';
+import { useVoucherMap } from '@/hooks/useProst';
 
 function formatTimeLeft(endTime: string | null): string | null {
-  if (!endTime) return null
-  endTime = new Date(endTime).toISOString()
-  const diff = new Date(endTime).getTime() - Date.now()
-  if (diff <= 0) return 'beendet'
+  if (!endTime) return null;
+  endTime = new Date(endTime).toISOString();
+  const diff = new Date(endTime).getTime() - Date.now();
+  if (diff <= 0) return 'beendet';
 
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
 
-  if (days > 0) return `noch ${days} ${days === 1 ? 'Tag' : 'Tage'}`
-  if (hours > 0) return `noch ${hours} ${hours === 1 ? 'Stunde' : 'Stunden'}`
-  return `noch ${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'}`
+  if (days > 0) return `noch ${days} ${days === 1 ? 'Tag' : 'Tage'}`;
+  if (hours > 0) return `noch ${hours} ${hours === 1 ? 'Stunde' : 'Stunden'}`;
+  return `noch ${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'}`;
 }
 
 function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
   const { title, summary, badge } = useMemo(() => {
-    const discountedLabels: string[] = []
-    let earliestEnd: number | null = null
-    let minQuantityRemaining: number | null = null
+    const discountedLabels: string[] = [];
+    let earliestEnd: number | null = null;
+    let minQuantityRemaining: number | null = null;
 
-    items.forEach(item => {
-      const discountedVariants = item.variants.filter(v => v.activeDiscount)
+    items.forEach((item) => {
+      const discountedVariants = item.variants.filter((v) => v.activeDiscount);
 
       if (discountedVariants.length === 1) {
-        discountedLabels.push(`${item.name} (${discountedVariants[0]!.name})`)
+        discountedLabels.push(`${item.name} (${discountedVariants[0]!.name})`);
       } else if (discountedVariants.length > 1) {
-        discountedLabels.push(item.name)
+        discountedLabels.push(item.name);
       }
 
-      discountedVariants.forEach(v => {
-        if (v.activeDiscount?.quantityRemaining !== null && v.activeDiscount?.quantityRemaining !== undefined) {
-          if (minQuantityRemaining === null || v.activeDiscount.quantityRemaining < minQuantityRemaining) {
-            minQuantityRemaining = v.activeDiscount.quantityRemaining
+      discountedVariants.forEach((v) => {
+        if (
+          v.activeDiscount?.quantityRemaining !== null &&
+          v.activeDiscount?.quantityRemaining !== undefined
+        ) {
+          if (
+            minQuantityRemaining === null ||
+            v.activeDiscount.quantityRemaining < minQuantityRemaining
+          ) {
+            minQuantityRemaining = v.activeDiscount.quantityRemaining;
           }
         } else if (v.activeDiscount?.endTime) {
-          const time = new Date(v.activeDiscount.endTime).getTime()
-          if (earliestEnd === null || time < earliestEnd) earliestEnd = time
+          const time = new Date(v.activeDiscount.endTime).getTime();
+          if (earliestEnd === null || time < earliestEnd) earliestEnd = time;
         }
-      })
-    })
+      });
+    });
 
-    if (discountedLabels.length === 0) return { title: '', summary: '', badge: '' }
+    if (discountedLabels.length === 0) return { title: '', summary: '', badge: '' };
 
-    let summaryStr = ''
+    let summaryStr = '';
     if (discountedLabels.length <= 2) {
-      summaryStr = discountedLabels.join(' & ') + ' reduziert'
+      summaryStr = discountedLabels.join(' & ') + ' reduziert';
     } else {
-      summaryStr = `${discountedLabels.length} Produkte reduziert`
+      summaryStr = `${discountedLabels.length} Produkte reduziert`;
     }
 
-    let badge = ''
+    let badge = '';
     if (minQuantityRemaining !== null) {
-      badge = `noch ${minQuantityRemaining}x`
+      badge = `noch ${minQuantityRemaining}x`;
     } else {
-      badge = earliestEnd ? (formatTimeLeft(new Date(earliestEnd).toISOString()) ?? '') : 'zeitlich unbegrenzt'
+      badge = earliestEnd
+        ? (formatTimeLeft(new Date(earliestEnd).toISOString()) ?? '')
+        : 'zeitlich unbegrenzt';
     }
 
     return {
-      title: discountedLabels.length > 1 ? "Rabatte verfügbar" : "Rabatt verfügbar",
+      title: discountedLabels.length > 1 ? 'Rabatte verfügbar' : 'Rabatt verfügbar',
       summary: summaryStr,
       badge,
-    }
-  }, [items])
+    };
+  }, [items]);
 
-  if (!summary) return null
+  if (!summary) return null;
 
   return (
     <div className="bg-orange-500 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/20 flex items-center gap-4 overflow-hidden relative group transition-all active:scale-[0.98]">
@@ -86,99 +94,102 @@ function PromoBanner({ items }: { items: BuyableWithVariants[] }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <h3 className="font-black text-lg leading-tight uppercase tracking-tighter italic">{title}</h3>
-          {badge && <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-bold whitespace-nowrap">
-            {badge}
-          </span>}
+          <h3 className="font-black text-lg leading-tight uppercase tracking-tighter italic">
+            {title}
+          </h3>
+          {badge && (
+            <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-bold whitespace-nowrap">
+              {badge}
+            </span>
+          )}
         </div>
-        <p className="text-sm font-medium opacity-95 truncate">
-          {summary}
-        </p>
+        <p className="text-sm font-medium opacity-95 truncate">{summary}</p>
       </div>
     </div>
-  )
+  );
 }
 export function Shop() {
-  const { data: items, isLoading } = useBuyables()
-  const { data: favorites } = useFavorites()
-  const { mutate: toggleFav } = useToggleFavorite()
+  const { data: items, isLoading } = useBuyables();
+  const { data: favorites } = useFavorites();
+  const { mutate: toggleFav } = useToggleFavorite();
 
-  const [selected, setSelected] = useState<BuyableWithVariants | null>(null)
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [selected, setSelected] = useState<BuyableWithVariants | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const voucherMap = useVoucherMap()
+  const voucherMap = useVoucherMap();
 
-  const favoriteIds = useMemo(
-    () => new Set(favorites?.map((f) => f.variantId) ?? []),
-    [favorites],
-  )
+  const favoriteIds = useMemo(() => new Set(favorites?.map((f) => f.variantId) ?? []), [favorites]);
 
   const categories = useMemo(() => {
-    const cats = new Set<string>()
-    items?.forEach((i) => { if (i.category) cats.add(i.category) })
-    return BUYABLE_CATEGORIES.filter(cat => cats.has(cat))
-  }, [items])
+    const cats = new Set<string>();
+    items?.forEach((i) => {
+      if (i.category) cats.add(i.category);
+    });
+    return BUYABLE_CATEGORIES.filter((cat) => cats.has(cat));
+  }, [items]);
 
   const filtered = useMemo(() => {
-    let list = items ?? []
-    if (activeCategory) list = list.filter((i) => i.category === activeCategory)
+    let list = items ?? [];
+    if (activeCategory) list = list.filter((i) => i.category === activeCategory);
     if (search) {
-      const q = search.toLowerCase()
+      const q = search.toLowerCase();
       list = list.filter(
         (i) =>
           i.name.toLowerCase().includes(q) ||
           i.variants.some((v) => v.name.toLowerCase().includes(q)),
-      )
+      );
     }
-    return list
-  }, [items, activeCategory, search])
+    return list;
+  }, [items, activeCategory, search]);
 
   const grouped = useMemo(() => {
-    const map = new Map<string, BuyableWithVariants[]>()
+    const map = new Map<string, BuyableWithVariants[]>();
     for (const item of filtered) {
-      const key = item.category ?? 'other'
-      const list = map.get(key) ?? []
-      list.push(item)
-      map.set(key, list)
+      const key = item.category ?? 'other';
+      const list = map.get(key) ?? [];
+      list.push(item);
+      map.set(key, list);
     }
-    return BUYABLE_CATEGORIES
-      .filter(cat => map.has(cat))
-      .map(cat => [cat, map.get(cat)!] as [string, BuyableWithVariants[]])
-  }, [filtered])
+    return BUYABLE_CATEGORIES.filter((cat) => map.has(cat)).map(
+      (cat) => [cat, map.get(cat)!] as [string, BuyableWithVariants[]],
+    );
+  }, [filtered]);
 
-  const filterRef = useRef<HTMLDivElement>(null)
-  const [leftFade, setLeftFade] = useState(false)
-  const [rightFade, setRightFade] = useState(false)
+  const filterRef = useRef<HTMLDivElement>(null);
+  const [leftFade, setLeftFade] = useState(false);
+  const [rightFade, setRightFade] = useState(false);
 
   useEffect(() => {
-    const el = filterRef.current
-    if (!el) return
+    const el = filterRef.current;
+    if (!el) return;
     const update = () => {
-      setLeftFade(el.scrollLeft > 0)
-      setRightFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 1)
-    }
-    update()
-    el.addEventListener('scroll', update, { passive: true })
-    return () => el.removeEventListener('scroll', update)
-  }, [categories])
+      setLeftFade(el.scrollLeft > 0);
+      setRightFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 1);
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    return () => el.removeEventListener('scroll', update);
+  }, [categories]);
 
   const openSheet = (item: BuyableWithVariants, variantId: string) => {
-    setSelected(item)
-    setSelectedVariantId(variantId)
-  }
+    setSelected(item);
+    setSelectedVariantId(variantId);
+  };
 
   return (
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto space-y-4">
-
         {/* Promo Banner */}
         {!isLoading && items && <PromoBanner items={items} />}
 
         {/* Search */}
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
           <input
             type="search"
             placeholder="Produkt oder Variante suchen…"
@@ -202,7 +213,9 @@ export function Shop() {
                 onClick={() => setActiveCategory(null)}
                 className={cn(
                   'flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                  !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                  !activeCategory
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground',
                 )}
               >
                 Alle
@@ -213,7 +226,9 @@ export function Shop() {
                   onClick={() => setActiveCategory(cat === activeCategory ? null : cat)}
                   className={cn(
                     'flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                    activeCategory === cat ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                    activeCategory === cat
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground',
                   )}
                 >
                   {CATEGORY_LABELS[cat as BuyableCategory]}
@@ -238,118 +253,132 @@ export function Shop() {
         )}
 
         {/* Product groups */}
-        {!isLoading && grouped.map(([category, products]) => (
-          <section key={category}>
-            {!activeCategory && (
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                {CATEGORY_LABELS[category as BuyableCategory] ?? category}
-              </h2>
-            )}
-            <div className="space-y-3">
-              {products.map((item) => {
-                const activeVariants = item.variants.filter((v) => v.isActive)
-                return (
-                  <div key={item.id} className="rounded-2xl border border-border bg-card overflow-hidden">
-                    {/* Product Header */}
-                    <div className="px-4 py-3 bg-muted/30 border-b border-border flex items-center gap-3">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="w-10 h-10 rounded-xl object-cover bg-muted flex-shrink-0 shadow-sm"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl shadow-sm">
-                          {CATEGORY_LABELS[item.category as BuyableCategory]?.[0] ?? '📦'}
-                        </div>
-                      )}
-                      <h3 className="font-bold text-base">{item.name}</h3>
-                    </div>
+        {!isLoading &&
+          grouped.map(([category, products]) => (
+            <section key={category}>
+              {!activeCategory && (
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  {CATEGORY_LABELS[category as BuyableCategory] ?? category}
+                </h2>
+              )}
+              <div className="space-y-3">
+                {products.map((item) => {
+                  const activeVariants = item.variants.filter((v) => v.isActive);
+                  return (
+                    <div
+                      key={item.id}
+                      className="rounded-2xl border border-border bg-card overflow-hidden"
+                    >
+                      {/* Product Header */}
+                      <div className="px-4 py-3 bg-muted/30 border-b border-border flex items-center gap-3">
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="w-10 h-10 rounded-xl object-cover bg-muted flex-shrink-0 shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl shadow-sm">
+                            {CATEGORY_LABELS[item.category as BuyableCategory]?.[0] ?? '📦'}
+                          </div>
+                        )}
+                        <h3 className="font-bold text-base">{item.name}</h3>
+                      </div>
 
-                    {/* Variants List */}
-                    <div className="divide-y divide-border/50">
-                      {activeVariants.map((v) => {
-                        const isFav = favoriteIds.has(v.id)
-                        const voucherCount = voucherMap.get(v.id) ?? 0
-                        const hasVoucher = voucherCount > 0
-                        const hasDiscount = v.activeDiscount != null
+                      {/* Variants List */}
+                      <div className="divide-y divide-border/50">
+                        {activeVariants.map((v) => {
+                          const isFav = favoriteIds.has(v.id);
+                          const voucherCount = voucherMap.get(v.id) ?? 0;
+                          const hasVoucher = voucherCount > 0;
+                          const hasDiscount = v.activeDiscount != null;
 
-                        return (
-                          <div
-                            key={v.id}
-                            className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group"
-                          >
-                            <button
-                              onClick={() => openSheet(item, v.id)}
-                              className="flex-1 min-w-0 flex items-center gap-3 text-left"
+                          return (
+                            <div
+                              key={v.id}
+                              className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group"
                             >
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-sm truncate">{v.name}</span>
-                                  {hasVoucher && (
-                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
-                                      {voucherCount}x 🎁
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  {hasDiscount ? (
-                                    <>
-                                      <span className="text-sm font-bold text-orange-500">
-                                        {formatCents(v.discountedPrice)}
-                                      </span>
-                                      <span className="text-[10px] text-muted-foreground line-through decoration-muted-foreground/50">
-                                        {formatCents(v.price)}
-                                      </span>
-                                      <span className="text-[10px] font-black text-orange-500 uppercase tracking-tighter">
-                                        {v.activeDiscount!.type === 'percent' ? `-${v.activeDiscount!.value}%` : 'Aktion'}
-                                      </span>
-                                      {v.activeDiscount!.quantityRemaining !== null && (
-                                        <span className="text-[10px] font-medium text-blue-500">
-                                          noch {v.activeDiscount!.quantityRemaining}x
-                                        </span>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <span className="text-sm font-medium text-foreground/80">
-                                      {formatCents(v.price)}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </button>
-
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  toggleFav({ variantId: v.id, isFav })
-                                }}
-                                className={cn(
-                                  'p-2 rounded-lg transition-all active:scale-90',
-                                  isFav ? 'text-yellow-500 bg-yellow-500/10' : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/5',
-                                )}
-                                title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
-                              >
-                                <Star size={16} fill={isFav ? 'currentColor' : 'none'} strokeWidth={isFav ? 1.5 : 2} />
-                              </button>
                               <button
                                 onClick={() => openSheet(item, v.id)}
-                                className="p-2 rounded-lg text-muted-foreground group-hover:text-primary group-hover:bg-primary/5 transition-all"
+                                className="flex-1 min-w-0 flex items-center gap-3 text-left"
                               >
-                                <Plus size={20} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-sm truncate">{v.name}</span>
+                                    {hasVoucher && (
+                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
+                                        {voucherCount}x 🎁
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    {hasDiscount ? (
+                                      <>
+                                        <span className="text-sm font-bold text-orange-500">
+                                          {formatCents(v.discountedPrice)}
+                                        </span>
+                                        <span className="text-[10px] text-muted-foreground line-through decoration-muted-foreground/50">
+                                          {formatCents(v.price)}
+                                        </span>
+                                        <span className="text-[10px] font-black text-orange-500 uppercase tracking-tighter">
+                                          {v.activeDiscount!.type === 'percent'
+                                            ? `-${v.activeDiscount!.value}%`
+                                            : 'Aktion'}
+                                        </span>
+                                        {v.activeDiscount!.quantityRemaining !== null && (
+                                          <span className="text-[10px] font-medium text-blue-500">
+                                            noch {v.activeDiscount!.quantityRemaining}x
+                                          </span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span className="text-sm font-medium text-foreground/80">
+                                        {formatCents(v.price)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </button>
+
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleFav({ variantId: v.id, isFav });
+                                  }}
+                                  className={cn(
+                                    'p-2 rounded-lg transition-all active:scale-90',
+                                    isFav
+                                      ? 'text-yellow-500 bg-yellow-500/10'
+                                      : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/5',
+                                  )}
+                                  title={
+                                    isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'
+                                  }
+                                >
+                                  <Star
+                                    size={16}
+                                    fill={isFav ? 'currentColor' : 'none'}
+                                    strokeWidth={isFav ? 1.5 : 2}
+                                  />
+                                </button>
+                                <button
+                                  onClick={() => openSheet(item, v.id)}
+                                  className="p-2 rounded-lg text-muted-foreground group-hover:text-primary group-hover:bg-primary/5 transition-all"
+                                >
+                                  <Plus size={20} />
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        )
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-        ))}
+                  );
+                })}
+              </div>
+            </section>
+          ))}
 
         {!isLoading && filtered.length === 0 && (
           <p className="text-center text-muted-foreground text-sm py-8">Keine Produkte gefunden</p>
@@ -359,8 +388,11 @@ export function Shop() {
       <BuySheet
         buyable={selected}
         initialVariantId={selectedVariantId}
-        onClose={() => { setSelected(null); setSelectedVariantId(null) }}
+        onClose={() => {
+          setSelected(null);
+          setSelectedVariantId(null);
+        }}
       />
     </Layout>
-  )
+  );
 }

@@ -1,78 +1,94 @@
-import type { FeedEntry } from '../hooks/useFeed'
-import { FeedItem, type GroupedFeedEntry } from './FeedItem'
-import { APP_TZ } from '../lib/utils'
-export type { GroupedFeedEntry }
+import type { FeedEntry } from '../hooks/useFeed';
+import { FeedItem, type GroupedFeedEntry } from './FeedItem';
+import { APP_TZ } from '../lib/utils';
+export type { GroupedFeedEntry };
 
-type Item = { name: string; variantName: string; count: number }
+type Item = { name: string; variantName: string; count: number };
 
 type TimelineItem =
   | { kind: 'entry'; entry: GroupedFeedEntry }
-  | { kind: 'separator'; label: string; key: string }
+  | { kind: 'separator'; label: string; key: string };
 
 function getDateLabel(dateStr: string): string {
-  const d = new Date(dateStr)
-  const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(today.getDate() - 1)
-  if (d.toDateString() === today.toDateString()) return 'Heute'
-  if (d.toDateString() === yesterday.toDateString()) return 'Gestern'
-  return d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', timeZone: APP_TZ })
+  const d = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return 'Heute';
+  if (d.toDateString() === yesterday.toDateString()) return 'Gestern';
+  return d.toLocaleDateString('de-DE', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: APP_TZ,
+  });
 }
 
 function mergeItems(a: Item[], b: Item[]): Item[] {
-  const map = new Map<string, Item>()
+  const map = new Map<string, Item>();
   for (const item of [...a, ...b]) {
-    const key = `${item.name}::${item.variantName}`
-    const existing = map.get(key)
-    map.set(key, existing ? { ...existing, count: existing.count + item.count } : { ...item })
+    const key = `${item.name}::${item.variantName}`;
+    const existing = map.get(key);
+    map.set(key, existing ? { ...existing, count: existing.count + item.count } : { ...item });
   }
-  return Array.from(map.values())
+  return Array.from(map.values());
 }
 
 export function groupEntries(entries: FeedEntry[]): GroupedFeedEntry[] {
-  const result: GroupedFeedEntry[] = []
+  const result: GroupedFeedEntry[] = [];
   for (const entry of entries) {
-    const last = result.at(-1)
+    const last = result.at(-1);
     if (
       last &&
       entry.type === 'purchase' &&
       last.type === 'purchase' &&
       entry.userId === last.userId
     ) {
-      const lastItems = last.mergedItems ?? ((last.metadata?.items as Item[]) ?? [])
-      const newItems = (entry.metadata?.items as Item[]) ?? []
-      last.mergedItems = mergeItems(lastItems, newItems)
+      const lastItems = last.mergedItems ?? (last.metadata?.items as Item[]) ?? [];
+      const newItems = (entry.metadata?.items as Item[]) ?? [];
+      last.mergedItems = mergeItems(lastItems, newItems);
     } else {
-      result.push({ ...entry })
+      result.push({ ...entry });
     }
   }
-  return result
+  return result;
 }
 
 function buildTimeline(entries: GroupedFeedEntry[]): TimelineItem[] {
-  const items: TimelineItem[] = []
-  let lastDate = ''
+  const items: TimelineItem[] = [];
+  let lastDate = '';
   for (const entry of entries) {
-    const dateKey = new Date(entry.createdAt).toDateString()
+    const dateKey = new Date(entry.createdAt).toDateString();
     if (dateKey !== lastDate) {
-      items.push({ kind: 'separator', label: getDateLabel(entry.createdAt), key: `sep-${dateKey}` })
-      lastDate = dateKey
+      items.push({
+        kind: 'separator',
+        label: getDateLabel(entry.createdAt),
+        key: `sep-${dateKey}`,
+      });
+      lastDate = dateKey;
     }
-    items.push({ kind: 'entry', entry })
+    items.push({ kind: 'entry', entry });
   }
-  return items
+  return items;
 }
 
 interface Props {
-  entries: FeedEntry[]
-  isLoading?: boolean
-  hasNextPage?: boolean
-  fetchNextPage?: () => void
-  isFetchingNextPage?: boolean
-  preGrouped?: boolean
+  entries: FeedEntry[];
+  isLoading?: boolean;
+  hasNextPage?: boolean;
+  fetchNextPage?: () => void;
+  isFetchingNextPage?: boolean;
+  preGrouped?: boolean;
 }
 
-export function FeedTimeline({ entries, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage, preGrouped }: Props) {
+export function FeedTimeline({
+  entries,
+  isLoading,
+  hasNextPage,
+  fetchNextPage,
+  isFetchingNextPage,
+  preGrouped,
+}: Props) {
   if (isLoading) {
     return (
       <div className="space-y-5">
@@ -86,7 +102,7 @@ export function FeedTimeline({ entries, isLoading, hasNextPage, fetchNextPage, i
           </div>
         ))}
       </div>
-    )
+    );
   }
 
   if (entries.length === 0) {
@@ -95,11 +111,11 @@ export function FeedTimeline({ entries, isLoading, hasNextPage, fetchNextPage, i
         <p className="text-2xl mb-2">📭</p>
         <p>Noch keine Aktivitäten</p>
       </div>
-    )
+    );
   }
 
-  const grouped = preGrouped ? (entries as GroupedFeedEntry[]) : groupEntries(entries)
-  const items = buildTimeline(grouped)
+  const grouped = preGrouped ? (entries as GroupedFeedEntry[]) : groupEntries(entries);
+  const items = buildTimeline(grouped);
 
   return (
     <div>
@@ -113,16 +129,12 @@ export function FeedTimeline({ entries, isLoading, hasNextPage, fetchNextPage, i
               </span>
               <div className="flex-1 h-px bg-border" />
             </div>
-          )
+          );
         }
-        const next = items[i + 1]
+        const next = items[i + 1];
         return (
-          <FeedItem
-            key={item.entry.id}
-            entry={item.entry}
-            hasConnector={next?.kind === 'entry'}
-          />
-        )
+          <FeedItem key={item.entry.id} entry={item.entry} hasConnector={next?.kind === 'entry'} />
+        );
       })}
 
       {hasNextPage && (
@@ -135,5 +147,5 @@ export function FeedTimeline({ entries, isLoading, hasNextPage, fetchNextPage, i
         </button>
       )}
     </div>
-  )
+  );
 }

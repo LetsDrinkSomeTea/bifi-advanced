@@ -1,11 +1,12 @@
-import { Layout } from '../components/layout/Layout'
-import { TransactionList } from '../components/TransactionList'
-import { useTransactionHistory } from '../hooks/useTransactions'
+import { Layout } from '../components/layout/Layout';
+import { TransactionList } from '../components/TransactionList';
+import { useTransactionHistory } from '../hooks/useTransactions';
 
 export function History() {
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useTransactionHistory()
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useTransactionHistory();
 
-  const allTxns = data?.pages.flatMap((p) => p.data) ?? []
+  const allTxns = data?.pages.flatMap((p) => p.data) ?? [];
 
   return (
     <Layout>
@@ -25,5 +26,5 @@ export function History() {
         )}
       </div>
     </Layout>
-  )
+  );
 }

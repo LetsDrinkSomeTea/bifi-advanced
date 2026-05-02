@@ -40,3 +40,16 @@ db-studio:
 # Shell into running app container
 shell:
 	$(DC) exec app sh
+
+# Run static analysis
+lint:
+	$(DC) exec app npm run lint
+
+format:
+	$(DC) exec app npm run format
+
+typecheck:
+	$(DC) exec app npm run typecheck
+
+check:
+	$(DC) exec app npm run check

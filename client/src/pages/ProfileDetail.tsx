@@ -1,33 +1,33 @@
-import { useState } from 'react'
-import { useParams, Link } from 'wouter'
-import { UserPlus, UserCheck, UserX, Clock, Bell, X, Beer, BarChart2 } from 'lucide-react'
-import { Layout } from '../components/layout/Layout'
-import { AchievementGrid } from '@/components/AchievementGrid'
-import { usePublicProfile } from '../hooks/useProfile'
-import { useSendFriendRequest, useAcceptFriendRequest, useRemoveFriend } from '../hooks/useFriends'
-import { useNudgePresets, useSendNudge } from '../hooks/useNudge'
-import { useSendProst } from '../hooks/useProst'
-import { useBuyables } from '../hooks/useBuyables'
-import { useAuth } from '../hooks/useAuth'
-import { formatCents, cn } from '../lib/utils'
-import type { FriendshipStatus } from '@shared/types'
+import { useState } from 'react';
+import { useParams, Link } from 'wouter';
+import { UserPlus, UserCheck, UserX, Clock, Bell, X, Beer, BarChart2 } from 'lucide-react';
+import { Layout } from '../components/layout/Layout';
+import { AchievementGrid } from '@/components/AchievementGrid';
+import { usePublicProfile } from '../hooks/useProfile';
+import { useSendFriendRequest, useAcceptFriendRequest, useRemoveFriend } from '../hooks/useFriends';
+import { useNudgePresets, useSendNudge } from '../hooks/useNudge';
+import { useSendProst } from '../hooks/useProst';
+import { useBuyables } from '../hooks/useBuyables';
+import { useAuth } from '../hooks/useAuth';
+import { formatCents, cn } from '../lib/utils';
+import type { FriendshipStatus } from '@shared/types';
 
 export const ROLE_LABEL: Record<string, string> = {
   admin: 'Admin',
   moderator: 'Moderator',
   member: 'Mitglied',
-}
+};
 
 export const ROLE_STYLE: Record<string, string> = {
   admin: 'bg-primary/10 text-primary',
   moderator: 'bg-purple-500/10 text-purple-500',
   member: 'bg-muted text-muted-foreground',
-}
+};
 
 function FriendButton({ userId, status }: { userId: string; status: FriendshipStatus }) {
-  const { mutate: send, isPending: sending } = useSendFriendRequest()
-  const { mutate: accept, isPending: accepting } = useAcceptFriendRequest()
-  const { mutate: remove, isPending: removing } = useRemoveFriend()
+  const { mutate: send, isPending: sending } = useSendFriendRequest();
+  const { mutate: accept, isPending: accepting } = useAcceptFriendRequest();
+  const { mutate: remove, isPending: removing } = useRemoveFriend();
 
   if (status === 'friends') {
     return (
@@ -39,7 +39,7 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
         <UserCheck size={15} />
         Freunde
       </button>
-    )
+    );
   }
 
   if (status === 'pending_sent') {
@@ -53,7 +53,7 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
         <Clock size={15} />
         Anfrage gesendet
       </button>
-    )
+    );
   }
 
   if (status === 'pending_received') {
@@ -76,7 +76,7 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
           Ablehnen
         </button>
       </div>
-    )
+    );
   }
 
   return (
@@ -88,21 +88,25 @@ function FriendButton({ userId, status }: { userId: string; status: FriendshipSt
       <UserPlus size={15} />
       Freund hinzufügen
     </button>
-  )
+  );
 }
 
-function NudgeSheet({ userId, displayName, onClose }: {
-  userId: string
-  displayName: string
-  onClose: () => void
+function NudgeSheet({
+  userId,
+  displayName,
+  onClose,
+}: {
+  userId: string;
+  displayName: string;
+  onClose: () => void;
 }) {
-  const [freetext, setFreetext] = useState('')
-  const { data: presets } = useNudgePresets()
-  const { mutate: send, isPending, isSuccess, error } = useSendNudge()
+  const [freetext, setFreetext] = useState('');
+  const { data: presets } = useNudgePresets();
+  const { mutate: send, isPending, isSuccess, error } = useSendNudge();
 
   const handleSend = (preset?: string, message?: string) => {
-    send({ recipientId: userId, preset, message }, { onSuccess: onClose })
-  }
+    send({ recipientId: userId, preset, message }, { onSuccess: onClose });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -138,7 +142,9 @@ function NudgeSheet({ userId, displayName, onClose }: {
             onChange={(e) => setFreetext(e.target.value)}
             maxLength={200}
             className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-            onKeyDown={(e) => e.key === 'Enter' && freetext.trim() && handleSend(undefined, freetext.trim())}
+            onKeyDown={(e) =>
+              e.key === 'Enter' && freetext.trim() && handleSend(undefined, freetext.trim())
+            }
           />
           <button
             onClick={() => handleSend(undefined, freetext.trim())}
@@ -156,20 +162,25 @@ function NudgeSheet({ userId, displayName, onClose }: {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-function ProstSheet({ toUserId, displayName, onClose }: {
-  toUserId: string
-  displayName: string
-  onClose: () => void
+function ProstSheet({
+  toUserId,
+  displayName,
+  onClose,
+}: {
+  toUserId: string;
+  displayName: string;
+  onClose: () => void;
 }) {
-  const { data: buyables, isLoading } = useBuyables()
-  const { mutate: send, isPending, error } = useSendProst()
+  const { data: buyables, isLoading } = useBuyables();
+  const { mutate: send, isPending, error } = useSendProst();
 
-  const variants = buyables?.flatMap((b) =>
-    b.variants.filter((v) => v.isActive).map((v) => ({ ...v, buyableName: b.name })),
-  ) ?? []
+  const variants =
+    buyables?.flatMap((b) =>
+      b.variants.filter((v) => v.isActive).map((v) => ({ ...v, buyableName: b.name })),
+    ) ?? [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -186,7 +197,9 @@ function ProstSheet({ toUserId, displayName, onClose }: {
         </p>
         {isLoading ? (
           <div className="space-y-2">
-            {[1, 2, 3].map((i) => <div key={i} className="h-12 rounded-xl bg-muted animate-pulse" />)}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-12 rounded-xl bg-muted animate-pulse" />
+            ))}
           </div>
         ) : (
           <div className="overflow-y-auto space-y-2">
@@ -206,22 +219,18 @@ function ProstSheet({ toUserId, displayName, onClose }: {
             ))}
           </div>
         )}
-        {error && (
-          <p className="text-xs text-destructive mt-2 flex-shrink-0">
-            Fehler beim Senden
-          </p>
-        )}
+        {error && <p className="text-xs text-destructive mt-2 flex-shrink-0">Fehler beim Senden</p>}
       </div>
     </div>
-  )
+  );
 }
 
 export function ProfileDetail() {
-  const { userId } = useParams<{ userId: string }>()
-  const { user: currentUser } = useAuth()
-  const { data: profile, isLoading } = usePublicProfile(userId)
-  const [nudgeOpen, setNudgeOpen] = useState(false)
-  const [prostOpen, setProstOpen] = useState(false)
+  const { userId } = useParams<{ userId: string }>();
+  const { user: currentUser } = useAuth();
+  const { data: profile, isLoading } = usePublicProfile(userId);
+  const [nudgeOpen, setNudgeOpen] = useState(false);
+  const [prostOpen, setProstOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -235,11 +244,13 @@ export function ProfileDetail() {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            {[1, 2, 3].map((i) => <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />)}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
+            ))}
           </div>
         </div>
       </Layout>
-    )
+    );
   }
 
   if (!profile) {
@@ -249,26 +260,32 @@ export function ProfileDetail() {
           Nutzer nicht gefunden
         </div>
       </Layout>
-    )
+    );
   }
 
-  const isOwnProfile = currentUser?.id === profile.id
+  const isOwnProfile = currentUser?.id === profile.id;
 
   return (
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto space-y-6">
-
         {/* Header */}
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold overflow-hidden flex-shrink-0">
-            {profile.avatarUrl
-              ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
-              : <span>{profile.displayName[0]?.toUpperCase()}</span>}
+            {profile.avatarUrl ? (
+              <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span>{profile.displayName[0]?.toUpperCase()}</span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold truncate">{profile.displayName}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium', ROLE_STYLE[profile.role])}>
+              <span
+                className={cn(
+                  'text-xs px-1.5 py-0.5 rounded-full font-medium',
+                  ROLE_STYLE[profile.role],
+                )}
+              >
                 {ROLE_LABEL[profile.role]}
               </span>
             </div>
@@ -299,8 +316,13 @@ export function ProfileDetail() {
         {/* Stats */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Statistiken</h2>
-            <Link href={`/profile/${profile.id}/stats`} className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Statistiken
+            </h2>
+            <Link
+              href={`/profile/${profile.id}/stats`}
+              className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline"
+            >
               <BarChart2 size={12} />
               Details
             </Link>
@@ -309,14 +331,12 @@ export function ProfileDetail() {
             <StatCard label="Käufe" value={String(profile.stats.purchaseCount)} />
             <StatCard
               label="Rang"
-              value={profile.stats.leaderboardRank != null ? `#${profile.stats.leaderboardRank}` : '–'}
+              value={
+                profile.stats.leaderboardRank != null ? `#${profile.stats.leaderboardRank}` : '–'
+              }
             />
             <StatCard label="Freunde" value={String(profile.stats.friendCount)} />
-            <StatCard
-              label="Liebling"
-              value={profile.stats.favoriteProduct?.name ?? '–'}
-              small
-            />
+            <StatCard label="Liebling" value={profile.stats.favoriteProduct?.name ?? '–'} small />
           </div>
         </div>
 
@@ -343,7 +363,7 @@ export function ProfileDetail() {
         />
       )}
     </Layout>
-  )
+  );
 }
 
 function StatCard({ label, value, small }: { label: string; value: string; small?: boolean }) {
@@ -352,5 +372,5 @@ function StatCard({ label, value, small }: { label: string; value: string; small
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
       <p className={cn('font-bold leading-tight', small ? 'text-sm' : 'text-xl')}>{value}</p>
     </div>
-  )
+  );
 }

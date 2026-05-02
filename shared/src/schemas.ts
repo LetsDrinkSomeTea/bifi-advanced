@@ -1,19 +1,24 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export const LocalLoginSchema = z.object({
   login: z.string().min(1),
   password: z.string().min(1),
-})
+});
 
 export const CreateLocalUserSchema = z.object({
   email: z.string().email(),
-  username: z.string().min(2).max(32).regex(/^[a-z0-9_-]+$/i).optional(),
+  username: z
+    .string()
+    .min(2)
+    .max(32)
+    .regex(/^[a-z0-9_-]+$/i)
+    .optional(),
   displayName: z.string().min(1).max(80),
   password: z.string().min(8),
   role: z.enum(['admin', 'moderator', 'member']).default('member'),
-})
+});
 
 // ─── User ─────────────────────────────────────────────────────────────────────
 
@@ -28,12 +33,12 @@ export const MeResponseSchema = z.object({
   jackpotAllowed: z.boolean(),
   isActive: z.boolean(),
   createdAt: z.string(),
-})
+});
 
 // ─── Buyables ─────────────────────────────────────────────────────────────────
 
-export const BUYABLE_CATEGORIES = ['alcoholic', 'soft_drink', 'food', 'snack', 'other'] as const
-export type BuyableCategory = typeof BUYABLE_CATEGORIES[number]
+export const BUYABLE_CATEGORIES = ['alcoholic', 'soft_drink', 'food', 'snack', 'other'] as const;
+export type BuyableCategory = (typeof BUYABLE_CATEGORIES)[number];
 
 export const CATEGORY_LABELS: Record<BuyableCategory, string> = {
   alcoholic: 'Alkoholische Getränke',
@@ -41,7 +46,7 @@ export const CATEGORY_LABELS: Record<BuyableCategory, string> = {
   food: 'Essen',
   snack: 'Snacks',
   other: 'Sonstiges',
-}
+};
 
 export const CreateBuyableSchema = z.object({
   name: z.string().min(1).max(80),
@@ -52,13 +57,13 @@ export const CreateBuyableSchema = z.object({
     name: z.string().min(1).max(80),
     price: z.number().int().min(0),
   }),
-})
+});
 
 export const CreateVariantSchema = z.object({
   name: z.string().min(1).max(80),
   price: z.number().int().min(0),
   sortOrder: z.number().int().default(0),
-})
+});
 
 // ─── Transactions ─────────────────────────────────────────────────────────────
 
@@ -74,31 +79,31 @@ export const PurchaseSchema = z.object({
     .min(1),
   groupId: z.string().uuid().optional(),
   note: z.string().max(200).optional(),
-})
+});
 
 export const ProstSchema = z.object({
   recipientId: z.string().uuid(),
   buyableId: z.string().uuid(),
   variantId: z.string().uuid(),
   note: z.string().max(200).optional(),
-})
+});
 
 export const DepositSchema = z.object({
   userId: z.string().uuid(),
   amount: z.number().int().min(1),
   note: z.string().max(200).optional(),
-})
+});
 
 // ─── Groups ───────────────────────────────────────────────────────────────────
 
 export const CreateGroupSchema = z.object({
   name: z.string().min(1).max(80),
   description: z.string().max(500).optional(),
-})
+});
 
 export const JoinGroupSchema = z.object({
   inviteCode: z.string().min(1),
-})
+});
 
 // ─── Promotions ───────────────────────────────────────────────────────────────
 
@@ -113,7 +118,7 @@ export const CreatePromotionSchema = z.object({
       buyableIds: z.array(z.string().uuid()).optional(),
     })
     .optional(),
-})
+});
 
 // ─── Donation Goals ───────────────────────────────────────────────────────────
 
@@ -124,17 +129,17 @@ export const CreateGoalSchema = z.object({
   reward: z.string().max(200).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-})
+});
 
 export const ContributeSchema = z.object({
   amount: z.number().int().min(1),
-})
+});
 
 // ─── Nudges ───────────────────────────────────────────────────────────────────
 
 export const NudgeSchema = z.object({
   recipientId: z.string().uuid(),
-})
+});
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
 
@@ -143,23 +148,23 @@ export const UpdateUserSchema = z.object({
   isActive: z.boolean().optional(),
   jackpotAllowed: z.boolean().optional(),
   displayName: z.string().min(1).max(80).optional(),
-})
+});
 
 export const BroadcastSchema = z.object({
   title: z.string().min(1).max(120),
   message: z.string().min(1).max(500),
-})
+});
 
 // ─── Jackpot ──────────────────────────────────────────────────────────────────
 
 export const JackpotSpinSchema = z.object({
   buyableId: z.string().uuid(),
   variantId: z.string().uuid().optional(),
-})
+});
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 
 export const CursorQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-})
+});

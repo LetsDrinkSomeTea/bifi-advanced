@@ -1,16 +1,16 @@
-import { Link, useLocation } from 'wouter'
-import { Layout } from '../../components/layout/Layout'
-import { cn } from '../../lib/utils'
+import { Link, useLocation } from 'wouter';
+import { Layout } from '../../components/layout/Layout';
+import { cn } from '../../lib/utils';
 
 const TABS = [
   { href: '/admin/users', label: 'Nutzer' },
   { href: '/admin/products', label: 'Produkte' },
   { href: '/admin/promotions', label: 'Rabatte' },
   { href: '/admin/settlement', label: 'Schulden' },
-]
+];
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation()
+  const [location] = useLocation();
   return (
     <Layout>
       <div className="border-b border-border sticky bg-background z-10">
@@ -33,5 +33,5 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       </div>
       <div className="px-4 py-4 max-w-lg mx-auto">{children}</div>
     </Layout>
-  )
+  );
 }

@@ -1,39 +1,54 @@
-import { useEffect, useRef, useState } from 'react'
-import { Bell, UserCircle, ShieldCheck, LogOut, Check } from 'lucide-react'
-import { useLocation } from 'wouter'
-import { useAuth, useLogout } from '../../hooks/useAuth'
-import { useNotifications, useMarkRead, useMarkAllRead, useSSE, type AppNotification } from '../../hooks/useNotifications'
-import { formatCents, formatRelative, balanceColor, cn } from '../../lib/utils'
+import { useEffect, useRef, useState } from 'react';
+import { Bell, UserCircle, ShieldCheck, LogOut, Check } from 'lucide-react';
+import { useLocation } from 'wouter';
+import { useAuth, useLogout } from '../../hooks/useAuth';
+import {
+  useNotifications,
+  useMarkRead,
+  useMarkAllRead,
+  useSSE,
+  type AppNotification,
+} from '../../hooks/useNotifications';
+import { formatCents, formatRelative, balanceColor, cn } from '../../lib/utils';
 
 function notificationHref(n: AppNotification): string | null {
   switch (n.type) {
-    case 'achievement': return '/achievements'
-    case 'friend_request': return n.relatedId ? `/profile/${n.relatedId}` : '/social'
-    case 'deposit': return '/history'
-    case 'balance_warning': return '/profile'
-    case 'goal_reached': return '/feed'
-    default: return null
+    case 'achievement':
+      return '/achievements';
+    case 'friend_request':
+      return n.relatedId ? `/profile/${n.relatedId}` : '/social';
+    case 'deposit':
+      return '/history';
+    case 'balance_warning':
+      return '/profile';
+    case 'goal_reached':
+      return '/feed';
+    default:
+      return null;
   }
 }
 
 function NotificationDropdown({ onClose }: { onClose: () => void }) {
-  const { data: notifs } = useNotifications()
-  const { mutate: markRead } = useMarkRead()
-  const { mutate: markAll } = useMarkAllRead()
-  const [, navigate] = useLocation()
+  const { data: notifs } = useNotifications();
+  const { mutate: markRead } = useMarkRead();
+  const { mutate: markAll } = useMarkAllRead();
+  const [, navigate] = useLocation();
 
   const handleNavigate = (n: AppNotification) => {
-    markRead(n.id)
-    const href = notificationHref(n)
-    if (href) { navigate(href); onClose() }
-  }
+    markRead(n.id);
+    const href = notificationHref(n);
+    if (href) {
+      navigate(href);
+      onClose();
+    }
+  };
 
   if (!notifs || notifs.length === 0) {
     return (
       <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-border bg-popover shadow-lg z-50 p-4 text-center text-sm text-muted-foreground">
         Keine neuen Benachrichtigungen
       </div>
-    )
+    );
   }
 
   return (
@@ -41,7 +56,10 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <span className="text-sm font-semibold">Benachrichtigungen</span>
         <button
-          onClick={() => { markAll(); onClose() }}
+          onClick={() => {
+            markAll();
+            onClose();
+          }}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           Alle gelesen
@@ -49,12 +67,9 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
       </div>
       <div className="max-h-80 overflow-y-auto">
         {notifs.map((n) => {
-          const href = notificationHref(n)
+          const href = notificationHref(n);
           return (
-            <div
-              key={n.id}
-              className="flex items-start border-b border-border last:border-0"
-            >
+            <div key={n.id} className="flex items-start border-b border-border last:border-0">
               <button
                 onClick={() => handleNavigate(n)}
                 className={cn(
@@ -65,7 +80,9 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
               >
                 <p className="text-sm font-medium leading-snug">{n.title}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">{formatRelative(n.createdAt)}</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">
+                  {formatRelative(n.createdAt)}
+                </p>
               </button>
               <button
                 onClick={() => markRead(n.id)}
@@ -75,19 +92,22 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
                 <Check size={14} />
               </button>
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
 function AvatarMenuDropdown({ onClose }: { onClose: () => void }) {
-  const { isModerator } = useAuth()
-  const logout = useLogout()
-  const [, navigate] = useLocation()
+  const { isModerator } = useAuth();
+  const logout = useLogout();
+  const [, navigate] = useLocation();
 
-  const go = (path: string) => { navigate(path); onClose() }
+  const go = (path: string) => {
+    navigate(path);
+    onClose();
+  };
 
   return (
     <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-border bg-popover shadow-xl ring-1 ring-black/5 z-50 overflow-hidden">
@@ -112,7 +132,10 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }) {
       <div className="border-t border-border" />
       <div className="py-1.5">
         <button
-          onClick={() => { logout(); onClose() }}
+          onClick={() => {
+            logout();
+            onClose();
+          }}
           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
         >
           <LogOut size={16} className="flex-shrink-0" />
@@ -120,31 +143,31 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }) {
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 export function TopBar() {
-  const { user } = useAuth()
-  const { unreadCount, setUnreadCount } = useSSE()
-  const { data: notifs } = useNotifications()
-  const [notifOpen, setNotifOpen] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const notifRef = useRef<HTMLDivElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const { user } = useAuth();
+  const { unreadCount, setUnreadCount } = useSSE();
+  const { data: notifs } = useNotifications();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (notifs) setUnreadCount(notifs.length)
-  }, [notifs, setUnreadCount])
+    if (notifs) setUnreadCount(notifs.length);
+  }, [notifs, setUnreadCount]);
 
   useEffect(() => {
-    if (!notifOpen && !menuOpen) return
+    if (!notifOpen && !menuOpen) return;
     const handler = (e: MouseEvent) => {
-      if (notifOpen && !notifRef.current?.contains(e.target as Node)) setNotifOpen(false)
-      if (menuOpen && !menuRef.current?.contains(e.target as Node)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [notifOpen, menuOpen])
+      if (notifOpen && !notifRef.current?.contains(e.target as Node)) setNotifOpen(false);
+      if (menuOpen && !menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [notifOpen, menuOpen]);
 
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between px-4 h-14 border-b border-border bg-background/80 backdrop-blur-sm">
@@ -163,7 +186,10 @@ export function TopBar() {
         {/* Notification bell */}
         <div ref={notifRef} className="relative">
           <button
-            onClick={() => { setNotifOpen((o) => !o); setMenuOpen(false) }}
+            onClick={() => {
+              setNotifOpen((o) => !o);
+              setMenuOpen(false);
+            }}
             className="relative p-1 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Benachrichtigungen"
           >
@@ -181,18 +207,23 @@ export function TopBar() {
         {user && (
           <div ref={menuRef} className="relative">
             <button
-              onClick={() => { setMenuOpen((o) => !o); setNotifOpen(false) }}
+              onClick={() => {
+                setMenuOpen((o) => !o);
+                setNotifOpen(false);
+              }}
               className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold overflow-hidden hover:ring-2 hover:ring-primary transition-all cursor-pointer flex-shrink-0"
               aria-label="Menü"
             >
-              {user.avatarUrl
-                ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
-                : <span>{user.displayName[0]?.toUpperCase()}</span>}
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span>{user.displayName[0]?.toUpperCase()}</span>
+              )}
             </button>
             {menuOpen && <AvatarMenuDropdown onClose={() => setMenuOpen(false)} />}
           </div>
         )}
       </div>
     </header>
-  )
+  );
 }

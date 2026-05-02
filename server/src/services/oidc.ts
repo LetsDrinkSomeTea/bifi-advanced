@@ -4,32 +4,33 @@ import {
   authorizationCodeGrant,
   randomPKCECodeVerifier,
   calculatePKCECodeChallenge,
-} from 'openid-client'
+} from 'openid-client';
 
-type OIDCConfig = Awaited<ReturnType<typeof discovery>>
+type OIDCConfig = Awaited<ReturnType<typeof discovery>>;
 
-let oidcConfig: OIDCConfig | null = null
+let oidcConfig: OIDCConfig | null = null;
 
 export async function initOIDC() {
-  const issuer = process.env.OIDC_ISSUER
-  const clientId = process.env.OIDC_CLIENT_ID
+  const issuer = process.env.OIDC_ISSUER;
+  const clientId = process.env.OIDC_CLIENT_ID;
 
   if (!issuer || !clientId) {
-    console.warn('OIDC_ISSUER or OIDC_CLIENT_ID not set — SSO login disabled')
-    return
+    console.warn('OIDC_ISSUER or OIDC_CLIENT_ID not set — SSO login disabled');
+    return;
   }
 
-  oidcConfig = await discovery(
-    new URL(issuer),
-    clientId,
-    process.env.OIDC_CLIENT_SECRET,
-  )
+  oidcConfig = await discovery(new URL(issuer), clientId, process.env.OIDC_CLIENT_SECRET);
 
-  console.log('OIDC discovery complete')
+  console.log('OIDC discovery complete');
 }
 
 export function getOIDCConfig() {
-  return oidcConfig
+  return oidcConfig;
 }
 
-export { buildAuthorizationUrl, authorizationCodeGrant, randomPKCECodeVerifier, calculatePKCECodeChallenge }
+export {
+  buildAuthorizationUrl,
+  authorizationCodeGrant,
+  randomPKCECodeVerifier,
+  calculatePKCECodeChallenge,
+};

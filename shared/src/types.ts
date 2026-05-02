@@ -1,132 +1,132 @@
-import type { z } from 'zod'
-import type { MeResponseSchema } from './schemas.ts'
-import type { AchievementKey, AchievementTier } from './achievements.ts'
+import type { z } from 'zod';
+import type { MeResponseSchema } from './schemas.ts';
+import type { AchievementKey, AchievementTier } from './achievements.ts';
 
-export type User = z.infer<typeof MeResponseSchema>
-export type Role = User['role']
+export type User = z.infer<typeof MeResponseSchema>;
+export type Role = User['role'];
 
 export interface ApiError {
-  error: string
-  code: string
-  details?: unknown
+  error: string;
+  code: string;
+  details?: unknown;
 }
 
 export interface PaginatedResponse<T> {
-  data: T[]
-  nextCursor: string | null
+  data: T[];
+  nextCursor: string | null;
 }
 
 export interface ActiveDiscount {
-  type: 'percent' | 'fixed'
-  value: number
-  name: string
-  endTime: string | null
-  quantityRemaining: number | null
-  promoId: string
+  type: 'percent' | 'fixed';
+  value: number;
+  name: string;
+  endTime: string | null;
+  quantityRemaining: number | null;
+  promoId: string;
 }
 
 export interface BuyableWithVariants {
-  id: string
-  name: string
-  imageUrl: string | null
-  category: string | null
-  isActive: boolean
-  sortOrder: number
-  createdAt: string
-  updatedAt: string
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  category: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
   variants: Array<{
-    id: string
-    buyableId: string
-    name: string
-    price: number
-    isActive: boolean
-    sortOrder: number
-    activeDiscount: ActiveDiscount | null
-    discountedPrice: number
-  }>
+    id: string;
+    buyableId: string;
+    name: string;
+    price: number;
+    isActive: boolean;
+    sortOrder: number;
+    activeDiscount: ActiveDiscount | null;
+    discountedPrice: number;
+  }>;
 }
 
 export interface Favorite {
-  variantId: string
-  variantName: string
-  price: number
-  buyableId: string
-  buyableName: string
-  category: string | null
-  isAvailable: boolean
-  activeDiscount: ActiveDiscount | null
-  discountedPrice: number
+  variantId: string;
+  variantName: string;
+  price: number;
+  buyableId: string;
+  buyableName: string;
+  category: string | null;
+  isAvailable: boolean;
+  activeDiscount: ActiveDiscount | null;
+  discountedPrice: number;
 }
 
 export interface AdminUser {
-  id: string
-  email: string
-  username: string | null
-  displayName: string
-  avatarUrl: string | null
-  role: Role
-  balance: number
-  isActive: boolean
-  jackpotAllowed: boolean
-  hasSso: boolean
-  hasPassword: boolean
-  createdAt: string
+  id: string;
+  email: string;
+  username: string | null;
+  displayName: string;
+  avatarUrl: string | null;
+  role: Role;
+  balance: number;
+  isActive: boolean;
+  jackpotAllowed: boolean;
+  hasSso: boolean;
+  hasPassword: boolean;
+  createdAt: string;
 }
 
 export interface SettlementEntry {
-  id: string
-  displayName: string
-  email: string
-  avatarUrl: string | null
-  balance: number
+  id: string;
+  displayName: string;
+  email: string;
+  avatarUrl: string | null;
+  balance: number;
 }
 
 export interface TransactionWithItems {
-  id: string
-  userId: string
-  initiatedBy: string
-  type: 'purchase' | 'deposit' | 'correction' | 'jackpot' | 'prost'
-  totalAmount: number
-  groupId: string | null
-  note: string | null
-  cancelledAt: string | null
-  cancelledBy: string | null
-  jackpotMultiplier: string | null
-  createdAt: string
+  id: string;
+  userId: string;
+  initiatedBy: string;
+  type: 'purchase' | 'deposit' | 'correction' | 'jackpot' | 'prost';
+  totalAmount: number;
+  groupId: string | null;
+  note: string | null;
+  cancelledAt: string | null;
+  cancelledBy: string | null;
+  jackpotMultiplier: string | null;
+  createdAt: string;
   items: Array<{
-    id: string
-    buyableId: string
-    variantId: string | null
-    quantity: number
-    unitPrice: number
-    totalPrice: number
-    buyableName: string
-    variantName: string | null
-  }>
+    id: string;
+    buyableId: string;
+    variantId: string | null;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+    buyableName: string;
+    variantName: string | null;
+  }>;
 }
 
 export interface PublicProfile {
-  id: string
-  displayName: string
-  avatarUrl: string | null
-  role: 'admin' | 'moderator' | 'member'
-  createdAt: string
-  hasSso: boolean
-  hasPassword: boolean
-  friendshipStatus: FriendshipStatus | null
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  role: 'admin' | 'moderator' | 'member';
+  createdAt: string;
+  hasSso: boolean;
+  hasPassword: boolean;
+  friendshipStatus: FriendshipStatus | null;
   stats: {
-    purchaseCount: number
-    leaderboardRank: { rank: number; categories: string[] } | null
-    favoriteProduct: { name: string; count: number } | null
-    friendCount: number
-  }
-  achievements: Array<{ key: string; unlockedAt: string }>
-  achievementProgress: Record<string, number>
+    purchaseCount: number;
+    leaderboardRank: { rank: number; categories: string[] } | null;
+    favoriteProduct: { name: string; count: number } | null;
+    friendCount: number;
+  };
+  achievements: Array<{ key: string; unlockedAt: string }>;
+  achievementProgress: Record<string, number>;
 }
 
 export interface FeedEvent {
-  id: string
-  userId: string
+  id: string;
+  userId: string;
   type:
     | 'purchase'
     | 'achievement'
@@ -136,42 +136,42 @@ export interface FeedEvent {
     | 'goal_reached'
     | 'jackpot_win'
     | 'promotion_started'
-    | 'promotion_ended'
-  targetUserId: string | null
-  targetGroupId: string | null
-  metadata: Record<string, unknown> | null
-  createdAt: string
-  user: { id: string; displayName: string; avatarUrl: string | null }
-  targetUser?: { id: string; displayName: string; avatarUrl: string | null }
+    | 'promotion_ended';
+  targetUserId: string | null;
+  targetGroupId: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  user: { id: string; displayName: string; avatarUrl: string | null };
+  targetUser?: { id: string; displayName: string; avatarUrl: string | null };
 }
 
-export type FriendshipStatus = 'none' | 'pending_sent' | 'pending_received' | 'friends'
+export type FriendshipStatus = 'none' | 'pending_sent' | 'pending_received' | 'friends';
 
 export interface Friend {
-  id: string
-  displayName: string
-  avatarUrl: string | null
-  since: string
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  since: string;
 }
 
 export interface FriendRequest {
-  id: string
-  displayName: string
-  avatarUrl: string | null
-  requestedAt: string
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  requestedAt: string;
 }
 
 export interface LeaderboardEntry {
-  rank: number
-  userId: string
-  displayName: string
-  avatarUrl: string | null
-  value: number | null  // null = hidden (non-friend spending)
+  rank: number;
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  value: number | null; // null = hidden (non-friend spending)
 }
 
 export interface AchievementWithDef {
-  key: AchievementKey
-  unlockedAt: string
+  key: AchievementKey;
+  unlockedAt: string;
 }
 
-export { AchievementKey, AchievementTier }
+export { AchievementKey, AchievementTier };

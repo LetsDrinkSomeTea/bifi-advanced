@@ -6,19 +6,19 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       ...options?.headers,
     },
     ...options,
-  })
+  });
 
-  if (res.status === 204) return undefined as T
+  if (res.status === 204) return undefined as T;
 
-  const data = await res.json().catch(() => ({ error: res.statusText }))
+  const data = await res.json().catch(() => ({ error: res.statusText }));
 
   if (!res.ok) {
-    const err = new Error(data.error ?? res.statusText)
-    ;(err as Error & { code?: string }).code = data.code
-    throw err
+    const err = new Error(data.error ?? res.statusText);
+    (err as Error & { code?: string }).code = data.code;
+    throw err;
   }
 
-  return data as T
+  return data as T;
 }
 
 export const api = {
@@ -39,4 +39,4 @@ export const api = {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
-}
+};

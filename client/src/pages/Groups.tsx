@@ -1,20 +1,23 @@
-import { useState } from 'react'
-import { Link } from 'wouter'
-import { Plus, X, Users, ChevronRight } from 'lucide-react'
-import { Layout } from '../components/layout/Layout'
-import { useGroups, useCreateGroup, useJoinGroup } from '../hooks/useGroups'
-import { cn } from '../lib/utils'
+import { useState } from 'react';
+import { Link } from 'wouter';
+import { Plus, X, Users, ChevronRight } from 'lucide-react';
+import { Layout } from '../components/layout/Layout';
+import { useGroups, useCreateGroup, useJoinGroup } from '../hooks/useGroups';
+import { cn } from '../lib/utils';
 
 function CreateGroupModal({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const { mutate: create, isPending, error } = useCreateGroup()
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const { mutate: create, isPending, error } = useCreateGroup();
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim()) return
-    create({ name: name.trim(), description: description.trim() || undefined }, { onSuccess: onClose })
-  }
+    e.preventDefault();
+    if (!name.trim()) return;
+    create(
+      { name: name.trim(), description: description.trim() || undefined },
+      { onSuccess: onClose },
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -55,18 +58,18 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
         </form>
       </div>
     </div>
-  )
+  );
 }
 
 function JoinGroupModal({ onClose }: { onClose: () => void }) {
-  const [code, setCode] = useState('')
-  const { mutate: join, isPending, error } = useJoinGroup()
+  const [code, setCode] = useState('');
+  const { mutate: join, isPending, error } = useJoinGroup();
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!code.trim()) return
-    join(code.trim(), { onSuccess: onClose })
-  }
+    e.preventDefault();
+    if (!code.trim()) return;
+    join(code.trim(), { onSuccess: onClose });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -103,13 +106,13 @@ function JoinGroupModal({ onClose }: { onClose: () => void }) {
         </form>
       </div>
     </div>
-  )
+  );
 }
 
 export function Groups() {
-  const { data: groups, isLoading } = useGroups()
-  const [createOpen, setCreateOpen] = useState(false)
-  const [joinOpen, setJoinOpen] = useState(false)
+  const { data: groups, isLoading } = useGroups();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
 
   return (
     <Layout>
@@ -135,7 +138,9 @@ export function Groups() {
 
         {isLoading && (
           <div className="space-y-3">
-            {[1, 2, 3].map((i) => <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />)}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
+            ))}
           </div>
         )}
 
@@ -175,5 +180,5 @@ export function Groups() {
       {createOpen && <CreateGroupModal onClose={() => setCreateOpen(false)} />}
       {joinOpen && <JoinGroupModal onClose={() => setJoinOpen(false)} />}
     </Layout>
-  )
+  );
 }

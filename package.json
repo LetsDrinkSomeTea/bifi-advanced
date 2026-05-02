@@ -14,7 +14,12 @@
     "db:studio": "drizzle-kit studio",
     "db:generate:local": "dotenv -e .env -- drizzle-kit generate",
     "db:migrate:local": "dotenv -e .env -- drizzle-kit migrate",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit -p client/tsconfig.json && tsc --noEmit -p server/tsconfig.json",
+    "check": "npm run format && npm run lint && npm run typecheck"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
@@ -42,6 +47,8 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/eslint__js": "^8.42.3",
     "@types/node": "^25.6.0",
     "@types/pg": "^8.11.11",
     "@types/react": "^18.3.18",
@@ -52,11 +59,18 @@
     "concurrently": "^9.1.2",
     "dotenv-cli": "^8.0.0",
     "drizzle-kit": "^0.30.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
     "postcss": "^8.5.1",
+    "prettier": "^3.8.3",
     "supertest": "^7.0.0",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.59.1",
     "vite": "^5.4.14",
     "vite-plugin-pwa": "^0.20.5",
     "vitest": "^2.1.8"

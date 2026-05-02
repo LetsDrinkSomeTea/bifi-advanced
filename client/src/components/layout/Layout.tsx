@@ -1,18 +1,16 @@
-import { TopBar } from './TopBar'
-import { BottomNav } from './BottomNav'
+import { TopBar } from './TopBar';
+import { BottomNav } from './BottomNav';
 
 interface Props {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function Layout({ children }: Props) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <TopBar />
-      <main className="flex-1 pb-16 overflow-y-auto">
-        {children}
-      </main>
+      <main className="flex-1 pb-16 overflow-y-auto">{children}</main>
       <BottomNav />
     </div>
-  )
+  );
 }

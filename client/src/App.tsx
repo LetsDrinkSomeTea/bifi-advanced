@@ -1,30 +1,30 @@
-import { Switch, Route, Redirect } from 'wouter' 
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClient } from './lib/queryClient'
-import { ProtectedRoute } from './components/layout/ProtectedRoute'
-import { Home } from './pages/Home'
-import { Login } from './pages/Login'
-import { Shop } from './pages/Shop'
-import { History } from './pages/History'
-import { Feed } from './pages/Feed'
-import { Profile } from './pages/Profile'
-import { ProfileDetail } from './pages/ProfileDetail'
-import { Social } from './pages/Social'
-import { GroupDetail } from './pages/GroupDetail'
-import { AllAchievements } from './pages/AllAchievements'
-import { ProfileStats } from './pages/ProfileStats'
-import { AdminUsers } from './pages/admin/Users'
-import { AdminProducts } from './pages/admin/Products'
-import { AdminPromotions } from './pages/admin/Promotions'
-import { AdminSettlement } from './pages/admin/Settlement'
-import { JoinGroup } from './pages/JoinGroup'
+import { Switch, Route, Redirect } from 'wouter';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/queryClient';
+import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import { Home } from './pages/Home';
+import { Login } from './pages/Login';
+import { Shop } from './pages/Shop';
+import { History } from './pages/History';
+import { Feed } from './pages/Feed';
+import { Profile } from './pages/Profile';
+import { ProfileDetail } from './pages/ProfileDetail';
+import { Social } from './pages/Social';
+import { GroupDetail } from './pages/GroupDetail';
+import { AllAchievements } from './pages/AllAchievements';
+import { ProfileStats } from './pages/ProfileStats';
+import { AdminUsers } from './pages/admin/Users';
+import { AdminProducts } from './pages/admin/Products';
+import { AdminPromotions } from './pages/admin/Promotions';
+import { AdminSettlement } from './pages/admin/Settlement';
+import { JoinGroup } from './pages/JoinGroup';
 
 function Placeholder({ title }: { title: string }) {
   return (
     <div className="flex items-center justify-center min-h-[50vh] text-muted-foreground text-sm">
       {title} — kommt bald
     </div>
-  )
+  );
 }
 
 export function App() {
@@ -34,45 +34,79 @@ export function App() {
         <Route path="/login" component={Login} />
 
         <Route path="/shop">
-          <ProtectedRoute><Shop /></ProtectedRoute>
+          <ProtectedRoute>
+            <Shop />
+          </ProtectedRoute>
         </Route>
         <Route path="/history">
-          <ProtectedRoute><History /></ProtectedRoute>
+          <ProtectedRoute>
+            <History />
+          </ProtectedRoute>
         </Route>
 
         <Route path="/profile">
-          <ProtectedRoute><Profile /></ProtectedRoute>
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
         </Route>
         <Route path="/profile/stats">
-          <ProtectedRoute><ProfileStats /></ProtectedRoute>
+          <ProtectedRoute>
+            <ProfileStats />
+          </ProtectedRoute>
         </Route>
         <Route path="/profile/:userId">
-          {(params) => <ProtectedRoute><ProfileDetail /></ProtectedRoute>}
+          {(params) => (
+            <ProtectedRoute>
+              <ProfileDetail />
+            </ProtectedRoute>
+          )}
         </Route>
         <Route path="/profile/:userId/stats">
-          {(params) => <ProtectedRoute><ProfileStats /></ProtectedRoute>}
+          {(params) => (
+            <ProtectedRoute>
+              <ProfileStats />
+            </ProtectedRoute>
+          )}
         </Route>
 
         <Route path="/feed">
-          <ProtectedRoute><Feed /></ProtectedRoute>
+          <ProtectedRoute>
+            <Feed />
+          </ProtectedRoute>
         </Route>
         <Route path="/social">
-          <ProtectedRoute><Social /></ProtectedRoute>
+          <ProtectedRoute>
+            <Social />
+          </ProtectedRoute>
         </Route>
         <Route path="/groups/:groupId">
-          {(params) => <ProtectedRoute><GroupDetail /></ProtectedRoute>}
+          {(params) => (
+            <ProtectedRoute>
+              <GroupDetail />
+            </ProtectedRoute>
+          )}
         </Route>
         <Route path="/join/:code">
-          {() => <ProtectedRoute><JoinGroup /></ProtectedRoute>}
+          {() => (
+            <ProtectedRoute>
+              <JoinGroup />
+            </ProtectedRoute>
+          )}
         </Route>
         <Route path="/leaderboard">
           <Redirect to="/social" />
         </Route>
         <Route path="/achievements">
-          <ProtectedRoute><AllAchievements /></ProtectedRoute>
+          <ProtectedRoute>
+            <AllAchievements />
+          </ProtectedRoute>
         </Route>
         <Route path="/achievements/:userId">
-          {() => <ProtectedRoute><AllAchievements /></ProtectedRoute>}
+          {() => (
+            <ProtectedRoute>
+              <AllAchievements />
+            </ProtectedRoute>
+          )}
         </Route>
 
         {/* Admin */}
@@ -80,23 +114,33 @@ export function App() {
           <Redirect to="/admin/users" />
         </Route>
         <Route path="/admin/users">
-          <ProtectedRoute requireRole="moderator"><AdminUsers /></ProtectedRoute>
+          <ProtectedRoute requireRole="moderator">
+            <AdminUsers />
+          </ProtectedRoute>
         </Route>
         <Route path="/admin/products">
-          <ProtectedRoute requireRole="moderator"><AdminProducts /></ProtectedRoute>
+          <ProtectedRoute requireRole="moderator">
+            <AdminProducts />
+          </ProtectedRoute>
         </Route>
         <Route path="/admin/promotions">
-          <ProtectedRoute requireRole="moderator"><AdminPromotions /></ProtectedRoute>
+          <ProtectedRoute requireRole="moderator">
+            <AdminPromotions />
+          </ProtectedRoute>
         </Route>
         <Route path="/admin/settlement">
-          <ProtectedRoute requireRole="moderator"><AdminSettlement /></ProtectedRoute>
+          <ProtectedRoute requireRole="moderator">
+            <AdminSettlement />
+          </ProtectedRoute>
         </Route>
 
         {/* Catch-all */}
         <Route>
-          <ProtectedRoute><Home /></ProtectedRoute>
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
         </Route>
       </Switch>
     </QueryClientProvider>
-  )
+  );
 }

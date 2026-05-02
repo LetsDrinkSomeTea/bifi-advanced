@@ -1,18 +1,18 @@
-import { useParams, useLocation } from 'wouter'
-import { ArrowLeft, Award } from 'lucide-react'
-import { Layout } from '../components/layout/Layout'
-import { AchievementGrid } from '@/components/AchievementGrid'
-import { usePublicProfile } from '../hooks/useProfile'
-import { useAuth } from '../hooks/useAuth'
+import { useParams, useLocation } from 'wouter';
+import { ArrowLeft, Award } from 'lucide-react';
+import { Layout } from '../components/layout/Layout';
+import { AchievementGrid } from '@/components/AchievementGrid';
+import { usePublicProfile } from '../hooks/useProfile';
+import { useAuth } from '../hooks/useAuth';
 export function AllAchievements() {
-  const { userId } = useParams<{ userId?: string }>()
-  const { user: currentUser } = useAuth()
-  const [, navigate] = useLocation()
+  const { userId } = useParams<{ userId?: string }>();
+  const { user: currentUser } = useAuth();
+  const [, navigate] = useLocation();
 
-  const targetId = userId ?? currentUser?.id
-  const isOwn = !userId || userId === currentUser?.id
+  const targetId = userId ?? currentUser?.id;
+  const isOwn = !userId || userId === currentUser?.id;
 
-  const { data: profile, isLoading } = usePublicProfile(targetId)
+  const { data: profile, isLoading } = usePublicProfile(targetId);
 
   return (
     <Layout>
@@ -43,5 +43,5 @@ export function AllAchievements() {
         )}
       </div>
     </Layout>
-  )
+  );
 }

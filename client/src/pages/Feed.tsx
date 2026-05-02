@@ -1,10 +1,10 @@
-import { Layout } from '../components/layout/Layout'
-import { FeedTimeline } from '../components/FeedTimeline'
-import { useFeed } from '../hooks/useFeed'
+import { Layout } from '../components/layout/Layout';
+import { FeedTimeline } from '../components/FeedTimeline';
+import { useFeed } from '../hooks/useFeed';
 
 export function Feed() {
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useFeed()
-  const entries = data?.pages.flatMap((p) => p.data) ?? []
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useFeed();
+  const entries = data?.pages.flatMap((p) => p.data) ?? [];
 
   return (
     <Layout>
@@ -19,5 +19,5 @@ export function Feed() {
         />
       </div>
     </Layout>
-  )
+  );
 }

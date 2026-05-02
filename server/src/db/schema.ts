@@ -10,20 +10,20 @@ import {
   numeric,
   primaryKey,
   unique,
-} from 'drizzle-orm/pg-core'
-import { sql } from 'drizzle-orm'
+} from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export const roleEnum = pgEnum('role', ['admin', 'moderator', 'member'])
+export const roleEnum = pgEnum('role', ['admin', 'moderator', 'member']);
 export const transactionTypeEnum = pgEnum('transaction_type', [
   'purchase',
   'deposit',
   'correction',
   'jackpot',
   'prost',
-])
-export const nudgeTypeEnum = pgEnum('nudge_type', ['nudge', 'prost'])
+]);
+export const nudgeTypeEnum = pgEnum('nudge_type', ['nudge', 'prost']);
 export const notificationTypeEnum = pgEnum('notification_type', [
   'nudge',
   'prost',
@@ -33,11 +33,17 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'balance_warning',
   'friend_request',
   'system',
-])
+]);
 
-export const buyableCategoryEnum = pgEnum('buyable_category', ['alcoholic', 'soft_drink', 'food', 'snack', 'other'])
-export const friendshipStatusEnum = pgEnum('friendship_status', ['pending', 'accepted'])
-export const groupRoleEnum = pgEnum('group_role', ['owner', 'member'])
+export const buyableCategoryEnum = pgEnum('buyable_category', [
+  'alcoholic',
+  'soft_drink',
+  'food',
+  'snack',
+  'other',
+]);
+export const friendshipStatusEnum = pgEnum('friendship_status', ['pending', 'accepted']);
+export const groupRoleEnum = pgEnum('group_role', ['owner', 'member']);
 export const feedTypeEnum = pgEnum('feed_type', [
   'purchase',
   'achievement',
@@ -53,13 +59,16 @@ export const feedTypeEnum = pgEnum('feed_type', [
   'jackpot_win',
   'promotion_started',
   'promotion_ended',
-])
+]);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const id = () => uuid('id').primaryKey().default(sql`gen_random_uuid()`)
-const createdAt = () => timestamp('created_at').notNull().defaultNow()
-const updatedAt = () => timestamp('updated_at').notNull().defaultNow()
+const id = () =>
+  uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`);
+const createdAt = () => timestamp('created_at').notNull().defaultNow();
+const updatedAt = () => timestamp('updated_at').notNull().defaultNow();
 
 // ─── Tables ───────────────────────────────────────────────────────────────────
 
@@ -77,7 +86,7 @@ export const users = pgTable('users', {
   isActive: boolean('is_active').notNull().default(true),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
-})
+});
 
 export const buyables = pgTable('buyables', {
   id: id(),
@@ -88,7 +97,7 @@ export const buyables = pgTable('buyables', {
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
-})
+});
 
 export const productVariants = pgTable('product_variants', {
   id: id(),
@@ -100,7 +109,7 @@ export const productVariants = pgTable('product_variants', {
   isActive: boolean('is_active').notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: createdAt(),
-})
+});
 
 export const groups = pgTable('groups', {
   id: id(),
@@ -113,7 +122,7 @@ export const groups = pgTable('groups', {
   maxMembers: integer('max_members').notNull().default(10),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: createdAt(),
-})
+});
 
 export const transactions = pgTable('transactions', {
   id: id(),
@@ -131,7 +140,7 @@ export const transactions = pgTable('transactions', {
   cancelledBy: uuid('cancelled_by').references(() => users.id),
   jackpotMultiplier: numeric('jackpot_multiplier', { precision: 4, scale: 2 }),
   createdAt: createdAt(),
-})
+});
 
 export const transactionItems = pgTable('transaction_items', {
   id: id(),
@@ -146,7 +155,7 @@ export const transactionItems = pgTable('transaction_items', {
   unitPrice: integer('unit_price').notNull(),
   totalPrice: integer('total_price').notNull(),
   discountSavedCents: integer('discount_saved_cents').notNull().default(0),
-})
+});
 
 export const groupMembers = pgTable(
   'group_members',
@@ -162,7 +171,7 @@ export const groupMembers = pgTable(
     leftAt: timestamp('left_at'),
   },
   (t) => [primaryKey({ columns: [t.groupId, t.userId] })],
-)
+);
 
 export const auditLogs = pgTable('audit_logs', {
   id: id(),
@@ -173,7 +182,7 @@ export const auditLogs = pgTable('audit_logs', {
   changes: jsonb('changes'),
   ipAddress: text('ip_address'),
   createdAt: createdAt(),
-})
+});
 
 export const notifications = pgTable('notifications', {
   id: id(),
@@ -186,7 +195,7 @@ export const notifications = pgTable('notifications', {
   readAt: timestamp('read_at'),
   relatedId: uuid('related_id'),
   createdAt: createdAt(),
-})
+});
 
 export const nudges = pgTable('nudges', {
   id: id(),
@@ -201,7 +210,7 @@ export const nudges = pgTable('nudges', {
   isPublic: boolean('is_public').notNull().default(false),
   transactionId: uuid('transaction_id').references(() => transactions.id),
   createdAt: createdAt(),
-})
+});
 
 export const userAchievements = pgTable(
   'user_achievements',
@@ -214,7 +223,7 @@ export const userAchievements = pgTable(
     unlockedAt: timestamp('unlocked_at').notNull().defaultNow(),
   },
   (t) => [unique().on(t.userId, t.achievementKey)],
-)
+);
 
 export const promotions = pgTable('promotions', {
   id: id(),
@@ -228,7 +237,7 @@ export const promotions = pgTable('promotions', {
   quantityLimit: integer('quantity_limit'),
   quantityUsed: integer('quantity_used').notNull().default(0),
   createdAt: createdAt(),
-})
+});
 
 export const donationGoals = pgTable('donation_goals', {
   id: id(),
@@ -242,7 +251,7 @@ export const donationGoals = pgTable('donation_goals', {
   isActive: boolean('is_active').notNull().default(true),
   completedAt: timestamp('completed_at'),
   createdAt: createdAt(),
-})
+});
 
 export const donationContributions = pgTable('donation_contributions', {
   id: id(),
@@ -254,7 +263,7 @@ export const donationContributions = pgTable('donation_contributions', {
     .references(() => users.id),
   amount: integer('amount').notNull(),
   createdAt: createdAt(),
-})
+});
 
 export const activityFeed = pgTable('activity_feed', {
   id: id(),
@@ -266,7 +275,7 @@ export const activityFeed = pgTable('activity_feed', {
   targetGroupId: uuid('target_group_id').references(() => groups.id),
   metadata: jsonb('metadata'),
   createdAt: createdAt(),
-})
+});
 
 export const userFriendships = pgTable(
   'user_friendships',
@@ -283,7 +292,7 @@ export const userFriendships = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [unique().on(t.requesterId, t.addresseeId)],
-)
+);
 
 export const prostVouchers = pgTable('prost_vouchers', {
   id: id(),
@@ -302,7 +311,7 @@ export const prostVouchers = pgTable('prost_vouchers', {
   redeemedAt: timestamp('redeemed_at'),
   creditedAt: timestamp('credited_at'),
   createdAt: createdAt(),
-})
+});
 
 export const userFavorites = pgTable(
   'user_favorites',
@@ -316,13 +325,13 @@ export const userFavorites = pgTable(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.variantId] })],
-)
+);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type User = typeof users.$inferSelect
-export type NewUser = typeof users.$inferInsert
-export type Buyable = typeof buyables.$inferSelect
-export type Transaction = typeof transactions.$inferSelect
-export type AuditLog = typeof auditLogs.$inferSelect
-export type Notification = typeof notifications.$inferSelect
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Buyable = typeof buyables.$inferSelect;
+export type Transaction = typeof transactions.$inferSelect;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;

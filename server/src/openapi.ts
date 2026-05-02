@@ -8,9 +8,7 @@ export const openApiSpec = {
     description: 'Vereins-Getränkeliste — club beverage tally with gamification.',
     version: '1.0.0',
   },
-  servers: [
-    { url: 'http://localhost:3000', description: 'Local dev' },
-  ],
+  servers: [{ url: 'http://localhost:3000', description: 'Local dev' }],
 
   // ─── Reusable components ──────────────────────────────────────────────────
 
@@ -29,100 +27,103 @@ export const openApiSpec = {
         required: ['error', 'code'],
         properties: {
           error: { type: 'string', example: 'Unauthorized' },
-          code:  { type: 'string', example: 'UNAUTHORIZED' },
+          code: { type: 'string', example: 'UNAUTHORIZED' },
         },
       },
       User: {
         type: 'object',
         properties: {
-          id:             { type: 'string', format: 'uuid' },
-          email:          { type: 'string', format: 'email' },
-          displayName:    { type: 'string' },
-          username:       { type: 'string', nullable: true },
-          avatarUrl:      { type: 'string', nullable: true },
-          role:           { type: 'string', enum: ['admin', 'moderator', 'member'] },
-          balance:        { type: 'integer', description: 'Balance in Cent; can be negative' },
+          id: { type: 'string', format: 'uuid' },
+          email: { type: 'string', format: 'email' },
+          displayName: { type: 'string' },
+          username: { type: 'string', nullable: true },
+          avatarUrl: { type: 'string', nullable: true },
+          role: { type: 'string', enum: ['admin', 'moderator', 'member'] },
+          balance: { type: 'integer', description: 'Balance in Cent; can be negative' },
           jackpotAllowed: { type: 'boolean' },
-          isActive:       { type: 'boolean' },
-          createdAt:      { type: 'string', format: 'date-time' },
+          isActive: { type: 'boolean' },
+          createdAt: { type: 'string', format: 'date-time' },
         },
       },
       Variant: {
         type: 'object',
         properties: {
-          id:        { type: 'string', format: 'uuid' },
-          name:      { type: 'string', example: '0,5l' },
-          price:     { type: 'integer', description: 'Price in Cent' },
-          isActive:  { type: 'boolean' },
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string', example: '0,5l' },
+          price: { type: 'integer', description: 'Price in Cent' },
+          isActive: { type: 'boolean' },
           sortOrder: { type: 'integer' },
         },
       },
       Buyable: {
         type: 'object',
         properties: {
-          id:          { type: 'string', format: 'uuid' },
-          name:        { type: 'string' },
+          id: { type: 'string', format: 'uuid' },
+          name: { type: 'string' },
           description: { type: 'string', nullable: true },
-          basePrice:   { type: 'integer', description: 'Price in Cent; used when no variants' },
-          imageUrl:    { type: 'string', nullable: true },
-          category:    { type: 'string', nullable: true },
-          isActive:    { type: 'boolean' },
-          isQuickBuy:  { type: 'boolean' },
-          sortOrder:   { type: 'integer' },
-          createdAt:   { type: 'string', format: 'date-time' },
-          updatedAt:   { type: 'string', format: 'date-time' },
-          variants:    { type: 'array', items: { '$ref': '#/components/schemas/Variant' } },
+          basePrice: { type: 'integer', description: 'Price in Cent; used when no variants' },
+          imageUrl: { type: 'string', nullable: true },
+          category: { type: 'string', nullable: true },
+          isActive: { type: 'boolean' },
+          isQuickBuy: { type: 'boolean' },
+          sortOrder: { type: 'integer' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+          variants: { type: 'array', items: { $ref: '#/components/schemas/Variant' } },
         },
       },
       TransactionItem: {
         type: 'object',
         properties: {
-          id:            { type: 'string', format: 'uuid' },
+          id: { type: 'string', format: 'uuid' },
           transactionId: { type: 'string', format: 'uuid' },
-          buyableId:     { type: 'string', format: 'uuid' },
-          variantId:     { type: 'string', format: 'uuid', nullable: true },
-          quantity:      { type: 'integer' },
-          unitPrice:     { type: 'integer', description: 'Price-at-purchase snapshot in Cent' },
-          totalPrice:    { type: 'integer' },
-          buyableName:   { type: 'string' },
-          variantName:   { type: 'string', nullable: true },
+          buyableId: { type: 'string', format: 'uuid' },
+          variantId: { type: 'string', format: 'uuid', nullable: true },
+          quantity: { type: 'integer' },
+          unitPrice: { type: 'integer', description: 'Price-at-purchase snapshot in Cent' },
+          totalPrice: { type: 'integer' },
+          buyableName: { type: 'string' },
+          variantName: { type: 'string', nullable: true },
         },
       },
       Transaction: {
         type: 'object',
         properties: {
-          id:                { type: 'string', format: 'uuid' },
-          userId:            { type: 'string', format: 'uuid' },
-          initiatedBy:       { type: 'string', format: 'uuid' },
-          type:              { type: 'string', enum: ['purchase', 'deposit', 'correction', 'jackpot', 'prost'] },
-          totalAmount:       { type: 'integer', description: 'Negative = debit, positive = credit (Cent)' },
-          groupId:           { type: 'string', format: 'uuid', nullable: true },
-          note:              { type: 'string', nullable: true },
-          cancelledAt:       { type: 'string', format: 'date-time', nullable: true },
-          cancelledBy:       { type: 'string', format: 'uuid', nullable: true },
+          id: { type: 'string', format: 'uuid' },
+          userId: { type: 'string', format: 'uuid' },
+          initiatedBy: { type: 'string', format: 'uuid' },
+          type: { type: 'string', enum: ['purchase', 'deposit', 'correction', 'jackpot', 'prost'] },
+          totalAmount: {
+            type: 'integer',
+            description: 'Negative = debit, positive = credit (Cent)',
+          },
+          groupId: { type: 'string', format: 'uuid', nullable: true },
+          note: { type: 'string', nullable: true },
+          cancelledAt: { type: 'string', format: 'date-time', nullable: true },
+          cancelledBy: { type: 'string', format: 'uuid', nullable: true },
           jackpotMultiplier: { type: 'string', nullable: true },
-          createdAt:         { type: 'string', format: 'date-time' },
-          items:             { type: 'array', items: { '$ref': '#/components/schemas/TransactionItem' } },
+          createdAt: { type: 'string', format: 'date-time' },
+          items: { type: 'array', items: { $ref: '#/components/schemas/TransactionItem' } },
         },
       },
       Paginated: {
         type: 'object',
         properties: {
-          data:       { type: 'array', items: {} },
+          data: { type: 'array', items: {} },
           nextCursor: { type: 'string', nullable: true },
         },
       },
       Achievement: {
         type: 'object',
         properties: {
-          key:         { type: 'string' },
-          name:        { type: 'string' },
+          key: { type: 'string' },
+          name: { type: 'string' },
           description: { type: 'string' },
-          icon:        { type: 'string' },
-          tier:        { type: 'string', enum: ['bronze', 'silver', 'gold'], nullable: true },
-          groupKey:    { type: 'string', nullable: true },
-          hidden:      { type: 'boolean', nullable: true },
-          threshold:   { type: 'integer', nullable: true },
+          icon: { type: 'string' },
+          tier: { type: 'string', enum: ['bronze', 'silver', 'gold'], nullable: true },
+          groupKey: { type: 'string', nullable: true },
+          hidden: { type: 'boolean', nullable: true },
+          threshold: { type: 'integer', nullable: true },
         },
       },
     },
@@ -134,7 +135,6 @@ export const openApiSpec = {
   // ─── Paths ────────────────────────────────────────────────────────────────
 
   paths: {
-
     // ── Auth / OIDC ──────────────────────────────────────────────────────────
 
     '/api/auth/login': {
@@ -145,7 +145,10 @@ export const openApiSpec = {
         security: [],
         responses: {
           302: { description: 'Redirect to Authentik login page' },
-          503: { description: 'OIDC not configured', content: { 'application/json': { schema: { '$ref': '#/components/schemas/Error' } } } },
+          503: {
+            description: 'OIDC not configured',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+          },
         },
       },
     },
@@ -157,7 +160,7 @@ export const openApiSpec = {
         description: 'Exchanges code for tokens, upserts user, sets session cookie.',
         security: [],
         parameters: [
-          { name: 'code',  in: 'query', required: true, schema: { type: 'string' } },
+          { name: 'code', in: 'query', required: true, schema: { type: 'string' } },
           { name: 'state', in: 'query', required: true, schema: { type: 'string' } },
         ],
         responses: {
@@ -172,7 +175,14 @@ export const openApiSpec = {
         summary: 'Logout',
         description: 'Clears session data. Session cookie is expired client-side.',
         responses: {
-          200: { description: 'Logged out', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' } } } } } },
+          200: {
+            description: 'Logged out',
+            content: {
+              'application/json': {
+                schema: { type: 'object', properties: { success: { type: 'boolean' } } },
+              },
+            },
+          },
         },
       },
     },
@@ -182,8 +192,14 @@ export const openApiSpec = {
         tags: ['Auth'],
         summary: 'Get current user',
         responses: {
-          200: { description: 'Authenticated user', content: { 'application/json': { schema: { '$ref': '#/components/schemas/User' } } } },
-          401: { description: 'Not authenticated', content: { 'application/json': { schema: { '$ref': '#/components/schemas/Error' } } } },
+          200: {
+            description: 'Authenticated user',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } },
+          },
+          401: {
+            description: 'Not authenticated',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+          },
         },
       },
     },
@@ -204,10 +220,10 @@ export const openApiSpec = {
                 type: 'object',
                 required: ['email', 'displayName', 'password'],
                 properties: {
-                  email:       { type: 'string', format: 'email' },
-                  username:    { type: 'string', minLength: 2 },
+                  email: { type: 'string', format: 'email' },
+                  username: { type: 'string', minLength: 2 },
                   displayName: { type: 'string' },
-                  password:    { type: 'string', minLength: 8 },
+                  password: { type: 'string', minLength: 8 },
                 },
               },
             },
@@ -234,7 +250,7 @@ export const openApiSpec = {
                 type: 'object',
                 required: ['login', 'password'],
                 properties: {
-                  login:    { type: 'string', description: 'Email or username' },
+                  login: { type: 'string', description: 'Email or username' },
                   password: { type: 'string' },
                 },
               },
@@ -262,18 +278,25 @@ export const openApiSpec = {
                 type: 'object',
                 required: ['email', 'displayName', 'password'],
                 properties: {
-                  email:       { type: 'string', format: 'email' },
-                  username:    { type: 'string', minLength: 2, maxLength: 32 },
+                  email: { type: 'string', format: 'email' },
+                  username: { type: 'string', minLength: 2, maxLength: 32 },
                   displayName: { type: 'string' },
-                  password:    { type: 'string', minLength: 8 },
-                  role:        { type: 'string', enum: ['admin', 'moderator', 'member'], default: 'member' },
+                  password: { type: 'string', minLength: 8 },
+                  role: {
+                    type: 'string',
+                    enum: ['admin', 'moderator', 'member'],
+                    default: 'member',
+                  },
                 },
               },
             },
           },
         },
         responses: {
-          201: { description: 'User created', content: { 'application/json': { schema: { '$ref': '#/components/schemas/User' } } } },
+          201: {
+            description: 'User created',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } },
+          },
           403: { description: 'Forbidden' },
         },
       },
@@ -284,7 +307,9 @@ export const openApiSpec = {
         tags: ['Auth'],
         summary: 'Set user password',
         description: 'Admin only.',
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
         requestBody: {
           required: true,
           content: {
@@ -311,10 +336,22 @@ export const openApiSpec = {
         tags: ['Products'],
         summary: 'List products',
         parameters: [
-          { name: 'quickBuyOnly', in: 'query', schema: { type: 'boolean' }, description: 'Filter to QuickBuy items only' },
+          {
+            name: 'quickBuyOnly',
+            in: 'query',
+            schema: { type: 'boolean' },
+            description: 'Filter to QuickBuy items only',
+          },
         ],
         responses: {
-          200: { description: 'Array of active products with variants', content: { 'application/json': { schema: { type: 'array', items: { '$ref': '#/components/schemas/Buyable' } } } } },
+          200: {
+            description: 'Array of active products with variants',
+            content: {
+              'application/json': {
+                schema: { type: 'array', items: { $ref: '#/components/schemas/Buyable' } },
+              },
+            },
+          },
         },
       },
       post: {
@@ -329,20 +366,23 @@ export const openApiSpec = {
                 type: 'object',
                 required: ['name', 'basePrice'],
                 properties: {
-                  name:        { type: 'string' },
+                  name: { type: 'string' },
                   description: { type: 'string' },
-                  basePrice:   { type: 'integer', description: 'Cent' },
-                  imageUrl:    { type: 'string', format: 'uri' },
-                  category:    { type: 'string' },
-                  isQuickBuy:  { type: 'boolean', default: false },
-                  sortOrder:   { type: 'integer', default: 0 },
+                  basePrice: { type: 'integer', description: 'Cent' },
+                  imageUrl: { type: 'string', format: 'uri' },
+                  category: { type: 'string' },
+                  isQuickBuy: { type: 'boolean', default: false },
+                  sortOrder: { type: 'integer', default: 0 },
                 },
               },
             },
           },
         },
         responses: {
-          201: { description: 'Created', content: { 'application/json': { schema: { '$ref': '#/components/schemas/Buyable' } } } },
+          201: {
+            description: 'Created',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Buyable' } } },
+          },
         },
       },
     },
@@ -352,7 +392,9 @@ export const openApiSpec = {
         tags: ['Products'],
         summary: 'Update product',
         description: 'Moderator or admin required.',
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
         requestBody: {
           required: true,
           content: {
@@ -360,21 +402,24 @@ export const openApiSpec = {
               schema: {
                 type: 'object',
                 properties: {
-                  name:        { type: 'string' },
+                  name: { type: 'string' },
                   description: { type: 'string', nullable: true },
-                  basePrice:   { type: 'integer' },
-                  imageUrl:    { type: 'string', nullable: true },
-                  category:    { type: 'string', nullable: true },
-                  isQuickBuy:  { type: 'boolean' },
-                  isActive:    { type: 'boolean' },
-                  sortOrder:   { type: 'integer' },
+                  basePrice: { type: 'integer' },
+                  imageUrl: { type: 'string', nullable: true },
+                  category: { type: 'string', nullable: true },
+                  isQuickBuy: { type: 'boolean' },
+                  isActive: { type: 'boolean' },
+                  sortOrder: { type: 'integer' },
                 },
               },
             },
           },
         },
         responses: {
-          200: { description: 'Updated product', content: { 'application/json': { schema: { '$ref': '#/components/schemas/Buyable' } } } },
+          200: {
+            description: 'Updated product',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Buyable' } } },
+          },
           404: { description: 'Not found' },
         },
       },
@@ -382,7 +427,9 @@ export const openApiSpec = {
         tags: ['Products'],
         summary: 'Deactivate product',
         description: 'Admin only. Soft-deletes (sets isActive=false).',
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
         responses: {
           204: { description: 'Deactivated' },
           404: { description: 'Not found' },
@@ -395,7 +442,9 @@ export const openApiSpec = {
         tags: ['Products'],
         summary: 'Add variant',
         description: 'Moderator or admin required.',
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
         requestBody: {
           required: true,
           content: {
@@ -404,8 +453,8 @@ export const openApiSpec = {
                 type: 'object',
                 required: ['name', 'price'],
                 properties: {
-                  name:      { type: 'string', example: '0,5l' },
-                  price:     { type: 'integer', description: 'Cent' },
+                  name: { type: 'string', example: '0,5l' },
+                  price: { type: 'integer', description: 'Cent' },
                   sortOrder: { type: 'integer', default: 0 },
                 },
               },
@@ -413,7 +462,10 @@ export const openApiSpec = {
           },
         },
         responses: {
-          201: { description: 'Variant created', content: { 'application/json': { schema: { '$ref': '#/components/schemas/Variant' } } } },
+          201: {
+            description: 'Variant created',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/Variant' } } },
+          },
         },
       },
     },
@@ -424,8 +476,13 @@ export const openApiSpec = {
         summary: 'Update variant',
         description: 'Moderator or admin required.',
         parameters: [
-          { name: 'id',        in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
-          { name: 'variantId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+          {
+            name: 'variantId',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', format: 'uuid' },
+          },
         ],
         requestBody: {
           required: true,
@@ -434,9 +491,9 @@ export const openApiSpec = {
               schema: {
                 type: 'object',
                 properties: {
-                  name:      { type: 'string' },
-                  price:     { type: 'integer' },
-                  isActive:  { type: 'boolean' },
+                  name: { type: 'string' },
+                  price: { type: 'integer' },
+                  isActive: { type: 'boolean' },
                   sortOrder: { type: 'integer' },
                 },
               },
@@ -457,8 +514,17 @@ export const openApiSpec = {
         tags: ['Transactions'],
         summary: 'Own transaction history',
         parameters: [
-          { name: 'cursor', in: 'query', schema: { type: 'string' }, description: 'Pagination cursor from previous response' },
-          { name: 'limit',  in: 'query', schema: { type: 'integer', default: 20, minimum: 1, maximum: 100 } },
+          {
+            name: 'cursor',
+            in: 'query',
+            schema: { type: 'string' },
+            description: 'Pagination cursor from previous response',
+          },
+          {
+            name: 'limit',
+            in: 'query',
+            schema: { type: 'integer', default: 20, minimum: 1, maximum: 100 },
+          },
         ],
         responses: {
           200: {
@@ -468,7 +534,7 @@ export const openApiSpec = {
                 schema: {
                   type: 'object',
                   properties: {
-                    data:       { type: 'array', items: { '$ref': '#/components/schemas/Transaction' } },
+                    data: { type: 'array', items: { $ref: '#/components/schemas/Transaction' } },
                     nextCursor: { type: 'string', nullable: true },
                   },
                 },
@@ -483,7 +549,8 @@ export const openApiSpec = {
       post: {
         tags: ['Transactions'],
         summary: 'Buy products',
-        description: 'Deducts from balance. Active promotions are applied automatically. Rate-limited to 20/min.',
+        description:
+          'Deducts from balance. Active promotions are applied automatically. Rate-limited to 20/min.',
         requestBody: {
           required: true,
           content: {
@@ -500,13 +567,17 @@ export const openApiSpec = {
                       required: ['buyableId', 'quantity'],
                       properties: {
                         buyableId: { type: 'string', format: 'uuid' },
-                        variantId: { type: 'string', format: 'uuid', description: 'Required when product has variants' },
-                        quantity:  { type: 'integer', minimum: 1, maximum: 99 },
+                        variantId: {
+                          type: 'string',
+                          format: 'uuid',
+                          description: 'Required when product has variants',
+                        },
+                        quantity: { type: 'integer', minimum: 1, maximum: 99 },
                       },
                     },
                   },
                   groupId: { type: 'string', format: 'uuid' },
-                  note:    { type: 'string', maxLength: 200 },
+                  note: { type: 'string', maxLength: 200 },
                 },
               },
               example: {
@@ -516,7 +587,12 @@ export const openApiSpec = {
           },
         },
         responses: {
-          201: { description: 'Transaction created', content: { 'application/json': { schema: { '$ref': '#/components/schemas/Transaction' } } } },
+          201: {
+            description: 'Transaction created',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/Transaction' } },
+            },
+          },
           400: { description: 'Variant required / product not found' },
           429: { description: 'Rate limit exceeded' },
         },
@@ -527,8 +603,11 @@ export const openApiSpec = {
       delete: {
         tags: ['Transactions'],
         summary: 'Cancel transaction',
-        description: 'Self-cancel within 5 minutes; moderator/admin can cancel anytime. Jackpot transactions require mod+.',
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        description:
+          'Self-cancel within 5 minutes; moderator/admin can cancel anytime. Jackpot transactions require mod+.',
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+        ],
         responses: {
           204: { description: 'Cancelled and refunded' },
           403: { description: 'Window expired, wrong user, or jackpot restriction' },
@@ -544,7 +623,7 @@ export const openApiSpec = {
         summary: 'All transactions (mod+)',
         parameters: [
           { name: 'cursor', in: 'query', schema: { type: 'string' } },
-          { name: 'limit',  in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
         ],
         responses: {
           200: { description: 'Paginated transaction list' },
@@ -561,7 +640,14 @@ export const openApiSpec = {
         summary: 'Get achievement metadata',
         description: 'Returns list of all available achievements and their UI properties.',
         responses: {
-          200: { description: 'Achievement list', content: { 'application/json': { schema: { type: 'array', items: { '$ref': '#/components/schemas/Achievement' } } } } },
+          200: {
+            description: 'Achievement list',
+            content: {
+              'application/json': {
+                schema: { type: 'array', items: { $ref: '#/components/schemas/Achievement' } },
+              },
+            },
+          },
         },
       },
     },
@@ -581,7 +667,7 @@ export const openApiSpec = {
                 schema: {
                   type: 'object',
                   properties: {
-                    status:    { type: 'string', example: 'ok' },
+                    status: { type: 'string', example: 'ok' },
                     timestamp: { type: 'string', format: 'date-time' },
                   },
                 },
@@ -592,4 +678,4 @@ export const openApiSpec = {
       },
     },
   },
-} as const
+} as const;

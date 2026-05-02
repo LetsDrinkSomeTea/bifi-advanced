@@ -1,53 +1,61 @@
-import { useMemo, useState, useEffect } from 'react'
-import { Pencil, ChevronRight, BarChart2 } from 'lucide-react'
-import { Link } from 'wouter'
-import { Layout } from '../components/layout/Layout'
-import { Modal } from '../components/Modal'
-import { AchievementGrid } from '@/components/AchievementGrid'
-import { ActivityItem, type ActivityUser, ProfileLink } from '../components/ActivityItem'
-import { useAuth } from '../hooks/useAuth'
-import { usePublicProfile, useUpdateProfile } from '../hooks/useProfile'
-import { ProstVoucher, useProstVouchers } from '../hooks/useProst'
-import { formatCents, balanceColor, cn } from '../lib/utils'
+import { useMemo, useState, useEffect } from 'react';
+import { Pencil, ChevronRight, BarChart2 } from 'lucide-react';
+import { Link } from 'wouter';
+import { Layout } from '../components/layout/Layout';
+import { Modal } from '../components/Modal';
+import { AchievementGrid } from '@/components/AchievementGrid';
+import { ActivityItem, type ActivityUser, ProfileLink } from '../components/ActivityItem';
+import { useAuth } from '../hooks/useAuth';
+import { usePublicProfile, useUpdateProfile } from '../hooks/useProfile';
+import { ProstVoucher, useProstVouchers } from '../hooks/useProst';
+import { formatCents, balanceColor, cn } from '../lib/utils';
 
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Admin',
   moderator: 'Moderator',
   member: 'Mitglied',
-}
+};
 
 const ROLE_STYLE: Record<string, string> = {
   admin: 'bg-primary/10 text-primary',
   moderator: 'bg-orange-500/10 text-orange-500',
   member: 'bg-muted text-muted-foreground',
-}
+};
 
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
 
-function EditProfileModal({ open, onClose, hasSso }: { open: boolean; onClose: () => void; hasSso: boolean }) {
-  const { user } = useAuth()
-  const { mutate: update, isPending } = useUpdateProfile()
-  const [displayName, setDisplayName] = useState(user?.displayName ?? '')
-  const [username, setUsername] = useState(user?.username ?? '')
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? '')
-  const [error, setError] = useState('')
+function EditProfileModal({
+  open,
+  onClose,
+  hasSso,
+}: {
+  open: boolean;
+  onClose: () => void;
+  hasSso: boolean;
+}) {
+  const { user } = useAuth();
+  const { mutate: update, isPending } = useUpdateProfile();
+  const [displayName, setDisplayName] = useState(user?.displayName ?? '');
+  const [username, setUsername] = useState(user?.username ?? '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? '');
+  const [error, setError] = useState('');
 
-  const canEditName = !hasSso
+  const canEditName = !hasSso;
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     const body: { displayName?: string; username?: string | null; avatarUrl?: string | null } = {
       avatarUrl: avatarUrl.trim() || null,
-    }
+    };
     if (canEditName) {
-      body.displayName = displayName.trim() || undefined
-      body.username = username.trim() || null
+      body.displayName = displayName.trim() || undefined;
+      body.username = username.trim() || null;
     }
     update(body, {
       onSuccess: onClose,
       onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
-    })
-  }
+    });
+  };
 
   return (
     <Modal open={open} onClose={onClose} title="Profil bearbeiten">
@@ -57,7 +65,10 @@ function EditProfileModal({ open, onClose, hasSso }: { open: boolean; onClose: (
           <input
             type="url"
             value={avatarUrl}
-            onChange={(e) => { setAvatarUrl(e.target.value); setError('') }}
+            onChange={(e) => {
+              setAvatarUrl(e.target.value);
+              setError('');
+            }}
             placeholder="https://…"
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -70,7 +81,10 @@ function EditProfileModal({ open, onClose, hasSso }: { open: boolean; onClose: (
               <input
                 type="text"
                 value={displayName}
-                onChange={(e) => { setDisplayName(e.target.value); setError('') }}
+                onChange={(e) => {
+                  setDisplayName(e.target.value);
+                  setError('');
+                }}
                 className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
@@ -79,7 +93,10 @@ function EditProfileModal({ open, onClose, hasSso }: { open: boolean; onClose: (
               <input
                 type="text"
                 value={username}
-                onChange={(e) => { setUsername(e.target.value); setError('') }}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  setError('');
+                }}
                 placeholder="z.B. max_mustermann"
                 className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
@@ -97,22 +114,21 @@ function EditProfileModal({ open, onClose, hasSso }: { open: boolean; onClose: (
         </button>
       </form>
     </Modal>
-  )
+  );
 }
 
-
-type StackedVoucher = ProstVoucher & { count: number }
+type StackedVoucher = ProstVoucher & { count: number };
 
 // ─── Voucher Item ────────────────────────────────────────────────────────────────
 function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }) {
-  const { data: profile, isLoading } = usePublicProfile(voucher.fromUserId)
+  const { data: profile, isLoading } = usePublicProfile(voucher.fromUserId);
   const donor: ActivityUser = {
     id: voucher.fromUserId,
     displayName: profile?.displayName ?? 'Unbekannt',
     avatarUrl: profile?.avatarUrl ?? null,
-  }
-  const drink = `${voucher.buyableName}${voucher.variantName ? ` ${voucher.variantName}` : ''}`
-  const isStacked = voucher.count > 1
+  };
+  const drink = `${voucher.buyableName}${voucher.variantName ? ` ${voucher.variantName}` : ''}`;
+  const isStacked = voucher.count > 1;
 
   return (
     <div className={cn('group relative', isStacked && 'mb-2 mr-2')}>
@@ -128,19 +144,13 @@ function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }) {
         user={donor}
         icon="🍺"
         createdAt={voucher.createdAt}
-        className='relative z-10 rounded-xl border border-border bg-background px-3 py-2 transition-transform duration-200'
+        className="relative z-10 rounded-xl border border-border bg-background px-3 py-2 transition-transform duration-200"
       >
         <div className="flex-1 pr-1">
           <span className="font-medium">{drink}</span>
           {' ('}
-          <span className="font-semibold text-green-500">
-            +{formatCents(voucher.amount)}
-          </span>
-          ) von {isLoading ? (
-            <span className="font-semibold">...</span>
-          ) : (
-            <ProfileLink user={donor} />
-          )}
+          <span className="font-semibold text-green-500">+{formatCents(voucher.amount)}</span>) von{' '}
+          {isLoading ? <span className="font-semibold">...</span> : <ProfileLink user={donor} />}
         </div>
         {/* Prominent, always-visible count badge */}
         {isStacked && (
@@ -150,57 +160,61 @@ function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }) {
         )}
       </ActivityItem>
     </div>
-  )
+  );
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export function Profile() {
-  const { user } = useAuth()
-  const { data: profile, isLoading: profileLoading } = usePublicProfile(user?.id)
-  const { data: vouchers } = useProstVouchers()
-  const [editOpen, setEditOpen] = useState(false)
+  const { user } = useAuth();
+  const { data: profile, isLoading: profileLoading } = usePublicProfile(user?.id);
+  const { data: vouchers } = useProstVouchers();
+  const [editOpen, setEditOpen] = useState(false);
   const stackedVouchers = useMemo<StackedVoucher[]>(() => {
-    if (!vouchers || vouchers.length === 0) return []
+    if (!vouchers || vouchers.length === 0) return [];
 
-    const grouped = new Map<string, StackedVoucher>()
+    const grouped = new Map<string, StackedVoucher>();
     for (const voucher of vouchers) {
-      const key = `${voucher.fromUserId}::${voucher.variantId}::${voucher.amount}`
-      const existing = grouped.get(key)
+      const key = `${voucher.fromUserId}::${voucher.variantId}::${voucher.amount}`;
+      const existing = grouped.get(key);
       if (existing) {
-        existing.count += 1
+        existing.count += 1;
         if (new Date(voucher.createdAt).getTime() > new Date(existing.createdAt).getTime()) {
-          existing.createdAt = voucher.createdAt
+          existing.createdAt = voucher.createdAt;
         }
       } else {
-        grouped.set(key, { ...voucher, count: 1 })
+        grouped.set(key, { ...voucher, count: 1 });
       }
     }
 
     return Array.from(grouped.values()).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
-  }, [vouchers])
+    );
+  }, [vouchers]);
 
   return (
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto space-y-6">
-
         {/* Header */}
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold overflow-hidden flex-shrink-0">
-            {user?.avatarUrl
-              ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
-              : <span>{user?.displayName[0]?.toUpperCase()}</span>}
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span>{user?.displayName[0]?.toUpperCase()}</span>
+            )}
           </div>
           <div className="flex-1 min-w-0 pt-1">
             <h1 className="text-xl font-bold truncate">{user?.displayName}</h1>
-            {user?.username && (
-              <p className="text-sm text-muted-foreground">@{user.username}</p>
-            )}
+            {user?.username && <p className="text-sm text-muted-foreground">@{user.username}</p>}
             <div className="flex items-center gap-2 mt-1">
               {user?.role && (
-                <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium', ROLE_STYLE[user.role])}>
+                <span
+                  className={cn(
+                    'text-xs px-1.5 py-0.5 rounded-full font-medium',
+                    ROLE_STYLE[user.role],
+                  )}
+                >
                   {ROLE_LABEL[user.role]}
                 </span>
               )}
@@ -217,7 +231,9 @@ export function Profile() {
 
         {/* Balance */}
         <div className="rounded-2xl border border-border bg-card px-5 py-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Kontostand</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">
+            Kontostand
+          </p>
           <p className={cn('text-3xl font-bold tabular-nums', balanceColor(user?.balance ?? 0))}>
             {formatCents(user?.balance ?? 0)}
           </p>
@@ -226,15 +242,22 @@ export function Profile() {
         {/* Stats */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Statistiken</h2>
-            <Link href="/profile/stats" className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Statistiken
+            </h2>
+            <Link
+              href="/profile/stats"
+              className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline"
+            >
               <BarChart2 size={12} />
               Details
             </Link>
           </div>
           {profileLoading ? (
             <div className="grid grid-cols-2 gap-3">
-              {[1, 2, 3, 4].map((i) => <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />)}
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
+              ))}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
@@ -270,12 +293,15 @@ export function Profile() {
             </div>
           </div>
         )}
-
       </div>
 
-      <EditProfileModal open={editOpen} onClose={() => setEditOpen(false)} hasSso={profile?.hasSso ?? false} />
+      <EditProfileModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        hasSso={profile?.hasSso ?? false}
+      />
     </Layout>
-  )
+  );
 }
 
 const RANK_CATEGORY_LABELS: Record<string, string> = {
@@ -284,7 +310,7 @@ const RANK_CATEGORY_LABELS: Record<string, string> = {
   achievements: 'Achievements',
   prost_sent: 'Prost',
   jackpot_spins: 'Spins',
-}
+};
 
 function RankCard({ rank }: { rank: { rank: number; categories: string[] } | null }) {
   return (
@@ -297,7 +323,7 @@ function RankCard({ rank }: { rank: { rank: number; categories: string[] } | nul
         </p>
       )}
     </div>
-  )
+  );
 }
 
 function StatCard({ label, value, small }: { label: string; value: string; small?: boolean }) {
@@ -306,5 +332,5 @@ function StatCard({ label, value, small }: { label: string; value: string; small
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
       <p className={cn('font-bold leading-tight', small ? 'text-sm' : 'text-xl')}>{value}</p>
     </div>
-  )
+  );
 }

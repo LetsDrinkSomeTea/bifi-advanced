@@ -1,58 +1,57 @@
-import { useState } from 'react'
-import { Star, ChevronRight, X } from 'lucide-react'
-import { Link } from 'wouter'
-import { Layout } from '../components/layout/Layout'
-import { TransactionList } from '../components/TransactionList'
-import { FeedTimeline, groupEntries } from '../components/FeedTimeline'
-import { useFavorites, useToggleFavorite } from '../hooks/useFavorites'
-import { useFeed } from '../hooks/useFeed'
-import { usePurchase, useTransactionHistory } from '../hooks/useTransactions'
-import { useVoucherMap } from '../hooks/useProst'
-import type { Favorite } from '@shared/types'
-import { formatCents, cn } from '../lib/utils'
-import { CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas'
+import { useState } from 'react';
+import { Star, ChevronRight, X } from 'lucide-react';
+import { Link } from 'wouter';
+import { Layout } from '../components/layout/Layout';
+import { TransactionList } from '../components/TransactionList';
+import { FeedTimeline, groupEntries } from '../components/FeedTimeline';
+import { useFavorites, useToggleFavorite } from '../hooks/useFavorites';
+import { useFeed } from '../hooks/useFeed';
+import { usePurchase, useTransactionHistory } from '../hooks/useTransactions';
+import { useVoucherMap } from '../hooks/useProst';
+import type { Favorite } from '@shared/types';
+import { formatCents, cn } from '../lib/utils';
+import { CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas';
 
-type CardState = { variantId: string; status: 'buying' | 'done' | 'error' } | null
+type CardState = { variantId: string; status: 'buying' | 'done' | 'error' } | null;
 
 function HomeFeedPreview() {
-  const { data, isLoading } = useFeed()
-  const entries = groupEntries(data?.pages[0]?.data ?? []).slice(0, 3)
+  const { data, isLoading } = useFeed();
+  const entries = groupEntries(data?.pages[0]?.data ?? []).slice(0, 3);
 
-  return <FeedTimeline entries={entries} isLoading={isLoading} preGrouped />
+  return <FeedTimeline entries={entries} isLoading={isLoading} preGrouped />;
 }
 
 export function Home() {
-  const { data: favorites, isLoading } = useFavorites()
-  const { data: txnData, isLoading: txnLoading } = useTransactionHistory()
-  const { mutate: purchase } = usePurchase()
-  const { mutate: toggleFav } = useToggleFavorite()
-  const voucherMap = useVoucherMap()
-  const [cardState, setCardState] = useState<CardState>(null)
+  const { data: favorites, isLoading } = useFavorites();
+  const { data: txnData, isLoading: txnLoading } = useTransactionHistory();
+  const { mutate: purchase } = usePurchase();
+  const { mutate: toggleFav } = useToggleFavorite();
+  const voucherMap = useVoucherMap();
+  const [cardState, setCardState] = useState<CardState>(null);
 
-  const recentTxns = (txnData?.pages[0]?.data ?? []).slice(0, 3)
+  const recentTxns = (txnData?.pages[0]?.data ?? []).slice(0, 3);
 
   const handleBuy = (fav: Favorite) => {
-    if (cardState || !fav.isAvailable) return
-    setCardState({ variantId: fav.variantId, status: 'buying' })
+    if (cardState || !fav.isAvailable) return;
+    setCardState({ variantId: fav.variantId, status: 'buying' });
     purchase(
       { items: [{ buyableId: fav.buyableId, variantId: fav.variantId, quantity: 1 }] },
       {
         onSuccess: () => {
-          setCardState({ variantId: fav.variantId, status: 'done' })
-          setTimeout(() => setCardState(null), 900)
+          setCardState({ variantId: fav.variantId, status: 'done' });
+          setTimeout(() => setCardState(null), 900);
         },
         onError: () => {
-          setCardState({ variantId: fav.variantId, status: 'error' })
-          setTimeout(() => setCardState(null), 1200)
+          setCardState({ variantId: fav.variantId, status: 'error' });
+          setTimeout(() => setCardState(null), 1200);
         },
       },
-    )
-  }
+    );
+  };
 
   return (
     <Layout>
       <div className="px-4 py-5 max-w-lg mx-auto space-y-6">
-
         {/* Favorites */}
         <section>
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
@@ -70,9 +69,7 @@ export function Home() {
           {!isLoading && (!favorites || favorites.length === 0) && (
             <div className="rounded-2xl border border-dashed border-border p-8 text-center space-y-2">
               <Star size={28} className="mx-auto text-muted-foreground opacity-40" />
-              <p className="text-sm text-muted-foreground">
-                Noch keine Favoriten
-              </p>
+              <p className="text-sm text-muted-foreground">Noch keine Favoriten</p>
               <p className="text-xs text-muted-foreground opacity-70">
                 Im Shop ★ neben einer Variante antippen
               </p>
@@ -82,7 +79,7 @@ export function Home() {
           {favorites && favorites.length > 0 && (
             <div className="grid grid-cols-2 gap-3">
               {favorites.map((fav) => {
-                const state = cardState?.variantId === fav.variantId ? cardState.status : null
+                const state = cardState?.variantId === fav.variantId ? cardState.status : null;
 
                 return (
                   <div key={fav.variantId} className="relative group">
@@ -102,14 +99,22 @@ export function Home() {
                     >
                       {fav.isAvailable && fav.activeDiscount && !state && (
                         <div className="absolute top-0 right-0 bg-orange-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg pointer-events-none uppercase tracking-tighter text-center leading-tight">
-                          <div>{fav.activeDiscount.type === 'percent' ? `-${fav.activeDiscount.value}%` : 'SALE'}</div>
+                          <div>
+                            {fav.activeDiscount.type === 'percent'
+                              ? `-${fav.activeDiscount.value}%`
+                              : 'SALE'}
+                          </div>
                           {fav.activeDiscount.quantityRemaining !== null && (
-                            <div className="normal-case">noch {fav.activeDiscount.quantityRemaining}x</div>
+                            <div className="normal-case">
+                              noch {fav.activeDiscount.quantityRemaining}x
+                            </div>
                           )}
                         </div>
                       )}
                       {fav.category && (
-                        <span className="text-xs text-muted-foreground">{CATEGORY_LABELS[fav.category as BuyableCategory]}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {CATEGORY_LABELS[fav.category as BuyableCategory]}
+                        </span>
                       )}
                       <span className="font-semibold text-sm leading-tight pr-4">
                         {fav.buyableName}
@@ -120,24 +125,36 @@ export function Home() {
                           {fav.isAvailable && voucherMap.has(fav.variantId) && !state && (
                             <span className="text-sm">🎁</span>
                           )}
-                          <span className={cn(
-                            'text-sm font-bold tabular-nums',
-                            !fav.isAvailable && 'text-muted-foreground',
-                            fav.isAvailable && fav.activeDiscount && !state && 'text-orange-500',
-                            voucherMap.has(fav.variantId) && !state && "line-through text-muted-foreground opacity-50"
-                          )}>
+                          <span
+                            className={cn(
+                              'text-sm font-bold tabular-nums',
+                              !fav.isAvailable && 'text-muted-foreground',
+                              fav.isAvailable && fav.activeDiscount && !state && 'text-orange-500',
+                              voucherMap.has(fav.variantId) &&
+                                !state &&
+                                'line-through text-muted-foreground opacity-50',
+                            )}
+                          >
                             {!fav.isAvailable
                               ? 'Nicht verfügbar'
-                              : state === 'buying' ? '…'
-                                : state === 'done' ? '✓'
-                                  : state === 'error' ? '✕'
-                                    : formatCents(fav.activeDiscount ? fav.discountedPrice : fav.price)}
+                              : state === 'buying'
+                                ? '…'
+                                : state === 'done'
+                                  ? '✓'
+                                  : state === 'error'
+                                    ? '✕'
+                                    : formatCents(
+                                        fav.activeDiscount ? fav.discountedPrice : fav.price,
+                                      )}
                           </span>
-                          {fav.isAvailable && fav.activeDiscount && !state && !voucherMap.has(fav.variantId) && (
-                            <span className="text-[10px] text-muted-foreground line-through decoration-muted-foreground/30 font-normal">
-                              {formatCents(fav.price)}
-                            </span>
-                          )}
+                          {fav.isAvailable &&
+                            fav.activeDiscount &&
+                            !state &&
+                            !voucherMap.has(fav.variantId) && (
+                              <span className="text-[10px] text-muted-foreground line-through decoration-muted-foreground/30 font-normal">
+                                {formatCents(fav.price)}
+                              </span>
+                            )}
                         </div>
                       </div>
                     </button>
@@ -145,19 +162,19 @@ export function Home() {
                     {/* Remove Favorite Button */}
                     <button
                       onClick={(e) => {
-                        e.stopPropagation()
-                        toggleFav({ variantId: fav.variantId, isFav: true })
+                        e.stopPropagation();
+                        toggleFav({ variantId: fav.variantId, isFav: true });
                       }}
                       className={cn(
-                        "absolute -top-1 -right-1 p-1 rounded-full bg-background border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all opacity-0 group-hover:opacity-100 shadow-sm z-10",
-                        !fav.isAvailable && "opacity-100"
+                        'absolute -top-1 -right-1 p-1 rounded-full bg-background border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all opacity-0 group-hover:opacity-100 shadow-sm z-10',
+                        !fav.isAvailable && 'opacity-100',
                       )}
                       title="Aus Favoriten entfernen"
                     >
                       <X size={10} />
                     </button>
                   </div>
-                )
+                );
               })}
             </div>
           )}
@@ -169,7 +186,10 @@ export function Home() {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               Letzte Käufe
             </h2>
-            <Link href="/history" className="flex items-center gap-0.5 text-xs text-primary hover:underline">
+            <Link
+              href="/history"
+              className="flex items-center gap-0.5 text-xs text-primary hover:underline"
+            >
               Alle <ChevronRight size={13} />
             </Link>
           </div>
@@ -180,8 +200,13 @@ export function Home() {
         {/* Feed preview */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Aktivität</h2>
-            <Link href="/social?tab=activity" className="flex items-center gap-0.5 text-xs text-primary hover:underline">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Aktivität
+            </h2>
+            <Link
+              href="/social?tab=activity"
+              className="flex items-center gap-0.5 text-xs text-primary hover:underline"
+            >
               Alle <ChevronRight size={13} />
             </Link>
           </div>
@@ -189,5 +214,5 @@ export function Home() {
         </section>
       </div>
     </Layout>
-  )
+  );
 }

@@ -1,30 +1,55 @@
-import { useState } from 'react'
-import { KeyRound, Link2, Plus, UserCog, Dices, ChevronDown, ChevronUp, Trash2, Eye, EyeOff, Check } from 'lucide-react'
-import { AdminLayout } from './AdminLayout'
-import { Modal } from '../../components/Modal'
-import { useAdminUsers, useCreateUser, useDeposit, useResetPassword, useUpdateUser, useDeleteUser } from '../../hooks/useAdmin'
-import { useAuth, useAuthConfig } from '../../hooks/useAuth'
-import type { AdminUser } from '@shared/types'
-import { cn, formatCents } from '../../lib/utils'
-import { ROLE_LABEL, ROLE_STYLE } from '../ProfileDetail'
+import { useState } from 'react';
+import {
+  KeyRound,
+  Link2,
+  Plus,
+  UserCog,
+  Dices,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  Eye,
+  EyeOff,
+  Check,
+} from 'lucide-react';
+import { AdminLayout } from './AdminLayout';
+import { Modal } from '../../components/Modal';
+import {
+  useAdminUsers,
+  useCreateUser,
+  useDeposit,
+  useResetPassword,
+  useUpdateUser,
+  useDeleteUser,
+} from '../../hooks/useAdmin';
+import { useAuth, useAuthConfig } from '../../hooks/useAuth';
+import type { AdminUser } from '@shared/types';
+import { cn, formatCents } from '../../lib/utils';
+import { ROLE_LABEL, ROLE_STYLE } from '../ProfileDetail';
 
 // ─── Deposit Modal ────────────────────────────────────────────────────────────
 
 function DepositModal({ user, onClose }: { user: AdminUser | null; onClose: () => void }) {
-  const [euros, setEuros] = useState('')
-  const [note, setNote] = useState('')
-  const [error, setError] = useState('')
-  const { mutate: deposit, isPending } = useDeposit()
+  const [euros, setEuros] = useState('');
+  const [note, setNote] = useState('');
+  const [error, setError] = useState('');
+  const { mutate: deposit, isPending } = useDeposit();
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const cents = Math.round(parseFloat(euros) * 100)
-    if (!cents || cents < 1) { setError('Ungültiger Betrag'); return }
+    e.preventDefault();
+    const cents = Math.round(parseFloat(euros) * 100);
+    if (!cents || cents < 1) {
+      setError('Ungültiger Betrag');
+      return;
+    }
     deposit(
       { userId: user!.id, amount: cents, note: note || undefined },
-      { onSuccess: onClose, onError: (err) => setError(err instanceof Error ? err.message : 'Fehler') },
-    )
-  }
+      {
+        onSuccess: onClose,
+        onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
+      },
+    );
+  };
 
   return (
     <Modal open={!!user} onClose={onClose} title={`Einzahlung – ${user?.displayName}`}>
@@ -37,7 +62,10 @@ function DepositModal({ user, onClose }: { user: AdminUser | null; onClose: () =
             min="0.01"
             placeholder="0.00"
             value={euros}
-            onChange={(e) => { setEuros(e.target.value); setError('') }}
+            onChange={(e) => {
+              setEuros(e.target.value);
+              setError('');
+            }}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             autoFocus
           />
@@ -62,7 +90,7 @@ function DepositModal({ user, onClose }: { user: AdminUser | null; onClose: () =
         </button>
       </form>
     </Modal>
-  )
+  );
 }
 
 // ─── User Row ─────────────────────────────────────────────────────────────────
@@ -82,37 +110,52 @@ function UserRow({
   onDeposit: () => void;
   onResetPassword: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false)
-  const { mutate: update, isPending: isUpdating } = useUpdateUser()
-  const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser()
-  const [deleteError, setDeleteError] = useState('')
+  const [expanded, setExpanded] = useState(false);
+  const { mutate: update, isPending: isUpdating } = useUpdateUser();
+  const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser();
+  const [deleteError, setDeleteError] = useState('');
 
   const handleUpdate = (patch: Partial<AdminUser>) => {
-    update({ id: user.id, ...patch })
-  }
+    update({ id: user.id, ...patch });
+  };
 
   const handleDelete = () => {
-    if (!window.confirm(`Möchtest du ${user.displayName} wirklich löschen?`)) return
+    if (!window.confirm(`Möchtest du ${user.displayName} wirklich löschen?`)) return;
     deleteUser(user.id, {
-      onError: (err) => setDeleteError(err instanceof Error ? err.message : 'Löschen fehlgeschlagen. Nutzer hat evtl. Historie.')
-    })
-  }
+      onError: (err) =>
+        setDeleteError(
+          err instanceof Error ? err.message : 'Löschen fehlgeschlagen. Nutzer hat evtl. Historie.',
+        ),
+    });
+  };
 
   return (
     <div className={cn('rounded-xl border border-border bg-card overflow-hidden')}>
-      <div className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => setExpanded(!expanded)}>
+      <div
+        className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
         {/* Avatar & Info with conditional opacity */}
-        <div className={cn('flex flex-1 items-center gap-3 min-w-0', !user.isActive && 'opacity-60')}>
+        <div
+          className={cn('flex flex-1 items-center gap-3 min-w-0', !user.isActive && 'opacity-60')}
+        >
           <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold flex-shrink-0 overflow-hidden">
-            {user.avatarUrl
-              ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
-              : user.displayName[0]?.toUpperCase()}
+            {user.avatarUrl ? (
+              <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              user.displayName[0]?.toUpperCase()
+            )}
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-medium text-sm truncate">{user.displayName}</span>
-              <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium', ROLE_STYLE[user.role])}>
+              <span
+                className={cn(
+                  'text-xs px-1.5 py-0.5 rounded-full font-medium',
+                  ROLE_STYLE[user.role],
+                )}
+              >
                 {ROLE_LABEL[user.role]}
               </span>
               {!user.isActive && (
@@ -127,13 +170,22 @@ function UserRow({
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className={cn('text-xs font-semibold tabular-nums', user.balance < 0 ? 'text-red-500' : 'text-muted-foreground')}>
+              <span
+                className={cn(
+                  'text-xs font-semibold tabular-nums',
+                  user.balance < 0 ? 'text-red-500' : 'text-muted-foreground',
+                )}
+              >
                 {formatCents(user.balance)}
               </span>
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 {user.hasSso && <Link2 size={11} />}
                 {user.hasPassword && <KeyRound size={11} />}
-                {user.jackpotAllowed && <span title="Jackpot freigeschaltet"><Dices size={11} className="text-yellow-500" /></span>}
+                {user.jackpotAllowed && (
+                  <span title="Jackpot freigeschaltet">
+                    <Dices size={11} className="text-yellow-500" />
+                  </span>
+                )}
               </span>
             </div>
           </div>
@@ -171,9 +223,17 @@ function UserRow({
       {expanded && (
         <div className="px-4 py-4 border-t border-border bg-accent/20 space-y-4">
           <div className="flex flex-col gap-4">
-            {(
+            {
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rolle{!canChangeRole && <span className="text-xs font-medium normal-case"> (wird von SSO verwaltet)</span>}</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Rolle
+                  {!canChangeRole && (
+                    <span className="text-xs font-medium normal-case">
+                      {' '}
+                      (wird von SSO verwaltet)
+                    </span>
+                  )}
+                </label>
                 <select
                   value={user.role}
                   onChange={(e) => handleUpdate({ role: e.target.value as any })}
@@ -185,10 +245,12 @@ function UserRow({
                   <option value="admin">Admin</option>
                 </select>
               </div>
-            )}
+            }
 
             <div className="space-y-3">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Status & Features</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                Status & Features
+              </label>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => handleUpdate({ jackpotAllowed: !user.jackpotAllowed })}
@@ -197,7 +259,7 @@ function UserRow({
                     'flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold',
                     user.jackpotAllowed
                       ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/20'
-                      : 'bg-muted border-border text-muted-foreground hover:bg-muted/80'
+                      : 'bg-muted border-border text-muted-foreground hover:bg-muted/80',
                   )}
                 >
                   <Dices size={14} className={user.jackpotAllowed ? 'text-yellow-500' : ''} />
@@ -219,7 +281,7 @@ function UserRow({
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold',
                   user.isActive
                     ? 'bg-orange-500/10 border-orange-500/50 text-orange-600 hover:bg-orange-500/20'
-                    : 'bg-green-500/10 border-green-500/50 text-green-600 hover:bg-green-500/20'
+                    : 'bg-green-500/10 border-green-500/50 text-green-600 hover:bg-green-500/20',
                 )}
               >
                 {user.isActive ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -236,38 +298,51 @@ function UserRow({
                     <Trash2 size={14} />
                     Nutzer löschen
                   </button>
-                  {deleteError && <p className="text-[10px] text-destructive max-w-[200px] text-right">{deleteError}</p>}
+                  {deleteError && (
+                    <p className="text-[10px] text-destructive max-w-[200px] text-right">
+                      {deleteError}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
-      )
-      }
-    </div >
-  )
+      )}
+    </div>
+  );
 }
 
 // ─── Create User Modal ────────────────────────────────────────────────────────
 
 function CreateUserModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [form, setForm] = useState({ email: '', username: '', displayName: '', password: '', role: 'member' })
-  const [error, setError] = useState('')
-  const { mutate: create, isPending } = useCreateUser()
+  const [form, setForm] = useState({
+    email: '',
+    username: '',
+    displayName: '',
+    password: '',
+    role: 'member',
+  });
+  const [error, setError] = useState('');
+  const { mutate: create, isPending } = useCreateUser();
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }))
+  const set =
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     create(
       { ...form, username: form.username || undefined },
       {
-        onSuccess: () => { setForm({ email: '', username: '', displayName: '', password: '', role: 'member' }); onClose() },
+        onSuccess: () => {
+          setForm({ email: '', username: '', displayName: '', password: '', role: 'member' });
+          onClose();
+        },
         onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
       },
-    )
-  }
+    );
+  };
 
   return (
     <Modal open={open} onClose={onClose} title="Neuer Nutzer">
@@ -311,29 +386,39 @@ function CreateUserModal({ open, onClose }: { open: boolean; onClose: () => void
         </button>
       </form>
     </Modal>
-  )
+  );
 }
 
 // ─── Reset Password Modal ─────────────────────────────────────────────────────
 
 function ResetPasswordModal({ user, onClose }: { user: AdminUser | null; onClose: () => void }) {
-  const [password, setPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [error, setError] = useState('')
-  const { mutate: reset, isPending } = useResetPassword()
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState('');
+  const { mutate: reset, isPending } = useResetPassword();
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (password.length < 8) { setError('Mindestens 8 Zeichen'); return }
-    if (password !== confirm) { setError('Passwörter stimmen nicht überein'); return }
+    e.preventDefault();
+    if (password.length < 8) {
+      setError('Mindestens 8 Zeichen');
+      return;
+    }
+    if (password !== confirm) {
+      setError('Passwörter stimmen nicht überein');
+      return;
+    }
     reset(
       { id: user!.id, password },
       {
-        onSuccess: () => { setPassword(''); setConfirm(''); onClose() },
+        onSuccess: () => {
+          setPassword('');
+          setConfirm('');
+          onClose();
+        },
         onError: (err) => setError(err instanceof Error ? err.message : 'Fehler'),
       },
-    )
-  }
+    );
+  };
 
   return (
     <Modal open={!!user} onClose={onClose} title={`Passwort setzen – ${user?.displayName}`}>
@@ -345,7 +430,10 @@ function ResetPasswordModal({ user, onClose }: { user: AdminUser | null; onClose
             minLength={8}
             required
             value={password}
-            onChange={(e) => { setPassword(e.target.value); setError('') }}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError('');
+            }}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             autoFocus
           />
@@ -357,7 +445,10 @@ function ResetPasswordModal({ user, onClose }: { user: AdminUser | null; onClose
             minLength={8}
             required
             value={confirm}
-            onChange={(e) => { setConfirm(e.target.value); setError('') }}
+            onChange={(e) => {
+              setConfirm(e.target.value);
+              setError('');
+            }}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -371,26 +462,28 @@ function ResetPasswordModal({ user, onClose }: { user: AdminUser | null; onClose
         </button>
       </form>
     </Modal>
-  )
+  );
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function AdminUsers() {
-  const { data: users, isLoading } = useAdminUsers()
-  const { isAdmin, isModerator } = useAuth()
-  const { data: config } = useAuthConfig()
-  const [depositTarget, setDepositTarget] = useState<AdminUser | null>(null)
-  const [resetTarget, setResetTarget] = useState<AdminUser | null>(null)
-  const [createOpen, setCreateOpen] = useState(false)
-  const [search, setSearch] = useState('')
+  const { data: users, isLoading } = useAdminUsers();
+  const { isAdmin, isModerator } = useAuth();
+  const { data: config } = useAuthConfig();
+  const [depositTarget, setDepositTarget] = useState<AdminUser | null>(null);
+  const [resetTarget, setResetTarget] = useState<AdminUser | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
-  const canChangeRole = (u: AdminUser) =>
-    !u.hasSso || (config?.roleSync ?? 'always') !== 'always'
+  const canChangeRole = (u: AdminUser) => !u.hasSso || (config?.roleSync ?? 'always') !== 'always';
 
   const filtered = (users ?? []).filter(
-    (u) => !search || u.displayName.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()),
-  )
+    (u) =>
+      !search ||
+      u.displayName.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
     <AdminLayout>
@@ -414,7 +507,9 @@ export function AdminUsers() {
 
         {isLoading && (
           <div className="space-y-2">
-            {[1, 2, 3].map((i) => <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />)}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
+            ))}
           </div>
         )}
 
@@ -439,5 +534,5 @@ export function AdminUsers() {
       <ResetPasswordModal user={resetTarget} onClose={() => setResetTarget(null)} />
       <CreateUserModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </AdminLayout>
-  )
+  );
 }

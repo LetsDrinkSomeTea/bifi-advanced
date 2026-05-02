@@ -1,31 +1,45 @@
-import { useParams, useLocation } from 'wouter'
-import { Link } from 'wouter'
-import { useState } from 'react'
-import { Copy, RefreshCw, LogOut, Trash2, UserX, QrCode, X } from 'lucide-react'
-import { Layout } from '../components/layout/Layout'
-import { useGroupDetail, useLeaveGroup, useRemoveMember, useDeleteGroup, useRefreshInviteCode } from '../hooks/useGroups'
-import { useAuth } from '../hooks/useAuth'
-import { cn } from '../lib/utils'
+import { useParams, useLocation } from 'wouter';
+import { Link } from 'wouter';
+import { useState } from 'react';
+import { Copy, RefreshCw, LogOut, Trash2, UserX, QrCode, X } from 'lucide-react';
+import { Layout } from '../components/layout/Layout';
+import {
+  useGroupDetail,
+  useLeaveGroup,
+  useRemoveMember,
+  useDeleteGroup,
+  useRefreshInviteCode,
+} from '../hooks/useGroups';
+import { useAuth } from '../hooks/useAuth';
+import { cn } from '../lib/utils';
 
 function copyToClipboard(text: string): Promise<void> {
   if (navigator.clipboard) {
-    return navigator.clipboard.writeText(text)
+    return navigator.clipboard.writeText(text);
   }
   // Fallback for non-HTTPS / older browsers
   return new Promise((resolve) => {
-    const el = document.createElement('textarea')
-    el.value = text
-    el.style.cssText = 'position:fixed;left:-9999px;top:-9999px'
-    document.body.appendChild(el)
-    el.focus()
-    el.select()
-    document.execCommand('copy')
-    document.body.removeChild(el)
-    resolve()
-  })
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    resolve();
+  });
 }
 
-function QRModal({ code, groupName, onClose }: { code: string; groupName: string; onClose: () => void }) {
+function QRModal({
+  code,
+  groupName,
+  onClose,
+}: {
+  code: string;
+  groupName: string;
+  onClose: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
@@ -52,28 +66,28 @@ function QRModal({ code, groupName, onClose }: { code: string; groupName: string
         </span>
       </div>
     </div>
-  )
+  );
 }
 
 export function GroupDetail() {
-  const { groupId } = useParams<{ groupId: string }>()
-  const { user } = useAuth()
-  const { data: group, isLoading } = useGroupDetail(groupId)
-  const { mutate: leave, isPending: leaving } = useLeaveGroup()
-  const { mutate: remove, isPending: removing } = useRemoveMember()
-  const { mutate: deleteGroup, isPending: deleting } = useDeleteGroup()
-  const { mutate: refreshCode } = useRefreshInviteCode()
-  const [, navigate] = useLocation()
-  const [copied, setCopied] = useState(false)
-  const [qrOpen, setQrOpen] = useState(false)
+  const { groupId } = useParams<{ groupId: string }>();
+  const { user } = useAuth();
+  const { data: group, isLoading } = useGroupDetail(groupId);
+  const { mutate: leave, isPending: leaving } = useLeaveGroup();
+  const { mutate: remove, isPending: removing } = useRemoveMember();
+  const { mutate: deleteGroup, isPending: deleting } = useDeleteGroup();
+  const { mutate: refreshCode } = useRefreshInviteCode();
+  const [, navigate] = useLocation();
+  const [copied, setCopied] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
   const handleCopy = () => {
-    if (!group?.inviteCode) return
+    if (!group?.inviteCode) return;
     copyToClipboard(group.inviteCode).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   if (isLoading) {
     return (
@@ -82,11 +96,13 @@ export function GroupDetail() {
           <div className="h-8 w-48 bg-muted rounded animate-pulse" />
           <div className="h-24 rounded-2xl bg-muted animate-pulse" />
           <div className="space-y-2">
-            {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />)}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />
+            ))}
           </div>
         </div>
       </Layout>
-    )
+    );
   }
 
   if (!group) {
@@ -96,15 +112,14 @@ export function GroupDetail() {
           Gruppe nicht gefunden
         </div>
       </Layout>
-    )
+    );
   }
 
-  const isOwner = group.myRole === 'owner'
+  const isOwner = group.myRole === 'owner';
 
   return (
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto space-y-6">
-
         {/* Header */}
         <div>
           <h1 className="text-xl font-bold">{group.name}</h1>
@@ -115,7 +130,9 @@ export function GroupDetail() {
 
         {/* Invite code */}
         <div className="rounded-2xl border border-border bg-card px-4 py-4 space-y-3">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Einladungscode</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
+            Einladungscode
+          </p>
           <div className="flex items-center gap-2">
             <span className="font-mono font-bold text-2xl tracking-widest flex-1 select-all">
               {group.inviteCode}
@@ -124,7 +141,9 @@ export function GroupDetail() {
               onClick={handleCopy}
               className={cn(
                 'p-2 rounded-lg transition-colors',
-                copied ? 'text-green-500' : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                copied
+                  ? 'text-green-500'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent',
               )}
               title={copied ? 'Kopiert!' : 'Kopieren'}
             >
@@ -147,9 +166,7 @@ export function GroupDetail() {
               </button>
             )}
           </div>
-          {copied && (
-            <p className="text-xs text-green-500">Code kopiert!</p>
-          )}
+          {copied && <p className="text-xs text-green-500">Code kopiert!</p>}
         </div>
 
         {/* Members */}
@@ -162,19 +179,24 @@ export function GroupDetail() {
               <div key={m.id} className="flex items-center gap-3 px-4 py-3 bg-card">
                 <Link href={`/profile/${m.id}`}>
                   <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold overflow-hidden flex-shrink-0 cursor-pointer">
-                    {m.avatarUrl
-                      ? <img src={m.avatarUrl} alt="" className="w-full h-full object-cover" />
-                      : <span>{m.displayName[0]?.toUpperCase()}</span>}
+                    {m.avatarUrl ? (
+                      <img src={m.avatarUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{m.displayName[0]?.toUpperCase()}</span>
+                    )}
                   </div>
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link href={`/profile/${m.id}`} className="text-sm font-medium hover:underline truncate block">
+                  <Link
+                    href={`/profile/${m.id}`}
+                    className="text-sm font-medium hover:underline truncate block"
+                  >
                     {m.displayName}
-                    {m.id === user?.id && <span className="text-muted-foreground font-normal"> (du)</span>}
+                    {m.id === user?.id && (
+                      <span className="text-muted-foreground font-normal"> (du)</span>
+                    )}
                   </Link>
-                  {m.role === 'owner' && (
-                    <span className="text-xs text-primary">Eigentümer</span>
-                  )}
+                  {m.role === 'owner' && <span className="text-xs text-primary">Eigentümer</span>}
                 </div>
                 {isOwner && m.id !== user?.id && (
                   <button
@@ -206,7 +228,7 @@ export function GroupDetail() {
             <button
               onClick={() => {
                 if (confirm(`Gruppe „${group.name}" wirklich löschen?`)) {
-                  deleteGroup(group.id, { onSuccess: () => navigate('/social') })
+                  deleteGroup(group.id, { onSuccess: () => navigate('/social') });
                 }
               }}
               disabled={deleting}
@@ -223,5 +245,5 @@ export function GroupDetail() {
         <QRModal code={group.inviteCode} groupName={group.name} onClose={() => setQrOpen(false)} />
       )}
     </Layout>
-  )
+  );
 }

@@ -1,39 +1,53 @@
-import { Hono } from 'hono'
-import { zValidator } from '@hono/zod-validator'
-import { z } from 'zod'
-import { alias } from 'drizzle-orm/pg-core'
-import { and, desc, eq, exists, gt, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from 'drizzle-orm'
-import { db } from '../db/index.ts'
-import { activityFeed, groupMembers, userFriendships, users } from '../db/schema.ts'
-import { requireAuth } from '../middleware/auth.ts'
+import { Hono } from 'hono';
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+import { alias } from 'drizzle-orm/pg-core';
+import {
+  and,
+  desc,
+  eq,
+  exists,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  lte,
+  ne,
+  or,
+  sql,
+} from 'drizzle-orm';
+import { db } from '../db/index.ts';
+import { activityFeed, groupMembers, userFriendships, users } from '../db/schema.ts';
+import { requireAuth } from '../middleware/auth.ts';
 
-const router = new Hono()
+const router = new Hono();
 
-const targetUsers = alias(users, 'target_users')
+const targetUsers = alias(users, 'target_users');
 
 function encodeCursor(createdAt: Date, id: string): string {
-  return Buffer.from(JSON.stringify({ t: createdAt.toISOString(), id })).toString('base64url')
+  return Buffer.from(JSON.stringify({ t: createdAt.toISOString(), id })).toString('base64url');
 }
 
 function decodeCursor(cursor: string): { t: string; id: string } | null {
   try {
-    return JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8'))
+    return JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8'));
   } catch {
-    return null
+    return null;
   }
 }
 
 const QuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
-})
+});
 
 router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
-  const user = c.get('user')
-  const { cursor, limit } = c.req.valid('query')
-  const parsed = cursor ? decodeCursor(cursor) : null
-  const cursorDate = parsed ? new Date(parsed.t) : null
-  const cursorId = parsed?.id ?? null
+  const user = c.get('user');
+  const { cursor, limit } = c.req.valid('query');
+  const parsed = cursor ? decodeCursor(cursor) : null;
+  const cursorDate = parsed ? new Date(parsed.t) : null;
+  const cursorId = parsed?.id ?? null;
 
   const friendRows = await db
     .select({ requesterId: userFriendships.requesterId, addresseeId: userFriendships.addresseeId })
@@ -43,9 +57,11 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
         or(eq(userFriendships.requesterId, user.id), eq(userFriendships.addresseeId, user.id)),
         eq(userFriendships.status, 'accepted'),
       ),
-    )
+    );
 
-  const friendIds = friendRows.map((f) => (f.requesterId === user.id ? f.addresseeId : f.requesterId))
+  const friendIds = friendRows.map((f) =>
+    f.requesterId === user.id ? f.addresseeId : f.requesterId,
+  );
 
   // Events by self or friends (or targeting self/friend)
   const selfOrFriendFilter =
@@ -56,7 +72,7 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
           eq(activityFeed.targetUserId, user.id),
           inArray(activityFeed.targetUserId, friendIds),
         )
-      : or(eq(activityFeed.userId, user.id), eq(activityFeed.targetUserId, user.id))
+      : or(eq(activityFeed.userId, user.id), eq(activityFeed.targetUserId, user.id));
 
   // Group events: visible only while the user was an active member at event time
   const wasGroupMember = exists(
@@ -71,7 +87,7 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
           or(isNull(groupMembers.leftAt), gt(groupMembers.leftAt, activityFeed.createdAt)),
         ),
       ),
-  )
+  );
 
   // goal_reached is a global club event — always visible
   // Events with a targetGroupId use membership-based visibility
@@ -79,8 +95,12 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
   const visibilityFilter = or(
     eq(activityFeed.type, 'goal_reached'),
     and(isNotNull(activityFeed.targetGroupId), wasGroupMember),
-    and(isNull(activityFeed.targetGroupId), ne(activityFeed.type, 'goal_reached'), selfOrFriendFilter),
-  )
+    and(
+      isNull(activityFeed.targetGroupId),
+      ne(activityFeed.type, 'goal_reached'),
+      selfOrFriendFilter,
+    ),
+  );
 
   const cursorFilter =
     cursorDate && cursorId
@@ -88,7 +108,7 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
           lt(activityFeed.createdAt, cursorDate),
           and(eq(activityFeed.createdAt, cursorDate), lt(activityFeed.id, cursorId)),
         )
-      : undefined
+      : undefined;
 
   const rows = await db
     .select({
@@ -115,18 +135,18 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
     .leftJoin(targetUsers, eq(activityFeed.targetUserId, targetUsers.id))
     .where(and(visibilityFilter, cursorFilter))
     .orderBy(desc(activityFeed.createdAt), desc(activityFeed.id))
-    .limit(limit + 1)
+    .limit(limit + 1);
 
-  const hasMore = rows.length > limit
-  const page = hasMore ? rows.slice(0, limit) : rows
-  const nextCursor = hasMore ? encodeCursor(page.at(-1)!.createdAt, page.at(-1)!.id) : null
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  const nextCursor = hasMore ? encodeCursor(page.at(-1)!.createdAt, page.at(-1)!.id) : null;
 
   const data = page.map((row) => ({
     ...row,
     targetUser: row.targetUser?.id ? row.targetUser : null,
-  }))
+  }));
 
-  return c.json({ data, nextCursor })
-})
+  return c.json({ data, nextCursor });
+});
 
-export default router
+export default router;

@@ -1,10 +1,22 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Link, useSearch, useLocation } from 'wouter'
-import { Search, Users2, UserCheck, UserX, UserPlus, ChevronRight, Plus, Hash, Crown, X, Lock } from 'lucide-react'
-import { Layout } from '../components/layout/Layout'
-import { Modal } from '../components/Modal'
-import { FeedTimeline } from '../components/FeedTimeline'
-import { useGroups, useCreateGroup, useJoinGroup } from '../hooks/useGroups'
+import { useState, useEffect, useMemo } from 'react';
+import { Link, useSearch, useLocation } from 'wouter';
+import {
+  Search,
+  Users2,
+  UserCheck,
+  UserX,
+  UserPlus,
+  ChevronRight,
+  Plus,
+  Hash,
+  Crown,
+  X,
+  Lock,
+} from 'lucide-react';
+import { Layout } from '../components/layout/Layout';
+import { Modal } from '../components/Modal';
+import { FeedTimeline } from '../components/FeedTimeline';
+import { useGroups, useCreateGroup, useJoinGroup } from '../hooks/useGroups';
 import {
   useFriends,
   useFriendRequests,
@@ -12,27 +24,33 @@ import {
   useSendFriendRequest,
   useAcceptFriendRequest,
   useRemoveFriend,
-} from '../hooks/useFriends'
-import { useLeaderboard } from '../hooks/useLeaderboard'
-import { useFeed } from '../hooks/useFeed'
-import { useAuth } from '../hooks/useAuth'
-import { formatCents, cn } from '../lib/utils'
+} from '../hooks/useFriends';
+import { useLeaderboard } from '../hooks/useLeaderboard';
+import { useFeed } from '../hooks/useFeed';
+import { useAuth } from '../hooks/useAuth';
+import { formatCents, cn } from '../lib/utils';
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
 function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const { mutate: create, isPending } = useCreateGroup()
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const { mutate: create, isPending } = useCreateGroup();
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim()) return
+    e.preventDefault();
+    if (!name.trim()) return;
     create(
       { name: name.trim(), description: description.trim() || undefined },
-      { onSuccess: () => { setName(''); setDescription(''); onClose() } },
-    )
-  }
+      {
+        onSuccess: () => {
+          setName('');
+          setDescription('');
+          onClose();
+        },
+      },
+    );
+  };
 
   return (
     <Modal open={open} onClose={onClose} title="Neue Gruppe">
@@ -69,21 +87,23 @@ function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => voi
         </button>
       </form>
     </Modal>
-  )
+  );
 }
 
 function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [code, setCode] = useState('')
-  const { mutate: join, isPending, error } = useJoinGroup()
+  const [code, setCode] = useState('');
+  const { mutate: join, isPending, error } = useJoinGroup();
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!code.trim()) return
-    join(
-      code.trim().toUpperCase(),
-      { onSuccess: () => { setCode(''); onClose() } },
-    )
-  }
+    e.preventDefault();
+    if (!code.trim()) return;
+    join(code.trim().toUpperCase(), {
+      onSuccess: () => {
+        setCode('');
+        onClose();
+      },
+    });
+  };
 
   return (
     <Modal open={open} onClose={onClose} title="Gruppe beitreten">
@@ -101,7 +121,9 @@ function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () => void 
           />
         </div>
         {error && (
-          <p className="text-sm text-destructive">{(error as Error).message ?? 'Ungültiger Code'}</p>
+          <p className="text-sm text-destructive">
+            {(error as Error).message ?? 'Ungültiger Code'}
+          </p>
         )}
         <button
           type="submit"
@@ -112,7 +134,7 @@ function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () => void 
         </button>
       </form>
     </Modal>
-  )
+  );
 }
 
 // ─── Avatar helper ────────────────────────────────────────────────────────────
@@ -120,11 +142,13 @@ function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () => void 
 function Avatar({ displayName, avatarUrl }: { displayName: string; avatarUrl: string | null }) {
   return (
     <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold overflow-hidden flex-shrink-0">
-      {avatarUrl
-        ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-        : <span>{displayName[0]?.toUpperCase()}</span>}
+      {avatarUrl ? (
+        <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+      ) : (
+        <span>{displayName[0]?.toUpperCase()}</span>
+      )}
     </div>
-  )
+  );
 }
 
 // ─── Sozial tab sections ──────────────────────────────────────────────────────
@@ -133,15 +157,17 @@ function GroupsSection({
   onCreateOpen,
   onJoinOpen,
 }: {
-  onCreateOpen: () => void
-  onJoinOpen: () => void
+  onCreateOpen: () => void;
+  onJoinOpen: () => void;
 }) {
-  const { data: groups, isLoading } = useGroups()
+  const { data: groups, isLoading } = useGroups();
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Gruppen</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Gruppen
+        </h2>
         <div className="flex items-center gap-3">
           <button
             onClick={onJoinOpen}
@@ -162,14 +188,21 @@ function GroupsSection({
 
       {isLoading ? (
         <div className="space-y-2">
-          {[1, 2].map((i) => <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />)}
+          {[1, 2].map((i) => (
+            <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />
+          ))}
         </div>
       ) : !groups || groups.length === 0 ? (
         <p className="text-sm text-muted-foreground py-3">
           Noch keine Gruppen.{' '}
-          <button onClick={onCreateOpen} className="text-primary hover:underline">Erstellen</button>
-          {' '}oder{' '}
-          <button onClick={onJoinOpen} className="text-primary hover:underline">beitreten</button>.
+          <button onClick={onCreateOpen} className="text-primary hover:underline">
+            Erstellen
+          </button>{' '}
+          oder{' '}
+          <button onClick={onJoinOpen} className="text-primary hover:underline">
+            beitreten
+          </button>
+          .
         </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
@@ -195,31 +228,34 @@ function GroupsSection({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function FriendsSection() {
-  const { data: friends, isLoading } = useFriends()
-  const { data: requests } = useFriendRequests()
-  const { mutate: accept } = useAcceptFriendRequest()
-  const { mutate: remove } = useRemoveFriend()
+  const { data: friends, isLoading } = useFriends();
+  const { data: requests } = useFriendRequests();
+  const { mutate: accept } = useAcceptFriendRequest();
+  const { mutate: remove } = useRemoveFriend();
 
   return (
     <div className="space-y-3">
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Freunde</h2>
+      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+        Freunde
+      </h2>
 
       {requests && requests.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">
-            Anfragen ({requests.length})
-          </p>
+          <p className="text-xs font-medium text-muted-foreground">Anfragen ({requests.length})</p>
           <div className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
             {requests.map((r) => (
               <div key={r.id} className="flex items-center gap-3 px-4 py-3 bg-card">
                 <Link href={`/profile/${r.id}`}>
                   <Avatar displayName={r.displayName} avatarUrl={r.avatarUrl} />
                 </Link>
-                <Link href={`/profile/${r.id}`} className="flex-1 min-w-0 text-sm font-medium truncate hover:underline">
+                <Link
+                  href={`/profile/${r.id}`}
+                  className="flex-1 min-w-0 text-sm font-medium truncate hover:underline"
+                >
                   {r.displayName}
                 </Link>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -246,7 +282,9 @@ function FriendsSection() {
 
       {isLoading ? (
         <div className="space-y-2">
-          {[1, 2, 3].map((i) => <div key={i} className="h-12 rounded-xl bg-muted animate-pulse" />)}
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-12 rounded-xl bg-muted animate-pulse" />
+          ))}
         </div>
       ) : !friends || friends.length === 0 ? (
         <p className="text-sm text-muted-foreground py-3">
@@ -266,53 +304,63 @@ function FriendsSection() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ─── Search results ───────────────────────────────────────────────────────────
 
 type SearchItem =
   | { kind: 'group'; id: string; name: string; memberCount: number }
-  | { kind: 'friend' | 'new_person'; id: string; displayName: string; avatarUrl: string | null }
+  | { kind: 'friend' | 'new_person'; id: string; displayName: string; avatarUrl: string | null };
 
 function SearchResults({
   query,
   groups,
   friends,
 }: {
-  query: string
-  groups: ReturnType<typeof useGroups>['data']
-  friends: ReturnType<typeof useFriends>['data']
+  query: string;
+  groups: ReturnType<typeof useGroups>['data'];
+  friends: ReturnType<typeof useFriends>['data'];
 }) {
-  const { data: userResults } = useUserSearch(query)
-  const { mutate: sendRequest } = useSendFriendRequest()
+  const { data: userResults } = useUserSearch(query);
+  const { mutate: sendRequest } = useSendFriendRequest();
 
-  const friendIds = useMemo(() => new Set(friends?.map((f) => f.id) ?? []), [friends])
+  const friendIds = useMemo(() => new Set(friends?.map((f) => f.id) ?? []), [friends]);
 
   const items = useMemo<SearchItem[]>(() => {
-    const q = query.toLowerCase()
+    const q = query.toLowerCase();
 
     const groupItems: SearchItem[] = (groups ?? [])
       .filter((g) => g.name.toLowerCase().includes(q))
-      .map((g) => ({ kind: 'group', id: g.id, name: g.name, memberCount: g.memberCount }))
+      .map((g) => ({ kind: 'group', id: g.id, name: g.name, memberCount: g.memberCount }));
 
     const friendItems: SearchItem[] = (friends ?? [])
       .filter((f) => f.displayName.toLowerCase().includes(q))
-      .map((f) => ({ kind: 'friend', id: f.id, displayName: f.displayName, avatarUrl: f.avatarUrl }))
+      .map((f) => ({
+        kind: 'friend',
+        id: f.id,
+        displayName: f.displayName,
+        avatarUrl: f.avatarUrl,
+      }));
 
     const newPeopleItems: SearchItem[] = (userResults ?? [])
       .filter((u) => !friendIds.has(u.id))
-      .map((u) => ({ kind: 'new_person', id: u.id, displayName: u.displayName, avatarUrl: u.avatarUrl }))
+      .map((u) => ({
+        kind: 'new_person',
+        id: u.id,
+        displayName: u.displayName,
+        avatarUrl: u.avatarUrl,
+      }));
 
-    return [...groupItems, ...friendItems, ...newPeopleItems]
-  }, [query, groups, friends, userResults, friendIds])
+    return [...groupItems, ...friendItems, ...newPeopleItems];
+  }, [query, groups, friends, userResults, friendIds]);
 
   if (items.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-8">
         Keine Ergebnisse für „{query}"
       </p>
-    )
+    );
   }
 
   return (
@@ -332,11 +380,14 @@ function SearchResults({
                 <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
               </div>
             </Link>
-          )
+          );
         }
 
         return (
-          <div key={`${item.kind}-${item.id}`} className="flex items-center gap-3 px-4 py-3 bg-card">
+          <div
+            key={`${item.kind}-${item.id}`}
+            className="flex items-center gap-3 px-4 py-3 bg-card"
+          >
             <Link href={`/profile/${item.id}`}>
               <Avatar displayName={item.displayName} avatarUrl={item.avatarUrl} />
             </Link>
@@ -359,36 +410,43 @@ function SearchResults({
               <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
             </Link>
           </div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 // ─── Leaderboard tab ──────────────────────────────────────────────────────────
 
-type LeaderboardType = 'total_spent' | 'total_purchases' | 'achievements' | 'prost_sent' | 'jackpot_spins'
-type LeaderboardPeriod = 'week' | 'month' | 'alltime'
+type LeaderboardType =
+  | 'total_spent'
+  | 'total_purchases'
+  | 'achievements'
+  | 'prost_sent'
+  | 'jackpot_spins';
+type LeaderboardPeriod = 'week' | 'month' | 'alltime';
 
 const PERIOD_LABELS: Record<LeaderboardPeriod, string> = {
   week: 'Woche',
   month: 'Monat',
   alltime: 'Gesamt',
-}
+};
 
 function formatValue(type: LeaderboardType, value: number): string {
-  if (type === 'total_spent') return formatCents(value)
-  if (type === 'achievements') return `${value} 🏆`
-  if (type === 'prost_sent') return `${value} 🥂`
-  if (type === 'jackpot_spins') return `${value} 🎰`
-  return String(value)
+  if (type === 'total_spent') return formatCents(value);
+  if (type === 'achievements') return `${value} 🏆`;
+  if (type === 'prost_sent') return `${value} 🥂`;
+  if (type === 'jackpot_spins') return `${value} 🎰`;
+  return String(value);
 }
 
 function RankMedal({ rank }: { rank: number }) {
-  if (rank === 1) return <span className="text-lg leading-none">🥇</span>
-  if (rank === 2) return <span className="text-lg leading-none">🥈</span>
-  if (rank === 3) return <span className="text-lg leading-none">🥉</span>
-  return <span className="w-6 text-center text-sm font-semibold text-muted-foreground">{rank}</span>
+  if (rank === 1) return <span className="text-lg leading-none">🥇</span>;
+  if (rank === 2) return <span className="text-lg leading-none">🥈</span>;
+  if (rank === 3) return <span className="text-lg leading-none">🥉</span>;
+  return (
+    <span className="w-6 text-center text-sm font-semibold text-muted-foreground">{rank}</span>
+  );
 }
 
 function LeaderboardSection({
@@ -397,20 +455,24 @@ function LeaderboardSection({
   period,
   currentUserId,
 }: {
-  type: LeaderboardType
-  title: string
-  period: LeaderboardPeriod
-  currentUserId: string | undefined
+  type: LeaderboardType;
+  title: string;
+  period: LeaderboardPeriod;
+  currentUserId: string | undefined;
 }) {
-  const { data, isLoading } = useLeaderboard(type, period)
-  const top3 = (data ?? []).slice(0, 3)
+  const { data, isLoading } = useLeaderboard(type, period);
+  const top3 = (data ?? []).slice(0, 3);
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{title}</h3>
+      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+        {title}
+      </h3>
       {isLoading ? (
         <div className="space-y-1.5">
-          {[1, 2, 3].map((i) => <div key={i} className="h-12 rounded-xl bg-muted animate-pulse" />)}
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-12 rounded-xl bg-muted animate-pulse" />
+          ))}
         </div>
       ) : top3.length === 0 ? (
         <div className="rounded-2xl border border-border px-4 py-4 text-sm text-muted-foreground text-center">
@@ -419,22 +481,28 @@ function LeaderboardSection({
       ) : (
         <div className="rounded-2xl border border-border overflow-hidden">
           {top3.map((entry) => {
-            const isSelf = entry.userId === currentUserId
+            const isSelf = entry.userId === currentUserId;
             return (
               <Link key={entry.userId} href={isSelf ? '/profile' : `/profile/${entry.userId}`}>
-                <div className={cn(
-                  'flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-accent/50 transition-colors',
-                  isSelf ? 'bg-primary/5' : 'bg-card',
-                )}>
+                <div
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-accent/50 transition-colors',
+                    isSelf ? 'bg-primary/5' : 'bg-card',
+                  )}
+                >
                   <div className="w-6 flex items-center justify-center flex-shrink-0">
                     <RankMedal rank={entry.rank} />
                   </div>
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold overflow-hidden flex-shrink-0">
-                    {entry.avatarUrl
-                      ? <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" />
-                      : <span>{entry.displayName[0]?.toUpperCase()}</span>}
+                    {entry.avatarUrl ? (
+                      <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{entry.displayName[0]?.toUpperCase()}</span>
+                    )}
                   </div>
-                  <span className={cn('flex-1 text-sm font-medium truncate', isSelf && 'text-primary')}>
+                  <span
+                    className={cn('flex-1 text-sm font-medium truncate', isSelf && 'text-primary')}
+                  >
                     {isSelf ? `${entry.displayName} (du)` : entry.displayName}
                   </span>
                   {entry.value === null ? (
@@ -449,17 +517,17 @@ function LeaderboardSection({
                   )}
                 </div>
               </Link>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function LeaderboardTab() {
-  const [period, setPeriod] = useState<LeaderboardPeriod>('alltime')
-  const { user } = useAuth()
+  const [period, setPeriod] = useState<LeaderboardPeriod>('alltime');
+  const { user } = useAuth();
 
   return (
     <div className="space-y-5">
@@ -481,20 +549,45 @@ function LeaderboardTab() {
         ))}
       </div>
 
-      <LeaderboardSection type="total_spent" title="Ausgaben" period={period} currentUserId={user?.id} />
-      <LeaderboardSection type="total_purchases" title="Käufe" period={period} currentUserId={user?.id} />
-      <LeaderboardSection type="achievements" title="Achievements" period={period} currentUserId={user?.id} />
-      <LeaderboardSection type="prost_sent" title="Prost gesendet" period={period} currentUserId={user?.id} />
-      <LeaderboardSection type="jackpot_spins" title="Spins" period={period} currentUserId={user?.id} />
+      <LeaderboardSection
+        type="total_spent"
+        title="Ausgaben"
+        period={period}
+        currentUserId={user?.id}
+      />
+      <LeaderboardSection
+        type="total_purchases"
+        title="Käufe"
+        period={period}
+        currentUserId={user?.id}
+      />
+      <LeaderboardSection
+        type="achievements"
+        title="Achievements"
+        period={period}
+        currentUserId={user?.id}
+      />
+      <LeaderboardSection
+        type="prost_sent"
+        title="Prost gesendet"
+        period={period}
+        currentUserId={user?.id}
+      />
+      <LeaderboardSection
+        type="jackpot_spins"
+        title="Spins"
+        period={period}
+        currentUserId={user?.id}
+      />
     </div>
-  )
+  );
 }
 
 // ─── Activity tab ─────────────────────────────────────────────────────────────
 
 function ActivityTab() {
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useFeed()
-  const entries = data?.pages.flatMap((p) => p.data) ?? []
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useFeed();
+  const entries = data?.pages.flatMap((p) => p.data) ?? [];
 
   return (
     <FeedTimeline
@@ -504,58 +597,65 @@ function ActivityTab() {
       fetchNextPage={fetchNextPage}
       isFetchingNextPage={isFetchingNextPage}
     />
-  )
+  );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const TABS = ['social', 'leaderboard', 'activity'] as const
-type Tab = typeof TABS[number]
+const TABS = ['social', 'leaderboard', 'activity'] as const;
+type Tab = (typeof TABS)[number];
 
 export function Social() {
-  const search = useSearch()
-  const [, navigate] = useLocation()
+  const search = useSearch();
+  const [, navigate] = useLocation();
 
   const initialTab: Tab = (() => {
-    const t = new URLSearchParams(search).get('tab')
-    return TABS.includes(t as Tab) ? (t as Tab) : 'social'
-  })()
+    const t = new URLSearchParams(search).get('tab');
+    return TABS.includes(t as Tab) ? (t as Tab) : 'social';
+  })();
 
-  const [tab, setTab] = useState<Tab>(initialTab)
+  const [tab, setTab] = useState<Tab>(initialTab);
 
   const changeTab = (newTab: Tab) => {
-    setTab(newTab)
-    navigate(newTab === 'social' ? '/social' : `/social?tab=${newTab}`, { replace: true })
-  }
-  const [query, setQuery] = useState('')
-  const [debouncedQuery, setDebouncedQuery] = useState('')
-  const [createOpen, setCreateOpen] = useState(false)
-  const [joinOpen, setJoinOpen] = useState(false)
+    setTab(newTab);
+    navigate(newTab === 'social' ? '/social' : `/social?tab=${newTab}`, { replace: true });
+  };
+  const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
 
-  const { data: groups } = useGroups()
-  const { data: friends } = useFriends()
+  const { data: groups } = useGroups();
+  const { data: friends } = useFriends();
 
   useEffect(() => {
-    if (tab !== 'social') return
-    const t = setTimeout(() => setDebouncedQuery(query), 300)
-    return () => clearTimeout(t)
-  }, [query, tab])
+    if (tab !== 'social') return;
+    const t = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(t);
+  }, [query, tab]);
 
-  const isSearching = debouncedQuery.length >= 2
+  const isSearching = debouncedQuery.length >= 2;
 
   return (
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto space-y-4">
-
         {/* Tab switcher */}
         <div className="flex gap-1 bg-muted rounded-xl p-1">
-          {([['social', 'Sozial'], ['activity', 'Aktivität'], ['leaderboard', 'Rangliste']] as [Tab, string][]).map(([value, label]) => (
+          {(
+            [
+              ['social', 'Sozial'],
+              ['activity', 'Aktivität'],
+              ['leaderboard', 'Rangliste'],
+            ] as [Tab, string][]
+          ).map(([value, label]) => (
             <button
               key={value}
               onClick={() => changeTab(value)}
               className={cn(
                 'flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                tab === value ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground',
+                tab === value
+                  ? 'bg-background shadow-sm text-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {label}
@@ -567,7 +667,10 @@ export function Social() {
           <div className="space-y-5">
             {/* Search */}
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+              />
               <input
                 type="text"
                 value={query}
@@ -589,7 +692,10 @@ export function Social() {
               <SearchResults query={debouncedQuery} groups={groups} friends={friends} />
             ) : (
               <>
-                <GroupsSection onCreateOpen={() => setCreateOpen(true)} onJoinOpen={() => setJoinOpen(true)} />
+                <GroupsSection
+                  onCreateOpen={() => setCreateOpen(true)}
+                  onJoinOpen={() => setJoinOpen(true)}
+                />
                 <FriendsSection />
               </>
             )}
@@ -604,5 +710,5 @@ export function Social() {
       <CreateGroupModal open={createOpen} onClose={() => setCreateOpen(false)} />
       <JoinGroupModal open={joinOpen} onClose={() => setJoinOpen(false)} />
     </Layout>
-  )
+  );
 }

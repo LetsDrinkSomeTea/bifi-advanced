@@ -1,13 +1,13 @@
-import { db } from '../db/index.ts'
-import { auditLogs } from '../db/schema.ts'
+import { db } from '../db/index.ts';
+import { auditLogs } from '../db/schema.ts';
 
 interface AuditEntry {
-  actorId?: string | null
-  action: string
-  resourceType: string
-  resourceId?: string | null
-  changes?: Record<string, unknown> | null
-  ipAddress?: string | null
+  actorId?: string | null;
+  action: string;
+  resourceType: string;
+  resourceId?: string | null;
+  changes?: Record<string, unknown> | null;
+  ipAddress?: string | null;
 }
 
 export async function writeAuditLog(entry: AuditEntry) {
@@ -18,5 +18,5 @@ export async function writeAuditLog(entry: AuditEntry) {
     resourceId: entry.resourceId ?? null,
     changes: entry.changes ?? null,
     ipAddress: entry.ipAddress ?? null,
-  })
+  });
 }

@@ -1,5 +1,5 @@
-import { and, eq, gte, isNull, sql } from "drizzle-orm";
-import { db } from "../db/index.ts";
+import { and, eq, gte, isNull, sql } from 'drizzle-orm';
+import { db } from '../db/index.ts';
 import {
   buyables,
   donationContributions,
@@ -7,26 +7,23 @@ import {
   transactionItems,
   transactions,
   userAchievements,
-} from "../db/schema.ts";
-import { emitFeedEvent } from "./feed.ts";
-import {
-  type AchievementEvent,
-  type AchievementKey,
-} from "../../../shared/src/achievements.ts";
-import { createNotification } from "./notifications.ts";
-import { ACHIEVEMENT_REGISTRY } from "./achievements/registry.ts";
+} from '../db/schema.ts';
+import { emitFeedEvent } from './feed.ts';
+import { type AchievementEvent, type AchievementKey } from '../../../shared/src/achievements.ts';
+import { createNotification } from './notifications.ts';
+import { ACHIEVEMENT_REGISTRY } from './achievements/registry.ts';
 
 // ─── Timezone helpers (respects TZ env var) ──────────────────────────────────
 
-export const APP_TZ = process.env.TZ || "Europe/Berlin";
+export const APP_TZ = process.env.TZ || 'Europe/Berlin';
 
 /** Converts any date to a Date object representing the same wall clock time in the configured TZ */
 export function toLocalTime(d: Date): Date {
-  const str = d.toLocaleString("en-CA", {
+  const str = d.toLocaleString('en-CA', {
     timeZone: APP_TZ,
     hour12: false,
   });
-  return new Date(str.replace(",", ""));
+  return new Date(str.replace(',', ''));
 }
 
 /** Legacy alias for toLocalTime */
@@ -38,8 +35,8 @@ export function getBiFiDay(date: Date): string {
   const d = new Date(local);
   if (h < 4) d.setUTCDate(d.getUTCDate() - 1);
   const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(d.getUTCDate()).padStart(2, "0");
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
 
@@ -69,26 +66,18 @@ export const getBerlinWeekday = getLocalWeekday;
 /** Returns ISO week number for a local date */
 export function getISOWeek(date: Date): { year: number; week: number } {
   const local = toLocalTime(date);
-  const d = new Date(
-    Date.UTC(
-      local.getUTCFullYear(),
-      local.getUTCMonth(),
-      local.getUTCDate(),
-    ),
-  );
+  const d = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()));
   const day = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - day);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const week = Math.ceil(
-    ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
-  );
+  const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   return { year: d.getUTCFullYear(), week };
 }
 
 export function isAllSevens(n: number): boolean {
   return String(n)
-    .split("")
-    .every((c) => c === "7");
+    .split('')
+    .every((c) => c === '7');
 }
 
 // ─── Reusable counters ────────────────────────────────────────────────────────
@@ -103,7 +92,7 @@ export const purchaseCount = (userId: string) =>
       .where(
         and(
           eq(transactions.userId, userId),
-          eq(transactions.type, "purchase"),
+          eq(transactions.type, 'purchase'),
           isNull(transactions.cancelledAt),
         ),
       ),
@@ -148,32 +137,26 @@ export const categoryItemCount = (userId: string, category: string) =>
         n: sql<number>`coalesce(sum(${transactionItems.quantity}), 0)::int`,
       })
       .from(transactionItems)
-      .innerJoin(
-        transactions,
-        eq(transactionItems.transactionId, transactions.id),
-      )
+      .innerJoin(transactions, eq(transactionItems.transactionId, transactions.id))
       .innerJoin(buyables, eq(transactionItems.buyableId, buyables.id))
       .where(
         and(
           eq(transactions.userId, userId),
-          eq(transactions.type, "purchase"),
+          eq(transactions.type, 'purchase'),
           isNull(transactions.cancelledAt),
           eq(buyables.category, category as any),
         ),
       ),
   );
 
-export const purchasesOnBiFiDay = async (
-  userId: string,
-  bifiDay: string,
-): Promise<number> => {
+export const purchasesOnBiFiDay = async (userId: string, bifiDay: string): Promise<number> => {
   const rows = await db
     .select({ createdAt: transactions.createdAt })
     .from(transactions)
     .where(
       and(
         eq(transactions.userId, userId),
-        eq(transactions.type, "purchase"),
+        eq(transactions.type, 'purchase'),
         isNull(transactions.cancelledAt),
       ),
     );
@@ -185,12 +168,7 @@ export const globalPurchaseCount = () =>
     db
       .select({ n: sql<number>`count(*)::int` })
       .from(transactions)
-      .where(
-        and(
-          eq(transactions.type, "purchase"),
-          isNull(transactions.cancelledAt),
-        ),
-      ),
+      .where(and(eq(transactions.type, 'purchase'), isNull(transactions.cancelledAt))),
   );
 
 // ─── Engine helpers ───────────────────────────────────────────────────────────
@@ -204,24 +182,21 @@ async function tryUnlock(userId: string, key: string): Promise<boolean> {
   }
 }
 
-async function notifyAchievement(
-  userId: string,
-  key: AchievementKey,
-): Promise<void> {
+async function notifyAchievement(userId: string, key: AchievementKey): Promise<void> {
   const def = ACHIEVEMENT_REGISTRY.find((a) => a.key === key);
   if (!def) return;
 
   const tierSuffix = def.tier
-    ? ` (${def.tier === "bronze" ? "🥉" : def.tier === "silver" ? "🥈" : "🥇"})`
-    : "";
+    ? ` (${def.tier === 'bronze' ? '🥉' : def.tier === 'silver' ? '🥈' : '🥇'})`
+    : '';
   createNotification({
     userId,
-    type: "achievement",
+    type: 'achievement',
     title: `${def.icon} Achievement freigeschaltet!`,
     message: `${def.name}${tierSuffix}: ${def.description}`,
   }).catch(console.error);
   emitFeedEvent({
-    type: "achievement",
+    type: 'achievement',
     userId,
     metadata: { achievementKey: key },
   });
@@ -232,9 +207,7 @@ async function notifyAchievement(
 
 async function checkAchievementsCollected(userId: string): Promise<void> {
   const count = await unlockedAchievementCount(userId);
-  const tiers = ACHIEVEMENT_REGISTRY.filter(
-    (a) => a.groupKey === "achievements_collected",
-  );
+  const tiers = ACHIEVEMENT_REGISTRY.filter((a) => a.groupKey === 'achievements_collected');
 
   for (const t of tiers) {
     if (t.threshold !== undefined && count >= t.threshold) {
@@ -244,16 +217,16 @@ async function checkAchievementsCollected(userId: string): Promise<void> {
       const already = await alreadyUnlocked(userId, t.key);
       if (!already && (await tryUnlock(userId, t.key))) {
         const tierSuffix = t.tier
-          ? ` (${t.tier === "bronze" ? "🥉" : t.tier === "silver" ? "🥈" : "🥇"})`
-          : "";
+          ? ` (${t.tier === 'bronze' ? '🥉' : t.tier === 'silver' ? '🥈' : '🥇'})`
+          : '';
         createNotification({
           userId,
-          type: "achievement",
+          type: 'achievement',
           title: `${t.icon} Achievement freigeschaltet!`,
           message: `${t.name}${tierSuffix}: ${t.description}`,
         }).catch(console.error);
         emitFeedEvent({
-          type: "achievement",
+          type: 'achievement',
           userId,
           metadata: { achievementKey: t.key },
         });
@@ -267,12 +240,7 @@ async function alreadyUnlocked(userId: string, key: string): Promise<boolean> {
   const [existing] = await db
     .select({ id: userAchievements.id })
     .from(userAchievements)
-    .where(
-      and(
-        eq(userAchievements.userId, userId),
-        eq(userAchievements.achievementKey, key),
-      ),
-    )
+    .where(and(eq(userAchievements.userId, userId), eq(userAchievements.achievementKey, key)))
     .limit(1);
   return !!existing;
 }
@@ -291,7 +259,7 @@ export const jackpotPlayCount = (userId: string) =>
       .where(
         and(
           eq(transactions.userId, userId),
-          eq(transactions.type, "jackpot"),
+          eq(transactions.type, 'jackpot'),
           isNull(transactions.cancelledAt),
         ),
       ),
@@ -305,7 +273,7 @@ export const jackpotWinCount = (userId: string) =>
       .where(
         and(
           eq(transactions.userId, userId),
-          eq(transactions.type, "jackpot"),
+          eq(transactions.type, 'jackpot'),
           isNull(transactions.cancelledAt),
           sql`${transactions.jackpotMultiplier} = 0`,
         ),
@@ -320,7 +288,7 @@ export const jackpotLossCount = (userId: string) =>
       .where(
         and(
           eq(transactions.userId, userId),
-          eq(transactions.type, "jackpot"),
+          eq(transactions.type, 'jackpot'),
           isNull(transactions.cancelledAt),
           sql`${transactions.jackpotMultiplier} = 2`,
         ),
@@ -343,7 +311,7 @@ export const discountedItemCount = (userId: string) =>
           sql`${transactionItems.discountSavedCents} > 0`,
         ),
       ),
-  )
+  );
 
 export const totalSavedCents = (userId: string) =>
   countQ(
@@ -360,19 +328,15 @@ export const totalSavedCents = (userId: string) =>
           isNull(transactions.cancelledAt),
         ),
       ),
-  )
+  );
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export async function checkAchievements(
-  event: AchievementEvent,
-): Promise<void> {
+export async function checkAchievements(event: AchievementEvent): Promise<void> {
   const { userId } = event;
 
   try {
-    const relevant = ACHIEVEMENT_REGISTRY.filter((a) =>
-      a.events.includes(event.type),
-    );
+    const relevant = ACHIEVEMENT_REGISTRY.filter((a) => a.events.includes(event.type));
     for (const def of relevant) {
       const isMet = await def.check(event);
       if (isMet) {

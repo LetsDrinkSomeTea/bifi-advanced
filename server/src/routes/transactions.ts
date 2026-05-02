@@ -1,9 +1,9 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
-import { and, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
-import { PurchaseSchema } from "../../../shared/src/schemas.ts";
-import { db } from "../db/index.ts";
+import { Hono } from 'hono';
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+import { and, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { PurchaseSchema } from '../../../shared/src/schemas.ts';
+import { db } from '../db/index.ts';
 import {
   buyables,
   groupMembers,
@@ -14,42 +14,40 @@ import {
   transactionItems,
   transactions,
   users,
-} from "../db/schema.ts";
-import { emitFeedEvent } from "../services/feed.ts";
-import { requireAuth } from "../middleware/auth.ts";
-import { purchaseRateLimit } from "../middleware/rateLimit.ts";
+} from '../db/schema.ts';
+import { emitFeedEvent } from '../services/feed.ts';
+import { requireAuth } from '../middleware/auth.ts';
+import { purchaseRateLimit } from '../middleware/rateLimit.ts';
 import {
   getActiveDiscount,
   calculateDiscountedPrice,
   consumeQuantityPromotion,
-} from "../services/promotions.ts";
-import { writeAuditLog } from "../services/audit.ts";
+} from '../services/promotions.ts';
+import { writeAuditLog } from '../services/audit.ts';
 import {
   broadcastInvalidate,
   createNotification,
   pushInvalidate,
-} from "../services/notifications.ts";
-import { checkAchievements } from "../services/achievements.ts";
+} from '../services/notifications.ts';
+import { checkAchievements } from '../services/achievements.ts';
 
 const router = new Hono();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatCents(cents: number): string {
-  return (cents / 100).toFixed(2).replace(".", ",") + " €";
+  return (cents / 100).toFixed(2).replace('.', ',') + ' €';
 }
 
 // ─── Cursor helpers ───────────────────────────────────────────────────────────
 
 function encodeCursor(createdAt: Date, id: string): string {
-  return Buffer.from(
-    JSON.stringify({ t: createdAt.toISOString(), id }),
-  ).toString("base64url");
+  return Buffer.from(JSON.stringify({ t: createdAt.toISOString(), id })).toString('base64url');
 }
 
 function decodeCursor(cursor: string): { t: string; id: string } | null {
   try {
-    return JSON.parse(Buffer.from(cursor, "base64url").toString("utf-8")) as {
+    return JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8')) as {
       t: string;
       id: string;
     };
@@ -65,81 +63,67 @@ const HistoryQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-router.get(
-  "/",
-  requireAuth,
-  zValidator("query", HistoryQuerySchema),
-  async (c) => {
-    const user = c.get("user");
-    const { cursor, limit } = c.req.valid("query");
+router.get('/', requireAuth, zValidator('query', HistoryQuerySchema), async (c) => {
+  const user = c.get('user');
+  const { cursor, limit } = c.req.valid('query');
 
-    const parsed = cursor ? decodeCursor(cursor) : null;
-    const cursorDate = parsed ? new Date(parsed.t) : null;
-    const cursorId = parsed?.id ?? null;
+  const parsed = cursor ? decodeCursor(cursor) : null;
+  const cursorDate = parsed ? new Date(parsed.t) : null;
+  const cursorId = parsed?.id ?? null;
 
-    const rows = await db
-      .select()
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.userId, user.id),
-          cursorDate && cursorId
-            ? or(
-                lt(transactions.createdAt, cursorDate),
-                and(
-                  eq(transactions.createdAt, cursorDate),
-                  lt(transactions.id, cursorId),
-                ),
-              )
-            : undefined,
-        ),
-      )
-      .orderBy(desc(transactions.createdAt), desc(transactions.id))
-      .limit(limit + 1);
+  const rows = await db
+    .select()
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, user.id),
+        cursorDate && cursorId
+          ? or(
+              lt(transactions.createdAt, cursorDate),
+              and(eq(transactions.createdAt, cursorDate), lt(transactions.id, cursorId)),
+            )
+          : undefined,
+      ),
+    )
+    .orderBy(desc(transactions.createdAt), desc(transactions.id))
+    .limit(limit + 1);
 
-    const hasMore = rows.length > limit;
-    const page = hasMore ? rows.slice(0, limit) : rows;
-    const nextCursor = hasMore
-      ? encodeCursor(
-          page[page.length - 1]!.createdAt,
-          page[page.length - 1]!.id,
-        )
-      : null;
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  const nextCursor = hasMore
+    ? encodeCursor(page[page.length - 1]!.createdAt, page[page.length - 1]!.id)
+    : null;
 
-    if (page.length === 0) return c.json({ data: [], nextCursor: null });
+  if (page.length === 0) return c.json({ data: [], nextCursor: null });
 
-    const txnIds = page.map((t) => t.id);
-    const itemRows = await db
-      .select({
-        id: transactionItems.id,
-        transactionId: transactionItems.transactionId,
-        buyableId: transactionItems.buyableId,
-        variantId: transactionItems.variantId,
-        quantity: transactionItems.quantity,
-        unitPrice: transactionItems.unitPrice,
-        totalPrice: transactionItems.totalPrice,
-        buyableName: buyables.name,
-        variantName: productVariants.name,
-      })
-      .from(transactionItems)
-      .innerJoin(buyables, eq(transactionItems.buyableId, buyables.id))
-      .leftJoin(
-        productVariants,
-        eq(transactionItems.variantId, productVariants.id),
-      )
-      .where(inArray(transactionItems.transactionId, txnIds));
+  const txnIds = page.map((t) => t.id);
+  const itemRows = await db
+    .select({
+      id: transactionItems.id,
+      transactionId: transactionItems.transactionId,
+      buyableId: transactionItems.buyableId,
+      variantId: transactionItems.variantId,
+      quantity: transactionItems.quantity,
+      unitPrice: transactionItems.unitPrice,
+      totalPrice: transactionItems.totalPrice,
+      buyableName: buyables.name,
+      variantName: productVariants.name,
+    })
+    .from(transactionItems)
+    .innerJoin(buyables, eq(transactionItems.buyableId, buyables.id))
+    .leftJoin(productVariants, eq(transactionItems.variantId, productVariants.id))
+    .where(inArray(transactionItems.transactionId, txnIds));
 
-    const itemsByTxn = new Map<string, typeof itemRows>();
-    for (const item of itemRows) {
-      const list = itemsByTxn.get(item.transactionId) ?? [];
-      list.push(item);
-      itemsByTxn.set(item.transactionId, list);
-    }
+  const itemsByTxn = new Map<string, typeof itemRows>();
+  for (const item of itemRows) {
+    const list = itemsByTxn.get(item.transactionId) ?? [];
+    list.push(item);
+    itemsByTxn.set(item.transactionId, list);
+  }
 
-    const data = page.map((t) => ({ ...t, items: itemsByTxn.get(t.id) ?? [] }));
-    return c.json({ data, nextCursor });
-  },
-);
+  const data = page.map((t) => ({ ...t, items: itemsByTxn.get(t.id) ?? [] }));
+  return c.json({ data, nextCursor });
+});
 
 // ─── Shared: resolve and price items ──────────────────────────────────────────
 
@@ -156,8 +140,7 @@ async function resolveItems(
     discountSavedCents: number;
   };
   const toInsert: ItemRow[] = [];
-  const feedItems: Array<{ name: string; variantName: string; count: number }> =
-    [];
+  const feedItems: Array<{ name: string; variantName: string; count: number }> = [];
   const achievementItems: Array<{
     buyableId: string;
     variantId: string;
@@ -175,47 +158,35 @@ async function resolveItems(
   let cost = 0;
 
   for (const item of items) {
-    const [buyable] = await tx
-      .select()
-      .from(buyables)
-      .where(eq(buyables.id, item.buyableId));
+    const [buyable] = await tx.select().from(buyables).where(eq(buyables.id, item.buyableId));
     if (!buyable?.isActive) {
-      throw Object.assign(new Error("Product not found or inactive"), {
+      throw Object.assign(new Error('Product not found or inactive'), {
         status: 400,
-        code: "PRODUCT_NOT_FOUND",
+        code: 'PRODUCT_NOT_FOUND',
       });
     }
 
     const variants = await tx
       .select()
       .from(productVariants)
-      .where(
-        and(
-          eq(productVariants.buyableId, buyable.id),
-          eq(productVariants.isActive, true),
-        ),
-      );
+      .where(and(eq(productVariants.buyableId, buyable.id), eq(productVariants.isActive, true)));
 
     if (variants.length === 0) {
-      throw Object.assign(
-        new Error(`No active variants for "${buyable.name}"`),
-        { status: 400, code: "NO_VARIANTS" },
-      );
+      throw Object.assign(new Error(`No active variants for "${buyable.name}"`), {
+        status: 400,
+        code: 'NO_VARIANTS',
+      });
     }
 
     const variant = variants.find((v) => v.id === item.variantId);
     if (!variant) {
-      throw Object.assign(new Error("Variant not found"), {
+      throw Object.assign(new Error('Variant not found'), {
         status: 400,
-        code: "VARIANT_NOT_FOUND",
+        code: 'VARIANT_NOT_FOUND',
       });
     }
 
-    const discount = await getActiveDiscount(
-      buyable.id,
-      variant.id,
-      buyable.category,
-    );
+    const discount = await getActiveDiscount(buyable.id, variant.id, buyable.category);
 
     if (discount?.quantityRemaining !== null && discount != null) {
       // Quantity-based promotion: consume atomically inside the transaction
@@ -355,7 +326,7 @@ async function redeemVouchers(
         await tx.insert(transactions).values({
           userId: v.fromUserId,
           initiatedBy: userId, // Initiated by the person redeeming
-          type: "correction",
+          type: 'correction',
           totalAmount: refundAmount,
           note: `Gutschein-Differenz`,
         });
@@ -366,13 +337,13 @@ async function redeemVouchers(
 }
 
 router.post(
-  "/purchase",
+  '/purchase',
   requireAuth,
   purchaseRateLimit,
-  zValidator("json", PurchaseSchema),
+  zValidator('json', PurchaseSchema),
   async (c) => {
-    const user = c.get("user");
-    const body = c.req.valid("json");
+    const user = c.get('user');
+    const body = c.req.valid('json');
 
     // ── Group purchase: split equally among all members ───────────────────────
     if (body.groupId) {
@@ -380,30 +351,16 @@ router.post(
         db
           .select({ userId: groupMembers.userId })
           .from(groupMembers)
-          .where(
-            and(
-              eq(groupMembers.groupId, body.groupId!),
-              isNull(groupMembers.leftAt),
-            ),
-          ),
-        db
-          .select({ name: groups.name })
-          .from(groups)
-          .where(eq(groups.id, body.groupId!)),
+          .where(and(eq(groupMembers.groupId, body.groupId!), isNull(groupMembers.leftAt))),
+        db.select({ name: groups.name }).from(groups).where(eq(groups.id, body.groupId!)),
       ]);
 
       if (members.length === 0)
-        return c.json(
-          { error: "Group not found or empty", code: "GROUP_ERROR" },
-          400,
-        );
+        return c.json({ error: 'Group not found or empty', code: 'GROUP_ERROR' }, 400);
 
       // Verify caller is a member of the group
       if (!members.some((m) => m.userId === user.id)) {
-        return c.json(
-          { error: "Not a member of this group", code: "FORBIDDEN" },
-          403,
-        );
+        return c.json({ error: 'Not a member of this group', code: 'FORBIDDEN' }, 403);
       }
 
       const memberIds = members.map((m) => m.userId);
@@ -423,7 +380,7 @@ router.post(
           .values({
             userId: user.id,
             initiatedBy: user.id,
-            type: "purchase",
+            type: 'purchase',
             totalAmount: -buyerShare,
             groupId: body.groupId!,
             note: body.note ?? null,
@@ -459,7 +416,7 @@ router.post(
             .values({
               userId: memberId,
               initiatedBy: user.id,
-              type: "purchase",
+              type: 'purchase',
               totalAmount: -sharePerOther,
               groupId: body.groupId!,
               note: `Gruppenaufteilung`,
@@ -479,9 +436,7 @@ router.post(
             .where(eq(transactions.id, splitTxn!.id));
           await tx
             .insert(transactionItems)
-            .values(
-              toInsert.map((i) => ({ transactionId: splitTxn!.id, ...i })),
-            );
+            .values(toInsert.map((i) => ({ transactionId: splitTxn!.id, ...i })));
 
           splitNotifications.push({
             memberId,
@@ -501,16 +456,12 @@ router.post(
       });
 
       // Notify split members outside the transaction
-      for (const {
-        memberId,
-        netShare,
-        txnId,
-      } of primaryTxn.splitNotifications) {
-        pushInvalidate(memberId, ["balance", "transactions"]);
+      for (const { memberId, netShare, txnId } of primaryTxn.splitNotifications) {
+        pushInvalidate(memberId, ['balance', 'transactions']);
         createNotification({
           userId: memberId,
-          type: "system",
-          title: "Gruppenaufteilung",
+          type: 'system',
+          title: 'Gruppenaufteilung',
           message: `${user.displayName} hat eine Gruppenbestellung aufgegeben. Dein Anteil: ${(netShare / 100).toFixed(2)} €`,
           relatedId: txnId,
         }).catch(console.error);
@@ -518,7 +469,7 @@ router.post(
 
       // Handle exhausted quantity promotions
       if (primaryTxn.consumedQuantityPromos.length > 0) {
-        broadcastInvalidate(["buyables"]);
+        broadcastInvalidate(['buyables']);
         for (const cp of primaryTxn.consumedQuantityPromos) {
           if (cp.isNowExhausted) {
             await db
@@ -526,7 +477,7 @@ router.post(
               .set({ isActive: false })
               .where(eq(promotions.id, cp.promoId));
             emitFeedEvent({
-              type: "promotion_ended",
+              type: 'promotion_ended',
               userId: user.id,
               metadata: { promoName: cp.name },
             });
@@ -535,7 +486,7 @@ router.post(
       }
 
       emitFeedEvent({
-        type: "purchase",
+        type: 'purchase',
         userId: user.id,
         targetGroupId: body.groupId,
         metadata: {
@@ -549,19 +500,21 @@ router.post(
 
       for (const memberId of memberIds) {
         checkAchievements({
-          type: "purchase",
+          type: 'purchase',
           userId: memberId,
           now: new Date(),
           items: primaryTxn.achievementItems,
           groupId: body.groupId,
-        }).catch(console.error)
+        }).catch(console.error);
 
         for (const cp of primaryTxn.consumedQuantityPromos) {
           if (cp.wasFirst) {
-            checkAchievements({ type: 'promo_first_buyer', userId: memberId }).catch(console.error)
+            checkAchievements({ type: 'promo_first_buyer', userId: memberId }).catch(console.error);
           }
           if (cp.isNowExhausted && cp.consumed > 0) {
-            checkAchievements({ type: 'promo_exhausted_buyer', userId: memberId }).catch(console.error)
+            checkAchievements({ type: 'promo_exhausted_buyer', userId: memberId }).catch(
+              console.error,
+            );
           }
         }
       }
@@ -586,7 +539,7 @@ router.post(
         .values({
           userId: user.id,
           initiatedBy: user.id,
-          type: "purchase",
+          type: 'purchase',
           totalAmount: -cost,
           groupId: null,
           note: body.note ?? null,
@@ -639,15 +592,12 @@ router.post(
 
     // Handle exhausted quantity promotions
     if (consumedQuantityPromos.length > 0) {
-      broadcastInvalidate(["buyables"]);
+      broadcastInvalidate(['buyables']);
       for (const cp of consumedQuantityPromos) {
         if (cp.isNowExhausted) {
-          await db
-            .update(promotions)
-            .set({ isActive: false })
-            .where(eq(promotions.id, cp.promoId));
+          await db.update(promotions).set({ isActive: false }).where(eq(promotions.id, cp.promoId));
           emitFeedEvent({
-            type: "promotion_ended",
+            type: 'promotion_ended',
             userId: user.id,
             metadata: { promoName: cp.name },
           });
@@ -658,21 +608,21 @@ router.post(
     // Fire discount achievement events
     for (const cp of consumedQuantityPromos) {
       if (cp.isNowExhausted && cp.consumed > 0) {
-        checkAchievements({ type: 'promo_exhausted_buyer', userId: user.id }).catch(console.error)
+        checkAchievements({ type: 'promo_exhausted_buyer', userId: user.id }).catch(console.error);
       }
       if (cp.wasFirst) {
-        checkAchievements({ type: 'promo_first_buyer', userId: user.id }).catch(console.error)
+        checkAchievements({ type: 'promo_first_buyer', userId: user.id }).catch(console.error);
       }
     }
 
     emitFeedEvent({
-      type: "purchase",
+      type: 'purchase',
       userId: user.id,
       metadata: { items: feedItems, totalAmount: txn.totalAmount },
     });
 
     checkAchievements({
-      type: "purchase",
+      type: 'purchase',
       userId: user.id,
       now: new Date(),
       items: achievementItems,
@@ -688,10 +638,7 @@ router.post(
               productName: buyables.name,
             })
             .from(prostVouchers)
-            .innerJoin(
-              productVariants,
-              eq(prostVouchers.variantId, productVariants.id),
-            )
+            .innerJoin(productVariants, eq(prostVouchers.variantId, productVariants.id))
             .innerJoin(buyables, eq(productVariants.buyableId, buyables.id))
             .where(eq(prostVouchers.id, rv.id));
 
@@ -699,11 +646,11 @@ router.post(
             const refundNote =
               rv.refundAmount > 0
                 ? ` Da das Produkt günstiger war, wurden dir ${formatCents(rv.refundAmount)} erstattet.`
-                : "";
+                : '';
 
             createNotification({
               userId: v.fromUserId,
-              type: "prost",
+              type: 'prost',
               title: `${user.displayName} hat deinen Gutschein eingelöst.`,
               message: `Und sich ${v.productName} (${v.variantName}) gekauft.${refundNote}`,
               relatedId: txn.id,
@@ -711,7 +658,7 @@ router.post(
 
             // Also invalidate donor balance if they got a refund
             if (rv.refundAmount > 0) {
-              pushInvalidate(v.fromUserId, ["balance", "transactions"]);
+              pushInvalidate(v.fromUserId, ['balance', 'transactions']);
             }
           }
         }
@@ -724,36 +671,29 @@ router.post(
 
 // ─── DELETE /api/transactions/:id (cancel) ────────────────────────────────────
 
-router.delete("/:id", requireAuth, async (c) => {
+router.delete('/:id', requireAuth, async (c) => {
   const { id } = c.req.param();
-  const user = c.get("user");
-  const isMod = user.role === "admin" || user.role === "moderator";
+  const user = c.get('user');
+  const isMod = user.role === 'admin' || user.role === 'moderator';
 
-  const [txn] = await db
-    .select()
-    .from(transactions)
-    .where(eq(transactions.id, id));
+  const [txn] = await db.select().from(transactions).where(eq(transactions.id, id));
 
-  if (!txn)
-    return c.json({ error: "Transaction not found", code: "NOT_FOUND" }, 404);
+  if (!txn) return c.json({ error: 'Transaction not found', code: 'NOT_FOUND' }, 404);
 
   if (txn.cancelledAt)
-    return c.json(
-      { error: "Already cancelled", code: "ALREADY_CANCELLED" },
-      409,
-    );
+    return c.json({ error: 'Already cancelled', code: 'ALREADY_CANCELLED' }, 409);
 
   // Permission check
   if (!isMod && txn.userId !== user.id) {
-    return c.json({ error: "Forbidden", code: "FORBIDDEN" }, 403);
+    return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
   }
 
   // Jackpot: only mod+ can cancel
-  if (txn.type === "jackpot" && !isMod) {
+  if (txn.type === 'jackpot' && !isMod) {
     return c.json(
       {
-        error: "Jackpot transactions cannot be self-cancelled",
-        code: "FORBIDDEN",
+        error: 'Jackpot transactions cannot be self-cancelled',
+        code: 'FORBIDDEN',
       },
       403,
     );
@@ -764,8 +704,8 @@ router.delete("/:id", requireAuth, async (c) => {
   if (ageMs > 5 * 60 * 1000) {
     return c.json(
       {
-        error: "Cancel window expired (5 minutes)",
-        code: "CANCEL_WINDOW_EXPIRED",
+        error: 'Cancel window expired (5 minutes)',
+        code: 'CANCEL_WINDOW_EXPIRED',
       },
       403,
     );
@@ -818,14 +758,14 @@ router.delete("/:id", requireAuth, async (c) => {
 
   await writeAuditLog({
     actorId: user.id,
-    action: "transaction.cancelled",
-    resourceType: "transaction",
+    action: 'transaction.cancelled',
+    resourceType: 'transaction',
     resourceId: id,
     changes: {
       before: { cancelledAt: null },
       after: { cancelledAt: new Date(), cancelledBy: user.id },
     },
-    ipAddress: c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+    ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
   });
 
   return c.body(null, 204);

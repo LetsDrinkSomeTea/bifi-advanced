@@ -57,7 +57,10 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -65,14 +68,22 @@ body {
   user-select: none;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   user-select: auto;
 }
 
 @keyframes achievement-glow {
-  0%   { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
-  20%  { box-shadow: 0 0 0 5px rgba(234, 179, 8, 0.55); }
-  100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0);
+  }
+  20% {
+    box-shadow: 0 0 0 5px rgba(234, 179, 8, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0);
+  }
 }
 
 .achievement-glow {
@@ -94,4 +105,3 @@ input, textarea, select {
   background-color: hsl(var(--border));
   border-radius: 9999px;
 }
-
