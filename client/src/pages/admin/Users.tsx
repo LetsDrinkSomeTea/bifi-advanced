@@ -122,6 +122,7 @@ function UserRow({
 }: {
   user: AdminUser;
   myRole: Role;
+  myId: string | undefined;
   canChangeRole: boolean;
   isModerator: boolean;
   isAdmin: boolean;
@@ -138,7 +139,7 @@ function UserRow({
   const isInactive = !user.isActive;
   // Controls other than activate/deactivate are locked for higher-rank or inactive users
   const isMyEntry = user.id == myId;
-  const isEditLocked = isHigherRank || isInactive
+  const isEditLocked = isHigherRank || isInactive;
   // All controls (including activate) are locked for higher-rank users
   const isFullyLocked = isHigherRank;
   const myRoleLevel = ROLE_LEVEL[myRole];
@@ -321,7 +322,7 @@ function UserRow({
                   size="sm"
                   className={cn(
                     user.jackpotAllowed &&
-                    'bg-yellow-500/10 border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/20',
+                      'bg-yellow-500/10 border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/20',
                   )}
                 >
                   <Dices
@@ -415,9 +416,9 @@ function CreateUserModal({
 
   const set =
     (k: keyof typeof form) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
-        setForm((f) => ({ ...f, [k]: e.target.value }));
-      };
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
+      setForm((f) => ({ ...f, [k]: e.target.value }));
+    };
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();

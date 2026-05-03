@@ -4,13 +4,11 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
-import { apiReference } from '@scalar/hono-api-reference';
 import { sessionMiddleware } from './middleware/session.ts';
 import { APP_TZ } from './services/achievements.ts';
 import { globalRateLimit } from './middleware/rateLimit.ts';
 import { initRedis } from './db/redis.ts';
 import { initOIDC } from './services/oidc.ts';
-import { openApiSpec } from './openapi.ts';
 import authRoutes from './routes/auth.ts';
 import localAuthRoutes from './routes/auth.local.ts';
 import buyablesRoutes from './routes/buyables.ts';
@@ -86,17 +84,6 @@ app.onError((err, c): Response => {
   console.error(err);
   return c.json({ error: 'Internal server error' }, 500);
 });
-
-// ─── API Docs ─────────────────────────────────────────────────────────────────
-
-app.get('/api/openapi.json', (c): Response => c.json(openApiSpec));
-app.get(
-  '/docs',
-  apiReference({
-    spec: { url: '/api/openapi.json' },
-    theme: 'default',
-  }),
-);
 
 // ─── Static files (production) ────────────────────────────────────────────────
 
