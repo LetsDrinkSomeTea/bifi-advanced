@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { Modal } from '../../components/Modal';
+import { Input } from '../../components/ui/Input';
 import { useGroups, useCreateGroup, useJoinGroup } from '../../hooks/useGroups';
 import {
   useFriends,
@@ -58,7 +59,7 @@ function CreateGroupModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Name</label>
-          <input
+          <Input
             type="text"
             value={name}
             onChange={(e) => {
@@ -66,30 +67,28 @@ function CreateGroupModal({
             }}
             maxLength={60}
             autoFocus
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">
             Beschreibung <span className="text-muted-foreground font-normal">(optional)</span>
           </label>
-          <input
+          <Input
             type="text"
             value={description}
             onChange={(e) => {
               setDescription(e.target.value);
             }}
             maxLength={200}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        <button
+        <Button
           type="submit"
           disabled={isPending || !name.trim()}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
+          className="w-full"
         >
           {isPending ? 'Erstellen…' : 'Erstellen'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -121,7 +120,7 @@ function JoinGroupModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Einladungscode</label>
-          <input
+          <Input
             type="text"
             value={code}
             onChange={(e) => {
@@ -130,17 +129,17 @@ function JoinGroupModal({
             maxLength={8}
             placeholder="A1B2C3D4"
             autoFocus
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm font-mono uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-ring"
+            className="font-mono uppercase tracking-widest"
           />
         </div>
         {error !== null ? <p className="text-sm text-destructive">{error.message}</p> : null}
-        <button
+        <Button
           type="submit"
           disabled={isPending || code.length < 6}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
+          className="w-full"
         >
           {isPending ? 'Beitreten…' : 'Beitreten'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -167,15 +166,15 @@ function GroupsSection({
           <Button
             onClick={onJoinOpen}
             variant="outline"
-            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-          >
+            className="flex items-center gap-1"
+           size="icon">
             <Hash size={15} />
             Code
           </Button>
           <Button
             onClick={onCreateOpen}
             variant="outline"
-            className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
+            className="flex items-center gap-1"
           >
             <Plus size={15} />
             Neu
@@ -192,13 +191,13 @@ function GroupsSection({
       ) : (groups?.length ?? 0) === 0 ? (
         <p className="text-sm text-muted-foreground py-3">
           Noch keine Gruppen.{' '}
-          <button onClick={onCreateOpen} className="text-primary hover:underline">
+          <Button onClick={onCreateOpen} variant="link">
             Erstellen
-          </button>{' '}
+          </Button>{' '}
           oder{' '}
-          <button onClick={onJoinOpen} className="text-primary hover:underline">
+          <Button onClick={onJoinOpen} variant="link">
             beitreten
-          </button>
+          </Button>
           .
         </p>
       ) : (
@@ -258,7 +257,7 @@ function FriendsSection(): React.JSX.Element {
                   {r.displayName}
                 </Link>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <button
+                  <Button
                     onClick={() => {
                       accept(r.id);
                     }}
@@ -266,8 +265,8 @@ function FriendsSection(): React.JSX.Element {
                     title="Annehmen"
                   >
                     <UserCheck size={15} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       remove(r.id);
                     }}
@@ -275,7 +274,7 @@ function FriendsSection(): React.JSX.Element {
                     title="Ablehnen"
                   >
                     <UserX size={15} />
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -401,7 +400,7 @@ function SearchResults({
               </p>
             </Link>
             {item.kind === 'new_person' ? (
-              <button
+              <Button
                 onClick={() => {
                   sendRequest(item.id);
                 }}
@@ -409,7 +408,7 @@ function SearchResults({
                 title="Freundschaft anfragen"
               >
                 <UserPlus size={15} />
-              </button>
+              </Button>
             ) : null}
             <Link href={`/profile/${item.id}`}>
               <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
@@ -452,24 +451,24 @@ export function SocialMainContent(): React.JSX.Element {
           size={16}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
         />
-        <input
+        <Input
           type="text"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
           }}
           placeholder="Gruppen und Personen suchen…"
-          className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="pl-9 pr-9 py-2.5 rounded-xl"
         />
         {query !== '' ? (
-          <button
+          <Button
             onClick={() => {
               setQuery('');
             }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X size={14} />
-          </button>
+          </Button>
         ) : null}
       </div>
 

@@ -3,6 +3,7 @@ import { TrendingUp, Wallet, Beer, Dices, Clock, Bell, Target, Tag } from 'lucid
 import { useUserStats } from '../../hooks/useStats';
 import { formatCents, cn } from '../../lib/utils';
 import { SectionHeader, StatTile } from '../../components/ui/Stats';
+import { Button } from '../../components/ui/Button';
 import {
   BarChart as ReBarChart,
   Bar,
@@ -56,7 +57,7 @@ export function PersonalStatsContent({
     <div className="space-y-6">
       <div className="flex gap-2 mb-6">
         {(Object.keys(PERIOD_LABELS) as ('week' | 'month' | 'alltime')[]).map((p) => (
-          <button
+          <Button
             key={p}
             onClick={() => {
               setPeriod(p);
@@ -69,7 +70,7 @@ export function PersonalStatsContent({
             )}
           >
             {PERIOD_LABELS[p]}
-          </button>
+          </Button>
         ))}
       </div>
 

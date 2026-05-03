@@ -12,6 +12,7 @@ import { useVoucherMap } from '../hooks/useProst';
 import type { Favorite } from '@shared/types';
 import { formatCents, cn } from '../lib/utils';
 import { CATEGORY_LABELS } from '@shared/schemas';
+import { Button } from '../components/ui/Button';
 
 type CardState = { variantId: string; status: 'buying' | 'done' | 'error' } | null;
 
@@ -88,7 +89,7 @@ export function Home(): React.JSX.Element {
 
                 return (
                   <div key={fav.variantId} className="relative group">
-                    <button
+                    <Button
                       key={fav.variantId}
                       onClick={() => {
                         handleBuy(fav);
@@ -164,10 +165,10 @@ export function Home(): React.JSX.Element {
                           ) : null}
                         </div>
                       </div>
-                    </button>
+                    </Button>
 
                     {/* Remove Favorite Button */}
-                    <button
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleFav({ variantId: fav.variantId, isFav: true });
@@ -180,7 +181,7 @@ export function Home(): React.JSX.Element {
                       title="Aus Favoriten entfernen"
                     >
                       <X size={10} />
-                    </button>
+                    </Button>
                   </div>
                 );
               })}

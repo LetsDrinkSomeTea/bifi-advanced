@@ -4,6 +4,7 @@ import { Layout } from '../components/layout/Layout';
 import { useJoinGroup } from '../hooks/useGroups';
 import { useAuth } from '../hooks/useAuth';
 import { type ApiError } from '../lib/api';
+import { Button } from '../components/ui/Button';
 
 export function JoinGroup(): React.JSX.Element {
   const { code } = useParams<{ code: string }>();
@@ -45,14 +46,14 @@ export function JoinGroup(): React.JSX.Element {
         {errorMsg ? (
           <div className="text-center space-y-4">
             <p className="text-destructive font-medium">{errorMsg}</p>
-            <button
+            <Button
               onClick={() => {
                 navigate('/social', { replace: true });
               }}
               className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
             >
               Zurück zur Übersicht
-            </button>
+            </Button>
           </div>
         ) : (
           <>

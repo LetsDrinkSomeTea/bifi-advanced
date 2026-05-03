@@ -27,6 +27,7 @@ import { ROLE_LEVEL } from '@shared/types';
 import { cn, formatCents } from '../../lib/utils';
 import { ROLE_LABEL, ROLE_STYLE } from '../../lib/constants';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
 
@@ -96,13 +97,13 @@ function DepositModal({
           />
         </div>
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <button
+        <Button
           type="submit"
           disabled={isPending}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
+          className="w-full"
         >
           {isPending ? 'Verarbeiten…' : 'Bestätigen'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -180,13 +181,13 @@ function ResetPasswordModal({
           />
         </div>
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <button
+        <Button
           type="submit"
           disabled={isPending}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
+          className="w-full"
         >
           {isPending ? 'Speichern…' : 'Passwort setzen'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -249,7 +250,7 @@ function CreateUserModal({
             </p>
             <p className="text-lg font-mono font-bold break-all select-all">{createdPassword}</p>
           </div>
-          <button
+          <Button
             onClick={() => {
               setCreatedPassword('');
               setDisplayName('');
@@ -261,7 +262,7 @@ function CreateUserModal({
             className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm"
           >
             Fertig
-          </button>
+          </Button>
         </div>
       </Modal>
     );
@@ -304,28 +305,27 @@ function CreateUserModal({
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Rolle</label>
-          <select
+          <Select
             value={role}
             onChange={(e) => {
               setRole(e.target.value as Role);
             }}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
             {assignableRoles.map((r) => (
               <option key={r} value={r}>
                 {ROLE_LABEL[r]}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <button
+        <Button
           type="submit"
           disabled={isPending || !displayName.trim()}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
+          className="w-full"
         >
           {isPending ? 'Erstellen…' : 'Nutzer erstellen'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -366,7 +366,7 @@ function EditRoleModal({
           <label className="block text-sm font-medium mb-2">Rolle auswählen</label>
           <div className="space-y-2">
             {assignableRoles.map((r) => (
-              <button
+              <Button
                 key={r}
                 onClick={() => {
                   setRole(r);
@@ -380,24 +380,24 @@ function EditRoleModal({
                   <span className="text-sm font-semibold">{ROLE_LABEL[r]}</span>
                 </div>
                 {role === r ? <div className="w-2 h-2 rounded-full bg-primary" /> : null}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
         <div className="flex gap-3">
-          <button
+          <Button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-semibold text-sm"
-          >
+            className="flex-1"
+           variant="outline">
             Abbrechen
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleUpdate}
             disabled={isPending || role === user?.role}
-            className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
+            className="flex-1"
           >
             Speichern
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -453,19 +453,19 @@ function DeleteUserModal({
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button
+          <Button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-semibold text-sm"
-          >
+            className="flex-1"
+           variant="outline">
             Abbrechen
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleDelete}
             disabled={isPending || !isConfirmed}
-            className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-semibold text-sm disabled:opacity-40"
-          >
+            className="flex-1"
+           variant="destructive">
             {isPending ? 'Lösche…' : 'Löschen'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -584,7 +584,7 @@ function UserCard({
       {isExpanded ? (
         <div className="px-4 pb-4 pt-2 border-t border-primary/10 space-y-4">
           <div className="grid grid-cols-2 gap-2">
-            <button
+            <Button
               onClick={(e) => {
                 e.stopPropagation();
                 onDeposit(user);
@@ -592,8 +592,8 @@ function UserCard({
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors"
             >
               <Coins size={14} /> Einzahlen
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={(e) => {
                 e.stopPropagation();
                 onEditRole(user);
@@ -602,7 +602,7 @@ function UserCard({
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/20 text-primary text-xs font-bold disabled:opacity-40 hover:bg-primary/5 transition-colors"
             >
               <KeyRound size={14} /> Rolle
-            </button>
+            </Button>
             <ToggleSwitch
               label="Aktiv"
               active={user.isActive}
@@ -620,7 +620,7 @@ function UserCard({
               }}
             />
             {isAdmin ? <>
-              <button
+              <Button
                 onClick={(e) => {
                   e.stopPropagation();
                   onResetPassword(user);
@@ -629,8 +629,8 @@ function UserCard({
                 className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border text-foreground text-xs font-medium disabled:opacity-40 hover:bg-accent transition-colors"
               >
                 <KeyRound size={14} /> PW Reset
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(user);
@@ -639,7 +639,7 @@ function UserCard({
                 className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-destructive/20 text-destructive text-xs font-bold disabled:opacity-40 hover:bg-destructive/5 transition-colors"
               >
                 <Trash2 size={14} /> Löschen
-              </button>
+              </Button>
             </> : null}
           </div>
 
@@ -647,7 +647,7 @@ function UserCard({
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">
               ID: {user.id}
             </div>
-            <button
+            <Button
               onClick={handleCopyId}
               className={cn(
                 'flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-all text-[10px] font-medium',
@@ -658,7 +658,7 @@ function UserCard({
             >
               {copied ? <Check size={12} /> : <Copy size={12} />}
               {copied ? 'Kopiert!' : 'ID kopieren'}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

@@ -1,4 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
+import { Button } from './ui/Button';
 
 interface Props {
   title: string;
@@ -9,12 +10,14 @@ interface Props {
 export function PageHeader({ title, subtitle, onBack }: Props): React.JSX.Element {
   return (
     <div className="flex items-center gap-3 mb-6">
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={onBack}
-        className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+        className="shrink-0"
       >
         <ArrowLeft size={20} />
-      </button>
+      </Button>
       <div>
         <h1 className="text-xl font-bold">{title}</h1>
         {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}

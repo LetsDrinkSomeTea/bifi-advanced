@@ -28,7 +28,6 @@ const NumericCounter = React.forwardRef<HTMLDivElement, NumericCounterProps>(
           size="icon"
           variant="outline"
           onClick={handleDecrement}
-          className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
         >
           <Minus size={18} />
         </Button>
@@ -37,7 +36,6 @@ const NumericCounter = React.forwardRef<HTMLDivElement, NumericCounterProps>(
           size="icon"
           variant="outline"
           onClick={handleIncrement}
-          className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
         >
           <Plus size={18} />
         </Button>

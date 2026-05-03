@@ -10,6 +10,8 @@ import { usePublicProfile, useUpdateProfile } from '../hooks/useProfile';
 import { type ProstVoucher, useProstVouchers } from '../hooks/useProst';
 import { formatCents, balanceColor, cn } from '../lib/utils';
 import { Avatar } from '../components/ui/Avatar';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
 import { type Role } from '@shared/types';
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -66,7 +68,7 @@ function EditProfileModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Profilbild-URL</label>
-          <input
+          <Input
             type="url"
             value={avatarUrl}
             onChange={(e) => {
@@ -74,7 +76,6 @@ function EditProfileModal({
               setError('');
             }}
             placeholder="https://…"
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
@@ -82,19 +83,18 @@ function EditProfileModal({
           <>
             <div>
               <label className="block text-sm font-medium mb-1">Anzeigename</label>
-              <input
+              <Input
                 type="text"
                 value={displayName}
                 onChange={(e) => {
                   setDisplayName(e.target.value);
                   setError('');
                 }}
-                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Benutzername (optional)</label>
-              <input
+              <Input
                 type="text"
                 value={username}
                 onChange={(e) => {
@@ -102,20 +102,19 @@ function EditProfileModal({
                   setError('');
                 }}
                 placeholder="z.B. max_mustermann"
-                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
           </>
         ) : null}
 
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <button
+        <Button
           type="submit"
           disabled={isPending}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
+          className="w-full rounded-xl"
         >
           {isPending ? 'Speichern…' : 'Speichern'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -226,15 +225,17 @@ export function Profile(): React.JSX.Element {
               ) : null}
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               setEditOpen(true);
             }}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0"
+            className="text-muted-foreground flex-shrink-0"
             title="Profil bearbeiten"
           >
             <Pencil size={16} />
-          </button>
+          </Button>
         </div>
 
         {/* Balance */}

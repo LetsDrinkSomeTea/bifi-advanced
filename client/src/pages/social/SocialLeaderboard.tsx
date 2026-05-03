@@ -4,6 +4,7 @@ import { Lock, Medal, Trophy, Beer, Dices, ShoppingCart } from 'lucide-react';
 import { useLeaderboard } from '../../hooks/useLeaderboard';
 import { useAuth } from '../../hooks/useAuth';
 import { formatCents, cn } from '../../lib/utils';
+import { Button } from '../../components/ui/Button';
 
 type LeaderboardType =
   | 'total_spent'
@@ -140,7 +141,7 @@ export function SocialLeaderboardContent(): React.JSX.Element {
       {/* Period pills */}
       <div className="flex gap-2">
         {(Object.keys(PERIOD_LABELS) as LeaderboardPeriod[]).map((p) => (
-          <button
+          <Button
             key={p}
             onClick={() => {
               setPeriod(p);
@@ -153,7 +154,7 @@ export function SocialLeaderboardContent(): React.JSX.Element {
             )}
           >
             {PERIOD_LABELS[p]}
-          </button>
+          </Button>
         ))}
       </div>
 

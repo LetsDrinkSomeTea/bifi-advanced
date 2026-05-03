@@ -15,6 +15,7 @@ import { useAuth } from '../hooks/useAuth';
 import { cn } from '../lib/utils';
 
 import { useDialog } from '../hooks/useDialog';
+import { Button } from '../components/ui/Button';
 
 function copyToClipboard(text: string): Promise<void> {
   return navigator.clipboard.writeText(text);
@@ -35,9 +36,9 @@ function QRModal({
       <div className="relative bg-background rounded-2xl p-6 shadow-2xl flex flex-col items-center gap-4 mx-4">
         <div className="flex items-center justify-between w-full">
           <h2 className="font-semibold">{groupName} beitreten</h2>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground">
+          <Button onClick={onClose} variant="ghost" size="icon">
             <X size={18} />
-          </button>
+          </Button>
         </div>
         <div className="bg-white p-4 rounded-xl">
           <img
@@ -129,7 +130,7 @@ export function GroupDetail(): React.JSX.Element {
             <span className="font-mono font-bold text-2xl tracking-widest flex-1 select-all">
               {group.inviteCode}
             </span>
-            <button
+            <Button
               onClick={handleCopy}
               className={cn(
                 'p-2 rounded-lg transition-colors',
@@ -140,8 +141,8 @@ export function GroupDetail(): React.JSX.Element {
               title={copied ? 'Kopiert!' : 'Kopieren'}
             >
               <Copy size={18} />
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => {
                 setQrOpen(true);
               }}
@@ -149,9 +150,9 @@ export function GroupDetail(): React.JSX.Element {
               title="QR-Code anzeigen"
             >
               <QrCode size={18} />
-            </button>
+            </Button>
             {isOwner ? (
-              <button
+              <Button
                 onClick={() => {
                   refreshCode(group.id);
                 }}
@@ -159,7 +160,7 @@ export function GroupDetail(): React.JSX.Element {
                 title="Neuen Code generieren"
               >
                 <RefreshCw size={18} />
-              </button>
+              </Button>
             ) : null}
           </div>
           {copied ? <p className="text-xs text-green-500">Code kopiert!</p> : null}
@@ -195,7 +196,7 @@ export function GroupDetail(): React.JSX.Element {
                   {m.role === 'owner' && <span className="text-xs text-primary">Eigentümer</span>}
                 </div>
                 {isOwner && m.id !== user?.id ? (
-                  <button
+                  <Button
                     onClick={() => {
                       remove({ groupId: group.id, userId: m.id });
                     }}
@@ -204,7 +205,7 @@ export function GroupDetail(): React.JSX.Element {
                     title="Entfernen"
                   >
                     <UserX size={15} />
-                  </button>
+                  </Button>
                 ) : null}
               </div>
             ))}
@@ -213,7 +214,7 @@ export function GroupDetail(): React.JSX.Element {
 
         {/* Danger zone */}
         <div className="space-y-2 pb-4">
-          <button
+          <Button
             onClick={() => {
               void (async () => {
                 if (
@@ -235,10 +236,10 @@ export function GroupDetail(): React.JSX.Element {
           >
             <LogOut size={15} />
             Gruppe verlassen
-          </button>
+          </Button>
 
           {isOwner ? (
-            <button
+            <Button
               onClick={() => {
                 void (async () => {
                   if (
@@ -260,7 +261,7 @@ export function GroupDetail(): React.JSX.Element {
             >
               <Trash2 size={15} />
               Gruppe löschen
-            </button>
+            </Button>
           ) : null}
         </div>
       </div>

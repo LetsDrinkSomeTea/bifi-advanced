@@ -284,7 +284,7 @@ export function Shop(): React.JSX.Element {
                                 key={v.id}
                                 className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group"
                               >
-                                <button
+                                <Button
                                   onClick={() => {
                                     openSheet(item, v.id);
                                   }}
@@ -328,7 +328,7 @@ export function Shop(): React.JSX.Element {
                                       )}
                                     </div>
                                   </div>
-                                </button>
+                                </Button>
 
                                 <div className="flex items-center gap-1">
                                   <Button

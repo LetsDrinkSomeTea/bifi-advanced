@@ -13,8 +13,10 @@ import { useAuth } from '../hooks/useAuth';
 import { formatCents, cn } from '../lib/utils';
 import { ROLE_LABEL, ROLE_STYLE } from '../lib/constants';
 import { Avatar } from '../components/ui/Avatar';
+import { Input } from '../components/ui/Input';
 import type { FriendshipStatus } from '@shared/types';
 import { RankCard, StatCard } from './Profile';
+import { Button } from '../components/ui/Button';
 
 function FriendButton({
   userId,
@@ -29,7 +31,7 @@ function FriendButton({
 
   if (status === 'friends') {
     return (
-      <button
+      <Button
         onClick={() => {
           remove(userId);
         }}
@@ -38,13 +40,13 @@ function FriendButton({
       >
         <UserCheck size={15} />
         Freunde
-      </button>
+      </Button>
     );
   }
 
   if (status === 'pending_sent') {
     return (
-      <button
+      <Button
         onClick={() => {
           remove(userId);
         }}
@@ -54,14 +56,14 @@ function FriendButton({
       >
         <Clock size={15} />
         Anfrage gesendet
-      </button>
+      </Button>
     );
   }
 
   if (status === 'pending_received') {
     return (
       <div className="flex gap-2">
-        <button
+        <Button
           onClick={() => {
             accept(userId);
           }}
@@ -70,8 +72,8 @@ function FriendButton({
         >
           <UserCheck size={15} />
           Annehmen
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => {
             remove(userId);
           }}
@@ -80,13 +82,13 @@ function FriendButton({
         >
           <UserX size={15} />
           Ablehnen
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <button
+    <Button
       onClick={() => {
         send(userId);
       }}
@@ -95,7 +97,7 @@ function FriendButton({
     >
       <UserPlus size={15} />
       Freund hinzufügen
-    </button>
+    </Button>
   );
 }
 
@@ -127,20 +129,20 @@ function NudgeSheet({
       <div className="relative w-full max-w-md bg-background rounded-t-2xl sm:rounded-2xl p-5 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">{displayName} anstupsen</h2>
-          <button
+          <Button
             onClick={() => {
               onClose();
             }}
             className="p-1 text-muted-foreground hover:text-foreground"
           >
             <X size={18} />
-          </button>
+          </Button>
         </div>
 
         {/* Presets */}
         <div className="space-y-2 mb-4">
           {presets?.map((p) => (
-            <button
+            <Button
               key={p.key}
               onClick={() => {
                 handleSend(p.key);
@@ -149,13 +151,13 @@ function NudgeSheet({
               className="w-full text-left px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-sm disabled:opacity-50"
             >
               {p.text}
-            </button>
+            </Button>
           ))}
         </div>
 
         {/* Freetext */}
         <div className="flex gap-2">
-          <input
+          <Input
             type="text"
             placeholder="Eigene Nachricht (privat)…"
             value={freetext}
@@ -163,14 +165,13 @@ function NudgeSheet({
               setFreetext(e.target.value);
             }}
             maxLength={200}
-            className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && freetext.trim() !== '') {
                 handleSend(undefined, freetext.trim());
               }
             }}
           />
-          <button
+          <Button
             onClick={() => {
               if (freetext.trim() !== '') {
                 handleSend(undefined, freetext.trim());
@@ -180,7 +181,7 @@ function NudgeSheet({
             className="px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40"
           >
             Senden
-          </button>
+          </Button>
         </div>
 
         {error !== null ? <p className="text-xs text-destructive mt-2">{error.message}</p> : null}
@@ -220,14 +221,14 @@ function ProstSheet({
             <h2 className="font-semibold">Prost an {displayName}</h2>
             <Beer size={18} className="text-amber-500" />
           </div>
-          <button
+          <Button
             onClick={() => {
               onClose();
             }}
             className="p-1 text-muted-foreground hover:text-foreground"
           >
             <X size={18} />
-          </button>
+          </Button>
         </div>
         <p className="text-sm text-muted-foreground mb-3 flex-shrink-0">
           Du zahlst jetzt — {displayName} bekommt den Gutschein für den nächsten Kauf.
@@ -241,7 +242,7 @@ function ProstSheet({
         ) : (
           <div className="overflow-y-auto space-y-2">
             {variants.map((v) => (
-              <button
+              <Button
                 key={v.id}
                 onClick={() => {
                   send({ toUserId, variantId: v.id }, { onSuccess: onClose });
@@ -254,7 +255,7 @@ function ProstSheet({
                   <span className="text-muted-foreground ml-1.5">{v.name}</span>
                 </span>
                 <span className="font-semibold tabular-nums">{formatCents(v.price)}</span>
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -344,7 +345,7 @@ export function ProfileDetail(): React.JSX.Element {
                 {profile.friendshipStatus !== null ? (
                   <FriendButton userId={profile.id} status={profile.friendshipStatus} />
                 ) : null}
-                <button
+                <Button
                   onClick={() => {
                     setProstOpen(true);
                   }}
@@ -352,8 +353,8 @@ export function ProfileDetail(): React.JSX.Element {
                 >
                   <Beer size={15} />
                   Prost
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => {
                     setNudgeOpen(true);
                   }}
@@ -361,7 +362,7 @@ export function ProfileDetail(): React.JSX.Element {
                 >
                   <Bell size={15} />
                   Anstupsen
-                </button>
+                </Button>
               </div>
             )}
           </div>

@@ -3,6 +3,7 @@ import { TrendingUp, Users, Wallet, Dices, Tag } from 'lucide-react';
 import { useSystemStats } from '../../hooks/useStats';
 import { formatCents, cn } from '../../lib/utils';
 import { SectionHeader, StatTile } from '../../components/ui/Stats';
+import { Button } from '../../components/ui/Button';
 
 const PERIOD_LABELS: Record<string, string> = {
   week: 'Woche',
@@ -18,7 +19,7 @@ export function SystemStatsContent(): React.JSX.Element {
     <div className="space-y-6">
       <div className="flex gap-2 mb-6">
         {(Object.keys(PERIOD_LABELS) as ('week' | 'month' | 'alltime')[]).map((p) => (
-          <button
+          <Button
             key={p}
             onClick={() => {
               setPeriod(p);
@@ -31,7 +32,7 @@ export function SystemStatsContent(): React.JSX.Element {
             )}
           >
             {PERIOD_LABELS[p]}
-          </button>
+          </Button>
         ))}
       </div>
 

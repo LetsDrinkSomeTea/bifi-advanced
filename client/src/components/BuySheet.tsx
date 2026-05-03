@@ -133,13 +133,15 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div className="w-10 h-1 bg-border rounded-full mx-auto absolute left-0 right-0 top-3" />
           <h2 className="text-lg font-semibold">{buyable.name}</h2>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleClose}
             title="Schließen"
-            className="p-1 text-muted-foreground hover:text-foreground"
+            className="shrink-0"
           >
             <X size={20} />
-          </button>
+          </Button>
         </div>
 
         <div className="px-5 pb-8 space-y-5">

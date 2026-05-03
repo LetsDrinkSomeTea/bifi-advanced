@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Modal } from './Modal';
+import { Button } from './ui/Button';
 import { useSpinJackpot, type SpinResult } from '../hooks/useJackpot';
 import { formatCents, cn } from '../lib/utils';
 
@@ -198,35 +199,35 @@ export function JackpotModal({
                     {formatCents(spinResult.pricePaid)}
                   </span>
                 </div>
-                <button
+                <Button
                   onClick={onClose}
-                  className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
+                  className="w-full rounded-xl"
                 >
                   Fertig
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}
         </div>
 
         {phase === 'ready' && (
-          <button
+          <Button
             onClick={() => {
               void handleSpin();
             }}
-            className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-bold text-lg active:scale-95 transition-transform"
+            className="w-full py-4 h-auto rounded-2xl font-bold text-lg active:scale-95 transition-transform"
           >
             Drehen!
-          </button>
+          </Button>
         )}
 
         {phase === 'spinning' && (
-          <button
+          <Button
             disabled
-            className="w-full py-4 rounded-2xl bg-muted text-muted-foreground font-bold text-lg cursor-not-allowed"
+            className="w-full py-4 h-auto rounded-2xl font-bold text-lg cursor-not-allowed bg-muted text-muted-foreground"
           >
             Glück am Rad...
-          </button>
+          </Button>
         )}
       </div>
     </Modal>

@@ -11,6 +11,7 @@ import {
 } from '../../hooks/usePromotions';
 import { formatCents, formatTimestamp, cn, toLocalISO, fromLocalISO } from '../../lib/utils';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
 import { useDialog } from '../../hooks/useDialog';
@@ -92,9 +93,9 @@ function PromotionModal({
       endTime: fromLocalISO(endTime),
       appliesTo: targetBuyableId
         ? {
-            buyableId: targetBuyableId,
-            variantId: targetVariantId || undefined,
-          }
+          buyableId: targetBuyableId,
+          variantId: targetVariantId || undefined,
+        }
         : null,
       isActive: promotion?.isActive ?? true,
       quantityLimit: parsedQty,
@@ -143,16 +144,15 @@ function PromotionModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">Typ</label>
-            <select
+            <Select
               value={type}
               onChange={(e) => {
                 setType(e.target.value as 'percent' | 'fixed');
               }}
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring h-10"
             >
               <option value="percent">Prozent (%)</option>
               <option value="fixed">Fixpreis (€)</option>
-            </select>
+            </Select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -194,13 +194,12 @@ function PromotionModal({
 
         <div>
           <label className="block text-sm font-medium mb-1">Gilt für...</label>
-          <select
+          <Select
             value={targetBuyableId}
             onChange={(e) => {
               setTargetBuyableId(e.target.value);
               setTargetVariantId('');
             }}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring h-10"
           >
             <option value="">Alle Produkte</option>
             {buyables?.map((b) => (
@@ -208,20 +207,19 @@ function PromotionModal({
                 {b.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {targetBuyableId !== '' &&
-        selectedBuyable !== undefined &&
-        selectedBuyable.variants.length > 0 ? (
+          selectedBuyable !== undefined &&
+          selectedBuyable.variants.length > 0 ? (
           <div>
             <label className="block text-sm font-medium mb-1">Variante (optional)</label>
-            <select
+            <Select
               value={targetVariantId}
               onChange={(e) => {
                 setTargetVariantId(e.target.value);
               }}
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring h-10"
             >
               <option value="">Alle Varianten von {selectedBuyable.name}</option>
               {selectedBuyable.variants.map((v) => (
@@ -229,7 +227,7 @@ function PromotionModal({
                   {v.name} ({formatCents(v.price)})
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         ) : null}
 
@@ -302,7 +300,7 @@ export function AdminPromotionsContent(): React.JSX.Element {
         return a.name.localeCompare(b.name);
       })
       .map((p) => p.id);
-    
+
     setOrderState({
       order: newOrder,
       search,
@@ -397,9 +395,9 @@ export function AdminPromotionsContent(): React.JSX.Element {
                         Seit {formatTimestamp(p.createdAt)}
                       </p>
                       {p.endTime ? <div className="flex items-center gap-1 text-[10px] text-orange-600 font-bold uppercase">
-                          <Calendar size={10} />
-                          Bis {formatTimestamp(p.endTime)}
-                        </div> : null}
+                        <Calendar size={10} />
+                        Bis {formatTimestamp(p.endTime)}
+                      </div> : null}
                     </div>
                   </div>
                 </div>
@@ -414,16 +412,17 @@ export function AdminPromotionsContent(): React.JSX.Element {
                     variant="ghost"
                     label={p.isActive ? 'Pausieren' : 'Starten'}
                   />
-                  <button
+                  <Button
                     onClick={() => {
                       setSelectedPromo(p);
                       setCreateOpen(true);
                     }}
-                    className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
+                    variant='ghost'
+                    size='icon'
                   >
                     <Pencil size={14} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       void (async () => {
                         if (await dialog.confirmDelete('Aktion beenden', `Soll die Aktion "${p.name}" wirklich gelöscht werden?`)) {
@@ -431,10 +430,11 @@ export function AdminPromotionsContent(): React.JSX.Element {
                         }
                       })();
                     }}
-                    className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                    variant='ghost_destructive'
+                    size='icon'
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </Button>
                 </div>
               </div>
 

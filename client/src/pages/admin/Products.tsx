@@ -12,6 +12,7 @@ import type { BuyableWithVariants, BuyableCategory } from '@shared/types';
 import { formatCents, cn } from '../../lib/utils';
 import { CATEGORY_LABELS } from '@shared/schemas';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
 
@@ -88,19 +89,18 @@ function ProductModal({
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Kategorie</label>
-          <select
+          <Select
             value={category}
             onChange={(e) => {
               setCategory(e.target.value as BuyableCategory);
             }}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
             {(Object.entries(CATEGORY_LABELS) as [BuyableCategory, string][]).map(([val, label]) => (
               <option key={val} value={val}>
                 {label}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {!product ? (
@@ -330,7 +330,7 @@ export function AdminProductsContent(): React.JSX.Element {
         return a.name.localeCompare(b.name);
       })
       .map((p) => p.id);
-    
+
     setOrderState({
       order: newOrder,
       search,
@@ -497,14 +497,15 @@ export function AdminProductsContent(): React.JSX.Element {
                         />
                       ))}
                     </div>
-                    <button
+                    <Button
                       onClick={() => {
                         setVariantModal({ open: true, product: p });
                       }}
-                      className="w-full py-2 rounded-xl border border-dashed border-primary/30 text-primary text-xs font-bold hover:bg-primary/5 transition-colors flex items-center justify-center gap-1.5"
+                      variant="dashed"
+                      size="full"
                     >
                       <Plus size={14} /> Variante hinzufügen
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : null}

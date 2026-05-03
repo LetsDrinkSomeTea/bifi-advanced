@@ -2,6 +2,7 @@ import type { FeedEntry } from '../hooks/useFeed';
 import { FeedItem, type GroupedFeedEntry } from './FeedItem';
 import { APP_TZ } from '../lib/utils';
 import { groupEntries } from '../lib/feed';
+import { Button } from './ui/Button';
 export type { GroupedFeedEntry };
 
 type TimelineItem =
@@ -107,13 +108,14 @@ export function FeedTimeline({
       })}
 
       {(hasNextPage ?? false) ? (
-        <button
+        <Button
+          variant="outline"
           onClick={fetchNextPage}
           disabled={isFetchingNextPage}
-          className="w-full mt-4 py-2.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-xl transition-colors disabled:opacity-50"
+          className="w-full mt-4 rounded-xl text-muted-foreground"
         >
           {(isFetchingNextPage ?? false) ? 'Laden…' : 'Mehr anzeigen'}
-        </button>
+        </Button>
       ) : null}
     </div>
   );
