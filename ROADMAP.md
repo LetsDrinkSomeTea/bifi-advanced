@@ -3,7 +3,7 @@
 ## Priorität 1: Sicherheit & Datenintegrität
 
 - [x] profile api leakt hidden achievements definitionen, gibt es weitere leaks? (In Bearbeitung)
-- [ ] Richtige Fehlermeldungen, Confirm Dialogs usw.
+- [x] Richtige Fehlermeldungen, Confirm Dialogs usw.
 
 ## Priorität 2: Developer Experience (DX) & Architektur
 
