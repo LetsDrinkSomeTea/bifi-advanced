@@ -14,6 +14,7 @@ import { formatCents, cn } from '../lib/utils';
 import { ROLE_LABEL, ROLE_STYLE } from '../lib/constants';
 import { Avatar } from '../components/ui/Avatar';
 import type { FriendshipStatus } from '@shared/types';
+import { RankCard, StatCard } from './Profile';
 
 function FriendButton({
   userId,
@@ -215,7 +216,10 @@ function ProstSheet({
       />
       <div className="relative w-full max-w-md bg-background rounded-t-2xl sm:rounded-2xl p-5 shadow-xl max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
-          <h2 className="font-semibold">Prost an {displayName} 🍺</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold">Prost an {displayName}</h2>
+            <Beer size={18} className="text-amber-500" />
+          </div>
           <button
             onClick={() => {
               onClose();
@@ -307,7 +311,7 @@ export function ProfileDetail(): React.JSX.Element {
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto space-y-6">
         <PageHeader
-          title={profile.displayName}
+          title=''
           onBack={() => {
             navigate('/social');
           }}
@@ -323,6 +327,9 @@ export function ProfileDetail(): React.JSX.Element {
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mt-1">
+              <span className='text-xl font-bold mr-2'>
+                {profile.displayName}
+              </span>
               <span
                 className={cn(
                   'text-xs px-1.5 py-0.5 rounded-full font-medium',
@@ -376,16 +383,9 @@ export function ProfileDetail(): React.JSX.Element {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <StatCard label="Käufe" value={String(profile.stats.purchaseCount)} />
-            <StatCard
-              label="Rang"
-              value={
-                profile.stats.leaderboardRank !== null
-                  ? `#${profile.stats.leaderboardRank.rank}`
-                  : '–'
-              }
-            />
+            <RankCard rank={profile.stats.leaderboardRank ?? null} />
             <StatCard label="Freunde" value={String(profile.stats.friendCount)} />
-            <StatCard label="Liebling" value={profile.stats.favoriteProduct?.name ?? '–'} small />
+            <StatCard label="Lieblingsprodukt" value={profile.stats.favoriteProduct?.name ?? '–'} small />
           </div>
         </div>
 
@@ -416,22 +416,5 @@ export function ProfileDetail(): React.JSX.Element {
         />
       ) : null}
     </Layout>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  small,
-}: {
-  label: string;
-  value: string;
-  small?: boolean;
-}): React.JSX.Element {
-  return (
-    <div className="rounded-xl border border-border bg-card px-3 py-3 text-center">
-      <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      <p className={cn('font-bold leading-tight', small ? 'text-sm' : 'text-xl')}>{value}</p>
-    </div>
   );
 }

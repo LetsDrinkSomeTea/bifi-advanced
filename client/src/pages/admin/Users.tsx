@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
-  Eye,
   EyeOff,
   Coins,
   Search,
@@ -547,14 +546,10 @@ function UserCard({
               {isSelf ? ' (Du)' : null}
             </p>
             <div className="flex items-center gap-1 flex-shrink-0">
-              {isSso && <Link2 size={12} className="text-muted-foreground" title="SSO Login" />}
-              {user.hasPassword && !isSso && (
-                <KeyRound size={12} className="text-muted-foreground" title="Lokales Passwort" />
-              )}
-              {user.jackpotAllowed && (
-                <Dices size={12} className="text-yellow-500" title="Jackpot berechtigt" />
-              )}
-              {!user.isActive && <EyeOff size={12} className="text-destructive" title="Inaktiv" />}
+              {isSso ? <span title="SSO Login"><Link2 size={12} className="text-muted-foreground" /></span> : null}
+              {user.hasPassword && !isSso ? <span title="Lokales Passwort"><KeyRound size={12} className="text-muted-foreground" /></span> : null}
+              {user.jackpotAllowed ? <span title="Jackpot berechtigt"><Dices size={12} className="text-yellow-500" /></span> : null}
+              {!user.isActive && <span title="Inaktiv"><EyeOff size={12} className="text-destructive" /></span>}
             </div>
           </div>
           <div className="flex items-center gap-2 mt-0.5">
@@ -624,30 +619,28 @@ function UserCard({
                 update({ id: user.id, jackpotAllowed: !user.jackpotAllowed });
               }}
             />
-            {isAdmin && (
-              <>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onResetPassword(user);
-                  }}
-                  disabled={isSso}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border text-foreground text-xs font-medium disabled:opacity-40 hover:bg-accent transition-colors"
-                >
-                  <KeyRound size={14} /> PW Reset
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(user);
-                  }}
-                  disabled={!canManage}
-                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-destructive/20 text-destructive text-xs font-bold disabled:opacity-40 hover:bg-destructive/5 transition-colors"
-                >
-                  <Trash2 size={14} /> Löschen
-                </button>
-              </>
-            )}
+            {isAdmin ? <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onResetPassword(user);
+                }}
+                disabled={isSso}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border text-foreground text-xs font-medium disabled:opacity-40 hover:bg-accent transition-colors"
+              >
+                <KeyRound size={14} /> PW Reset
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(user);
+                }}
+                disabled={!canManage}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-destructive/20 text-destructive text-xs font-bold disabled:opacity-40 hover:bg-destructive/5 transition-colors"
+              >
+                <Trash2 size={14} /> Löschen
+              </button>
+            </> : null}
           </div>
 
           <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-3">

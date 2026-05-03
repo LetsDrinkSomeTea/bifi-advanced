@@ -2,10 +2,10 @@
 
 export type AchievementTier = 'bronze' | 'silver' | 'gold';
 
-export const TIER_META: Record<AchievementTier, { label: string; emoji: string }> = {
-  bronze: { label: 'Bronze', emoji: '🥉' },
-  silver: { label: 'Silber', emoji: '🥈' },
-  gold: { label: 'Gold', emoji: '🥇' },
+export const TIER_META: Record<AchievementTier, { label: string; icon: string }> = {
+  bronze: { label: 'Bronze', icon: 'medal' },
+  silver: { label: 'Silber', icon: 'medal' },
+  gold: { label: 'Gold', icon: 'medal' },
 };
 
 // ─── Definition type ──────────────────────────────────────────────────────────
@@ -15,6 +15,7 @@ export interface AchievementDef {
   name: string; // group label (same across tiers)
   description: string; // describes this tier's threshold
   icon: string;
+  color?: string; // hex or tailwind class
   tier?: AchievementTier;
   groupKey?: string; // ties tiers together in the UI
   hidden?: boolean; // true = show as ??? until any tier in the group is unlocked

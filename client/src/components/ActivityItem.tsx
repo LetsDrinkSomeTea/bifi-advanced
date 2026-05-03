@@ -56,8 +56,8 @@ export function ActivityItem({
         {hasConnector ? <div className="w-px bg-border mt-2 flex-1 min-h-[1.5rem]" /> : null}
       </div>
       <div className={cn('flex-1 min-w-0 pt-0.5', hasConnector && 'pb-3')}>
-        <p className="text-sm leading-snug">{children}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{formatTimestamp(createdAt)}</p>
+        <div className="text-sm leading-snug">{children}</div>
+        <div className="text-xs text-muted-foreground mt-0.5">{formatTimestamp(createdAt)}</div>
       </div>
     </div>
   );

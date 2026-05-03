@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Medal, Lock } from 'lucide-react';
 import { TIER_META } from '@shared/achievements';
 import type { AchievementDef, AchievementTier } from '@shared/achievements';
 import { cn, formatCents } from '../lib/utils';
 import { useAchievementMeta } from '../hooks/useAchievements';
+import { DynamicIcon } from './ui/DynamicIcon';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -34,6 +35,7 @@ interface GroupCard {
   groupKey: string;
   name: string;
   icon: string;
+  color?: string;
   hidden: boolean;
   tiers: TierEntry[];
   anyUnlocked: boolean;
@@ -46,6 +48,7 @@ interface StandaloneCard {
   key: string;
   name: string;
   icon: string;
+  color?: string;
   description: string;
   hidden: boolean;
   unlocked: boolean;
@@ -73,6 +76,7 @@ function buildCards(unlockedMap: Map<string, Date>, meta: AchievementDef[]): Car
           groupKey: def.groupKey,
           name: def.name,
           icon: def.icon,
+          color: def.color,
           hidden: def.hidden ?? false,
           tiers: [],
           anyUnlocked: false,
@@ -109,6 +113,7 @@ function buildCards(unlockedMap: Map<string, Date>, meta: AchievementDef[]): Car
         key: def.key,
         name: def.name,
         icon: def.icon,
+        color: def.color,
         description: def.description,
         hidden: def.hidden ?? false,
         unlocked: unlockedAt !== null,
@@ -166,6 +171,12 @@ function useJustUnlocked(latestUnlockedAt: Date | null, id: string): boolean {
   return isJustUnlocked;
 }
 
+const TIER_COLORS: Record<AchievementTier, string> = {
+  bronze: 'text-amber-700',
+  silver: 'text-slate-400',
+  gold: 'text-yellow-500',
+};
+
 function TierBadge({
   tier,
   unlocked,
@@ -178,7 +189,7 @@ function TierBadge({
       className={cn('text-sm leading-none', !unlocked && 'opacity-20 grayscale')}
       title={`${TIER_META[tier].label}${unlocked ? ' ✓' : ''}`}
     >
-      {TIER_META[tier].emoji}
+      <Medal size={14} className={TIER_COLORS[tier]} />
     </span>
   );
 }
@@ -236,8 +247,8 @@ function GroupCardComponent({
   const tooltip = isHiddenAndLocked
     ? '???'
     : card.tiers
-        .map((t) => `${TIER_META[t.tier].emoji} ${t.description}${t.unlocked ? ' ✓' : ''}`)
-        .join('\n');
+      .map((t) => `${TIER_META[t.tier].label}: ${t.description}${t.unlocked ? ' ✓' : ''}`)
+      .join('\n');
 
   const justUnlocked = useJustUnlocked(card.latestUnlockedAt, card.groupKey);
 
@@ -271,7 +282,13 @@ function GroupCardComponent({
         justUnlocked && 'achievement-glow',
       )}
     >
-      <span className="text-2xl leading-none">{isHiddenAndLocked ? '🔒' : card.icon}</span>
+      <span className="leading-none">
+        {isHiddenAndLocked ? (
+          <Lock className="w-6 h-6 text-muted-foreground" />
+        ) : (
+          <DynamicIcon name={card.icon} size={24} className={card.color} />
+        )}
+      </span>
       <span
         className={cn(
           'text-[10px] leading-tight font-medium line-clamp-2',
@@ -303,7 +320,13 @@ function StandaloneCardComponent({ card }: { card: StandaloneCard }): React.JSX.
         justUnlocked && 'achievement-glow',
       )}
     >
-      <span className="text-2xl leading-none">{isHiddenAndLocked ? '🔒' : card.icon}</span>
+      <span className="leading-none">
+        {isHiddenAndLocked ? (
+          <Lock className="w-6 h-6 text-muted-foreground" />
+        ) : (
+          <DynamicIcon name={card.icon} size={24} className={card.color} />
+        )}
+      </span>
       <span
         className={cn(
           'text-[10px] leading-tight font-medium line-clamp-2',
@@ -370,7 +393,8 @@ export const AchievementGrid = ({
       kind: 'standalone',
       key: `hidden_locked_dummy_${i}`,
       name: '???',
-      icon: '🔒',
+      icon: 'lock',
+      color: 'text-muted-foreground',
       description: 'Dieses Achievement ist geheim.',
       hidden: true,
       unlocked: false,

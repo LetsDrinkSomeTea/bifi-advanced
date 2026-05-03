@@ -278,42 +278,47 @@ export function AdminPromotionsContent(): React.JSX.Element {
   const [selectedPromo, setSelectedPromo] = useState<Promotion | null>(null);
 
   // Stable sort order: only update order when products length or search changes
-  const [stableOrder, setStableOrder] = useState<string[]>([]);
-  const [prevSearch, setPrevSearch] = useState('');
-  const [prevCount, setPrevCount] = useState(0);
+  const [orderState, setOrderState] = useState<{
+    order: string[];
+    search: string;
+    count: number;
+  }>({
+    order: [],
+    search: '',
+    count: 0,
+  });
 
-  const filteredPromotions = useMemo(() => {
+  const filtered = useMemo(() => {
     if (!promotions) return [];
     const s = search.toLowerCase().trim();
-    const filtered = promotions.filter((p) => p.name.toLowerCase().includes(s));
+    return promotions.filter((p) => p.name.toLowerCase().includes(s));
+  }, [promotions, search]);
 
-    if (search !== prevSearch || filtered.length !== prevCount || stableOrder.length === 0) {
-      const newOrder = [...filtered]
-        .sort((a, b) => {
-          if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-          return a.name.localeCompare(b.name);
-        })
-        .map((p) => p.id);
-      
-      setStableOrder(newOrder);
-      setPrevSearch(search);
-      setPrevCount(filtered.length);
-      
-      return [...filtered].sort((a, b) => {
-        const idxA = newOrder.indexOf(a.id);
-        const idxB = newOrder.indexOf(b.id);
-        return idxA - idxB;
-      });
-    }
+  // Derive stable order during render if search or count changed
+  if (promotions && (search !== orderState.search || filtered.length !== orderState.count || (orderState.order.length === 0 && filtered.length > 0))) {
+    const newOrder = [...filtered]
+      .sort((a, b) => {
+        if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      })
+      .map((p) => p.id);
+    
+    setOrderState({
+      order: newOrder,
+      search,
+      count: filtered.length,
+    });
+  }
 
+  const filteredPromotions = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      const idxA = stableOrder.indexOf(a.id);
-      const idxB = stableOrder.indexOf(b.id);
+      const idxA = orderState.order.indexOf(a.id);
+      const idxB = orderState.order.indexOf(b.id);
       if (idxA === -1) return 1;
       if (idxB === -1) return -1;
       return idxA - idxB;
     });
-  }, [promotions, search, stableOrder, prevSearch, prevCount]);
+  }, [filtered, orderState.order]);
 
   const getScopeLabel = (p: Promotion): string => {
     if (!p.appliesTo) return 'Alle Produkte';
@@ -391,12 +396,10 @@ export function AdminPromotionsContent(): React.JSX.Element {
                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
                         Seit {formatTimestamp(p.createdAt)}
                       </p>
-                      {p.endTime && (
-                        <div className="flex items-center gap-1 text-[10px] text-orange-600 font-bold uppercase">
+                      {p.endTime ? <div className="flex items-center gap-1 text-[10px] text-orange-600 font-bold uppercase">
                           <Calendar size={10} />
                           Bis {formatTimestamp(p.endTime)}
-                        </div>
-                      )}
+                        </div> : null}
                     </div>
                   </div>
                 </div>

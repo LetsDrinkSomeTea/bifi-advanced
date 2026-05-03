@@ -4,6 +4,8 @@ import type { AchievementDef } from '@shared/achievements';
 import { ActivityItem, type ActivityUser, ProfileLink } from './ActivityItem';
 import { useAchievementMeta } from '@/hooks/useAchievements';
 import { type FeedType } from '@shared/types';
+import { DynamicIcon } from './ui/DynamicIcon';
+import { cn } from '../lib/utils';
 
 interface Item {
   name: string;
@@ -15,23 +17,23 @@ export interface GroupedFeedEntry extends FeedEntry {
   mergedItems?: Item[];
 }
 
-// ─── Type emoji map ────────────────────────────────────────────────────────────
+// ─── Type icon map ────────────────────────────────────────────────────────────
 
-const TYPE_EMOJI: Record<FeedType, string> = {
-  purchase: '🛒',
-  achievement: '🏆',
-  prost_sent: '🍺',
-  prost_received: '🍻',
-  nudge: '👋',
-  group_join: '👥',
-  group_created: '🏗️',
-  group_left: '🚪',
-  group_deleted: '🗑️',
-  friendship_started: '🤝',
-  goal_reached: '🎯',
-  jackpot_win: '🎰',
-  promotion_started: '🔥',
-  promotion_ended: '⌛',
+const TYPE_ICON: Record<FeedType, { name: string; color: string }> = {
+  purchase: { name: 'shopping-bag', color: 'text-blue-500' },
+  achievement: { name: 'trophy', color: 'text-yellow-500' },
+  prost_sent: { name: 'beer', color: 'text-amber-500' },
+  prost_received: { name: 'beer', color: 'text-amber-500' },
+  nudge: { name: 'hand', color: 'text-slate-500' },
+  group_join: { name: 'user-plus', color: 'text-green-500' },
+  group_created: { name: 'plus-square', color: 'text-blue-500' },
+  group_left: { name: 'user-minus', color: 'text-red-500' },
+  group_deleted: { name: 'trash-2', color: 'text-slate-500' },
+  friendship_started: { name: 'users', color: 'text-purple-500' },
+  goal_reached: { name: 'target', color: 'text-emerald-500' },
+  jackpot_win: { name: 'dices', color: 'text-indigo-500' },
+  promotion_started: { name: 'flame', color: 'text-orange-500' },
+  promotion_ended: { name: 'timer', color: 'text-slate-500' },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -212,12 +214,12 @@ function feedText(
       );
       return isMe ? (
         <>
-          Du hast {targetName(targetUser, currentUserId, true)} {drinkNode} ausgegeben 🍺
+          Du hast {targetName(targetUser, currentUserId, true)} {drinkNode} ausgegeben
         </>
       ) : (
         <>
           <Actor user={user} currentUserId={currentUserId} /> hat{' '}
-          {targetName(targetUser, currentUserId, false)} {drinkNode} ausgegeben 🍺
+          {targetName(targetUser, currentUserId, false)} {drinkNode} ausgegeben
         </>
       );
     }
@@ -235,29 +237,28 @@ function feedText(
       return isMe ? (
         <>
           Du hast {drinkNode} von {targetName(targetUser, currentUserId, false)} ausgegeben bekommen
-          🍺
         </>
       ) : (
         <>
           <Actor user={user} currentUserId={currentUserId} /> hat {drinkNode} von{' '}
-          {targetName(targetUser, currentUserId, false)} ausgegeben bekommen 🍺
+          {targetName(targetUser, currentUserId, false)} ausgegeben bekommen
         </>
       );
     }
     case 'friendship_started': {
       const isTarget = currentUserId !== undefined && targetUser?.id === currentUserId;
       if (isMe)
-        return <>Du und {targetName(targetUser, currentUserId, true)} seid jetzt befreundet 🤝</>;
+        return <>Du und {targetName(targetUser, currentUserId, true)} seid jetzt befreundet</>;
       if (isTarget)
         return (
           <>
-            <ProfileLink user={user} /> und du seid jetzt befreundet 🤝
+            <ProfileLink user={user} /> und du seid jetzt befreundet
           </>
         );
       return (
         <>
           <Actor user={user} currentUserId={currentUserId} /> und{' '}
-          {targetName(targetUser, undefined)} sind jetzt befreundet 🤝
+          {targetName(targetUser, undefined)} sind jetzt befreundet
         </>
       );
     }
@@ -265,7 +266,7 @@ function feedText(
       const title = metadata?.goalTitle as string | undefined;
       return (
         <>
-          Spendenziel <span className="font-medium">{title ?? 'Ziel'}</span> wurde erreicht! 🎯
+          Spendenziel <span className="font-medium">{title ?? 'Ziel'}</span> wurde erreicht!
         </>
       );
     }
@@ -281,7 +282,7 @@ function feedText(
           </span>
         ) : null;
       // 1. Klar lesbare Logik für den Preis-Text
-      let outcome = '🎰'; // Fallback
+      let outcome = '';
       if (pct === 0) {
         outcome = 'gratis';
       } else if (pct != null && pct < 100) {
@@ -319,8 +320,7 @@ function feedText(
               {' '}
               – nur <span className="font-bold">{qty}x</span> verfügbar!
             </>
-          ) : null}{' '}
-          🔥
+          ) : null}
         </>
       );
     }
@@ -329,7 +329,7 @@ function feedText(
       return (
         <>
           Die Aktion <span className="font-medium italic">„{name ?? 'Sonderangebot'}"</span> ist nun
-          beendet. ⌛
+          beendet.
         </>
       );
     }
@@ -354,12 +354,18 @@ interface Props {
 export function FeedItem({ entry, hasConnector = false }: Props): React.JSX.Element {
   const { user: currentUser } = useAuth();
   const { data: achievements } = useAchievementMeta();
-  const emoji = TYPE_EMOJI[entry.type];
+  const iconMeta = TYPE_ICON[entry.type];
 
   return (
     <ActivityItem
       user={entry.user}
-      icon={emoji}
+      icon={
+        <DynamicIcon
+          name={iconMeta.name}
+          size={16}
+          className={cn('bg-background rounded-full p-0.5', iconMeta.color)}
+        />
+      }
       hasConnector={hasConnector}
       createdAt={entry.createdAt}
     >

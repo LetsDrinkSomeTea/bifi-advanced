@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
-import { Lock } from 'lucide-react';
+import { Lock, Medal, Trophy, Beer, Dices, ShoppingCart } from 'lucide-react';
 import { useLeaderboard } from '../../hooks/useLeaderboard';
 import { useAuth } from '../../hooks/useAuth';
 import { formatCents, cn } from '../../lib/utils';
@@ -19,18 +19,37 @@ const PERIOD_LABELS: Record<LeaderboardPeriod, string> = {
   alltime: 'Gesamt',
 };
 
-function formatValue(type: LeaderboardType, value: number): string {
+function formatValue(type: LeaderboardType, value: number): React.ReactNode {
   if (type === 'total_spent') return formatCents(value);
-  if (type === 'achievements') return `${value} 🏆`;
-  if (type === 'prost_sent') return `${value} 🥂`;
-  if (type === 'jackpot_spins') return `${value} 🎰`;
-  return String(value);
+
+  let Icon = null;
+  let color = '';
+  if (type === 'achievements') {
+    Icon = Trophy;
+    color = 'text-yellow-500';
+  } else if (type === 'prost_sent') {
+    Icon = Beer;
+    color = 'text-amber-500';
+  } else if (type === 'jackpot_spins') {
+    Icon = Dices;
+    color = 'text-indigo-500';
+  } else {
+    Icon = ShoppingCart;
+    color = 'text-blue-500'
+  }
+
+  return (
+    <span className="flex items-center gap-1.5">
+      {value}
+      {<Icon size={14} className={color} />}
+    </span>
+  );
 }
 
 function RankMedal({ rank }: { rank: number }): React.JSX.Element {
-  if (rank === 1) return <span className="text-lg leading-none">🥇</span>;
-  if (rank === 2) return <span className="text-lg leading-none">🥈</span>;
-  if (rank === 3) return <span className="text-lg leading-none">🥉</span>;
+  if (rank === 1) return <Medal size={16} className="text-yellow-500" />;
+  if (rank === 2) return <Medal size={16} className="text-slate-400" />;
+  if (rank === 3) return <Medal size={16} className="text-amber-700" />;
   return (
     <span className="w-6 text-center text-sm font-semibold text-muted-foreground">{rank}</span>
   );

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pencil, BarChart2 } from 'lucide-react';
+import { Pencil, BarChart2, Beer } from 'lucide-react';
 import { Link } from 'wouter';
 import { Layout } from '../components/layout/Layout';
 import { Modal } from '../components/Modal';
@@ -146,7 +146,7 @@ function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }): React.JSX.E
       ) : null}
       <ActivityItem
         user={donor}
-        icon="🍺"
+        icon={<Beer size={10} className="text-amber-500" />}
         createdAt={voucher.createdAt}
         className="relative z-10 rounded-xl border border-border bg-background px-3 py-2 transition-transform duration-200"
       >
@@ -291,9 +291,12 @@ export function Profile(): React.JSX.Element {
         {/* Prost vouchers */}
         {stackedVouchers.length > 0 ? (
           <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              Prost-Gutscheine 🍺
-            </h2>
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Prost-Gutscheine
+              </h2>
+              <Beer size={14} className="text-amber-500" />
+            </div>
             <div className="rounded-2xl bg-card p-3 space-y-2">
               {stackedVouchers.map((v) => (
                 <ProstVoucherItem key={`${v.fromUserId}-${v.variantId}-${v.amount}`} voucher={v} />
@@ -322,7 +325,7 @@ const RANK_CATEGORY_LABELS: Record<string, string> = {
   jackpot_spins: 'Spins',
 };
 
-function RankCard({
+export function RankCard({
   rank,
 }: {
   rank: { rank: number; categories: string[] } | null;
@@ -340,7 +343,7 @@ function RankCard({
   );
 }
 
-function StatCard({
+export function StatCard({
   label,
   value,
   small,

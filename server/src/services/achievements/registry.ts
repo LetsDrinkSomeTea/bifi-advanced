@@ -62,6 +62,7 @@ function defineTieredAchievement<T extends AchievementEventType>(config: {
   groupKey: string;
   name: string;
   icon: string;
+  color?: string;
   events: T[];
   hidden?: boolean;
   progressFormat?: 'count' | 'cents';
@@ -79,6 +80,7 @@ function defineTieredAchievement<T extends AchievementEventType>(config: {
     name: config.name,
     description: t.description,
     icon: config.icon,
+    color: config.color,
     tier: t.tier,
     groupKey: config.groupKey,
     threshold: t.threshold,
@@ -104,7 +106,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'purchases',
     name: 'Stammkunde',
-    icon: '🛒',
+    icon: 'shopping-cart',
+    color: 'text-blue-500',
     events: ['purchase'],
     progress: (userId) => purchaseCount(userId),
     tiers: [
@@ -118,7 +121,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'prost_sent',
     name: 'Großzügig',
-    icon: '🥂',
+    icon: 'gift',
+    color: 'text-purple-500',
     events: ['prost_sent'],
     progress: (userId) => prostSentCount(userId),
     tiers: [
@@ -132,7 +136,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'prost_received',
     name: 'Beliebt',
-    icon: '❤️',
+    icon: 'heart',
+    color: 'text-red-500',
     events: ['prost_received'],
     progress: (userId) => prostReceivedCount(userId),
     tiers: [
@@ -146,7 +151,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'donations',
     name: 'Spendenritter',
-    icon: '🦸',
+    icon: 'shield',
+    color: 'text-indigo-500',
     events: ['contribution'],
     hidden: true,
     progress: (userId) => donationCount(userId),
@@ -164,7 +170,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'achievements_collected',
     name: 'Erfolgsjäger',
-    icon: '🏆',
+    icon: 'trophy',
+    color: 'text-yellow-500',
     events: [], // Internal trigger
     progress: (userId) => unlockedAchievementCount(userId),
     tiers: [
@@ -186,7 +193,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'alcoholic_drinker',
     name: 'Hopfenheld',
-    icon: '🍺',
+    icon: 'beer',
+    color: 'text-amber-500',
     events: ['purchase'],
     progress: (userId) => categoryItemCount(userId, 'alcoholic'),
     tiers: [
@@ -211,7 +219,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'softdrink_lover',
     name: 'Zuckerschock',
-    icon: '🥤',
+    icon: 'cup-soda',
+    color: 'text-cyan-500',
     events: ['purchase'],
     progress: (userId) => categoryItemCount(userId, 'soft_drink'),
     tiers: [
@@ -228,7 +237,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'food_fan',
     name: 'Schlemmerchampion',
-    icon: '🍔',
+    icon: 'utensils',
+    color: 'text-orange-500',
     events: ['purchase'],
     progress: (userId) => categoryItemCount(userId, 'food'),
     tiers: [
@@ -245,7 +255,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'snack_king',
     name: 'Snack-König',
-    icon: '🍿',
+    icon: 'popcorn',
+    color: 'text-yellow-600',
     events: ['purchase'],
     progress: (userId) => categoryItemCount(userId, 'snack'),
     tiers: [
@@ -262,7 +273,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'misc_collector',
     name: 'Sammler',
-    icon: '📦',
+    icon: 'package',
+    color: 'text-slate-500',
     events: ['purchase'],
     progress: (userId) => categoryItemCount(userId, 'other'),
     tiers: [
@@ -281,7 +293,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'pleite',
     name: 'Pleite',
     description: 'Kontostand fiel unter -10 €',
-    icon: '💸',
+    icon: 'arrow-down-circle',
+    color: 'text-red-500',
     hidden: true,
     events: ['purchase', 'deposit'],
     check: async (e) => {
@@ -296,7 +309,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'tief_verschuldet',
     name: 'Tief verschuldet',
     description: 'Kontostand fiel unter -20 €',
-    icon: '🕳️',
+    icon: 'skull',
+    color: 'text-red-700',
     hidden: true,
     events: ['purchase', 'deposit'],
     check: async (e) => {
@@ -311,7 +325,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'verantwortungsvoll',
     name: 'Verantwortungsvoll',
     description: 'Einen positiven Kontostand gehalten',
-    icon: '💚',
+    icon: 'heart',
+    color: 'text-green-500',
     events: ['deposit'],
     check: (e) => e.balanceAfter > 0,
   }),
@@ -319,7 +334,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'passendes_kleingeld',
     name: 'Passendes Kleingeld',
     description: 'Exakten Betrag eingezahlt, um auf Null zu kommen',
-    icon: '🪙',
+    icon: 'coins',
+    color: 'text-yellow-600',
     hidden: true,
     events: ['deposit'],
     check: (e) => e.balanceBefore < 0 && e.balanceBefore + e.amount === 0,
@@ -328,7 +344,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'grosse_einzahlung',
     name: 'Große Einzahlung',
     description: 'Einzahlung von 50 € oder mehr',
-    icon: '💰',
+    icon: 'banknote',
+    color: 'text-emerald-500',
     events: ['deposit'],
     check: (e) => e.amount >= 5000,
   }),
@@ -336,7 +353,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'finanz_phoenix',
     name: 'Finanz-Phönix',
     description: 'Von unter -20 € auf über 20 € in einer Einzahlung',
-    icon: '🔥',
+    icon: 'flame',
+    color: 'text-orange-500',
     hidden: true,
     events: ['deposit'],
     check: (e) => e.balanceBefore < -2000 && e.balanceAfter > 2000,
@@ -345,7 +363,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'ich_habs_ja',
     name: 'Ich habs ja',
     description: 'Eingezahlt obwohl der Kontostand positiv war',
-    icon: '😏',
+    icon: 'smile',
+    color: 'text-yellow-400',
     hidden: true,
     events: ['deposit'],
     check: (e) => e.balanceBefore > 0,
@@ -354,7 +373,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'dagobert',
     name: 'Dagobert',
-    icon: '🤑',
+    icon: 'circle-dollar-sign',
+    color: 'text-yellow-500',
     events: ['deposit'],
     hidden: true,
     check: (e) => e.balanceAfter,
@@ -382,7 +402,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'fruher_vogel',
     name: 'Früher Vogel',
     description: 'Kauf zwischen 6 und 10 Uhr',
-    icon: '🌅',
+    icon: 'sunrise',
+    color: 'text-orange-400',
     events: ['purchase'],
     check: (e) => {
       const h = getLocalHour(e.now);
@@ -393,7 +414,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'morgenrote',
     name: 'Morgenröte',
     description: 'Kauf zwischen 4 und 6 Uhr früh',
-    icon: '🌄',
+    icon: 'mountain',
+    color: 'text-red-400',
     hidden: true,
     events: ['purchase'],
     check: (e) => {
@@ -405,7 +427,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'geisterstunde',
     name: 'Geisterstunde',
     description: 'Kauf um genau Mitternacht (±10 Sek.)',
-    icon: '👻',
+    icon: 'ghost',
+    color: 'text-slate-400',
     hidden: true,
     events: ['purchase'],
     check: (e) => {
@@ -419,7 +442,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'happy_hour',
     name: 'Happy Hour',
     description: 'Kauf zwischen 16 und 18 Uhr',
-    icon: '🍻',
+    icon: 'beer',
+    color: 'text-amber-500',
     events: ['purchase'],
     check: (e) => {
       const h = getLocalHour(e.now);
@@ -430,7 +454,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'mittagspause',
     name: 'Mittagspause',
     description: 'Kauf zwischen 12 und 13 Uhr',
-    icon: '☀️',
+    icon: 'sun',
+    color: 'text-yellow-500',
     events: ['purchase'],
     check: (e) => {
       const h = getLocalHour(e.now);
@@ -441,7 +466,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'monday_blues',
     name: 'Monday Blues',
     description: 'Mehr als 3 Getränke an einem Montag',
-    icon: '😩',
+    icon: 'frown',
+    color: 'text-blue-400',
     hidden: true,
     events: ['purchase'],
     check: async (e) => {
@@ -455,7 +481,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'shopper',
     name: 'Shopper',
-    icon: '🛍️',
+    icon: 'shopping-bag',
+    color: 'text-pink-500',
     events: ['purchase'],
     check: async (e) => {
       return await purchasesOnBiFiDay(e.userId, getBiFiDay(e.now));
@@ -483,7 +510,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'schnellfeuer',
     name: 'Schnellfeuer',
     description: 'Mindestens 3 Käufe innerhalb einer Stunde mit je mind. 5 Min. Abstand',
-    icon: '⚡',
+    icon: 'zap',
+    color: 'text-yellow-400',
     hidden: true,
     events: ['purchase'],
     check: async (e) => {
@@ -508,7 +536,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'intervall_trinker',
     name: 'Intervall-Trinker',
     description: 'Drei aufeinanderfolgende Käufe mit gleichen Pausen (±1 Min.)',
-    icon: '⏱️',
+    icon: 'timer',
+    color: 'text-slate-500',
     hidden: true,
     events: ['purchase'],
     check: async (e) => {
@@ -533,7 +562,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'tagliches_ritual',
     name: 'Tägliches Ritual',
-    icon: '📅',
+    icon: 'calendar',
+    color: 'text-blue-500',
     events: ['purchase'],
     check: async (e) => {
       const all = await db
@@ -575,7 +605,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'treue_seele',
     name: 'Treue Seele',
-    icon: '🗓️',
+    icon: 'calendar-days',
+    color: 'text-indigo-500',
     events: ['purchase'],
     check: async (e) => {
       const all = await db
@@ -632,7 +663,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'weekend_warrior',
     name: 'Weekend-Warrior',
     description: 'An einem Wochenende sowohl Samstag als auch Sonntag gekauft',
-    icon: '🏖️',
+    icon: 'palmtree',
+    color: 'text-emerald-400',
     events: ['purchase'],
     check: async (e) => {
       const w = getLocalWeekday(e.now);
@@ -653,7 +685,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'saisontrinker',
     name: 'Saisontrinker',
     description: 'In allen vier Jahreszeiten gekauft',
-    icon: '🌍',
+    icon: 'globe',
+    color: 'text-blue-400',
     hidden: true,
     events: ['purchase'],
     check: async (e) => {
@@ -676,7 +709,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'feierlaune',
     name: 'Feierlaune',
     description: 'An einem Feiertag (Weihnachten, Neujahr, Halloween) gekauft',
-    icon: '🎉',
+    icon: 'party-popper',
+    color: 'text-pink-500',
     hidden: true,
     events: ['purchase'],
     check: (e) => {
@@ -691,7 +725,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'die_runde_geht_auf_mich',
     name: 'Die Runde geht auf mich',
-    icon: '🥳',
+    icon: 'users',
+    color: 'text-purple-500',
     events: ['purchase'],
     check: (e) => {
       return e.items.reduce((s, i) => s + i.quantity, 0);
@@ -719,7 +754,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'wein_buddy',
     name: 'Wein-Buddy',
     description: 'Gruppenbestellung mit einem Wein',
-    icon: '🍷',
+    icon: 'wine',
+    color: 'text-red-700',
     hidden: true,
     events: ['purchase'],
     check: (e) =>
@@ -729,7 +765,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'party',
     name: 'Party',
     description: 'Erste Gruppenbestellung',
-    icon: '🎊',
+    icon: 'sparkles',
+    color: 'text-yellow-400',
     events: ['purchase'],
     check: (e) => e.groupId !== undefined,
   }),
@@ -739,7 +776,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'lucky_seven',
     name: 'Lucky Seven',
     description: 'Die 7., 77., 777., ... Transaktion im System',
-    icon: '7️⃣',
+    icon: 'clover',
+    color: 'text-green-500',
     hidden: true,
     events: ['purchase'],
     check: async () => isAllSevens(await globalPurchaseCount()),
@@ -749,7 +787,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'jackpot_plays',
     name: 'Die Sonne lacht',
-    icon: '🎰',
+    icon: 'dices',
+    color: 'text-indigo-500',
     events: ['jackpot'],
     progress: (userId) => jackpotPlayCount(userId),
     tiers: [
@@ -762,7 +801,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'gluckspilz',
     name: 'Glückspilz',
-    icon: '🍀',
+    icon: 'clover',
+    color: 'text-green-600',
     hidden: true,
     events: ['jackpot'],
     progress: (userId) => jackpotWinCount(userId),
@@ -788,7 +828,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'pechvogel',
     name: 'Pechvogel',
-    icon: '🐦',
+    icon: 'bird',
+    color: 'text-slate-500',
     hidden: true,
     events: ['jackpot'],
     progress: (userId) => jackpotLossCount(userId),
@@ -806,7 +847,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'deal_hunter',
     name: 'Schnäppchenjäger',
-    icon: '🏷️',
+    icon: 'tag',
+    color: 'text-amber-500',
     events: ['purchase'],
     progress: (userId) => discountedItemCount(userId),
     tiers: [
@@ -819,7 +861,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
   ...defineTieredAchievement({
     groupKey: 'savings_fox',
     name: 'Sparfuchs',
-    icon: '🦊',
+    icon: 'piggy-bank',
+    color: 'text-pink-400',
     events: ['purchase'],
     progressFormat: 'cents',
     progress: (userId) => totalSavedCents(userId),
@@ -834,7 +877,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'resteverwerter',
     name: 'Resteverwerter',
     description: 'Das letzte Stück einer Kontingent-Aktion gekauft',
-    icon: '🗑️',
+    icon: 'trash',
+    color: 'text-slate-400',
     hidden: true,
     events: ['promo_exhausted_buyer'],
     check: () => true,
@@ -843,7 +887,8 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     key: 'promo_champion',
     name: 'Aktions-Held',
     description: 'Als Erster bei einer neuen Aktion zugeschlagen',
-    icon: '🥇',
+    icon: 'medal',
+    color: 'text-yellow-500',
     hidden: true,
     events: ['promo_first_buyer'],
     check: () => true,

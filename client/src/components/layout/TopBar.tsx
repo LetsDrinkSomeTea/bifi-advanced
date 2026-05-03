@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, UserCircle, ShieldCheck, LogOut, Check } from 'lucide-react';
+import { Bell, UserCircle, ShieldCheck, LogOut, Check, Beer } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth, useLogout } from '../../hooks/useAuth';
 import {
@@ -181,7 +181,10 @@ export function TopBar(): React.JSX.Element {
 
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between px-4 h-14 border-b border-border bg-background/80 backdrop-blur-sm">
-      <span className="font-bold text-base tracking-tight">🍺 BiFi</span>
+      <div className="flex items-center gap-1.5">
+        <Beer className="w-5 h-5 text-amber-500" />
+        <span className="font-bold text-base tracking-tight">BiFi</span>
+      </div>
 
       <div className="flex items-center gap-3">
         {user ? (

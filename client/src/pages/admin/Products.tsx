@@ -299,52 +299,54 @@ export function AdminProductsContent(): React.JSX.Element {
   }>({ open: false });
 
   // Stable sort order for products: only update order when products length or search changes
-  const [stableOrder, setStableOrder] = useState<string[]>([]);
-  const [prevSearch, setPrevSearch] = useState('');
-  const [prevCount, setPrevCount] = useState(0);
+  const [orderState, setOrderState] = useState<{
+    order: string[];
+    search: string;
+    count: number;
+  }>({
+    order: [],
+    search: '',
+    count: 0,
+  });
 
   // Stable sort order for variants: map of buyableId -> variantId order
   const [stableVariantOrders, setStableVariantOrders] = useState<Record<string, string[]>>({});
 
-  const sortedProducts = useMemo(() => {
+  const filtered = useMemo(() => {
     if (!products) return [];
-
     const s = search.toLowerCase().trim();
-    const filtered = products.filter(
+    return products.filter(
       (p) =>
         p.name.toLowerCase().includes(s) ||
         (p.category && CATEGORY_LABELS[p.category].toLowerCase().includes(s)),
     );
+  }, [products, search]);
 
-    // If search or count changed, or we don't have an order yet, recalculate order
-    if (search !== prevSearch || filtered.length !== prevCount || stableOrder.length === 0) {
-      const newOrder = [...filtered]
-        .sort((a, b) => {
-          if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-          return a.name.localeCompare(b.name);
-        })
-        .map((p) => p.id);
+  // Derive stable order during render if search or count changed
+  if (products && (search !== orderState.search || filtered.length !== orderState.count || (orderState.order.length === 0 && filtered.length > 0))) {
+    const newOrder = [...filtered]
+      .sort((a, b) => {
+        if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      })
+      .map((p) => p.id);
+    
+    setOrderState({
+      order: newOrder,
+      search,
+      count: filtered.length,
+    });
+  }
 
-      setStableOrder(newOrder);
-      setPrevSearch(search);
-      setPrevCount(filtered.length);
-
-      return [...filtered].sort((a, b) => {
-        const idxA = newOrder.indexOf(a.id);
-        const idxB = newOrder.indexOf(b.id);
-        return idxA - idxB;
-      });
-    }
-
-    // Otherwise, use the existing order
+  const sortedProducts = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      const idxA = stableOrder.indexOf(a.id);
-      const idxB = stableOrder.indexOf(b.id);
+      const idxA = orderState.order.indexOf(a.id);
+      const idxB = orderState.order.indexOf(b.id);
       if (idxA === -1) return 1;
       if (idxB === -1) return -1;
       return idxA - idxB;
     });
-  }, [products, search, stableOrder, prevSearch, prevCount]);
+  }, [filtered, orderState.order]);
 
   const getSortedVariants = (buyableId: string, variants: BuyableWithVariants['variants']): BuyableWithVariants['variants'] => {
     const existingOrder = stableVariantOrders[buyableId];
