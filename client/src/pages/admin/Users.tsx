@@ -113,6 +113,7 @@ import { Button } from '@/components/ui/Button';
 function UserRow({
   user,
   myRole,
+  myId,
   canChangeRole,
   isModerator,
   isAdmin,
@@ -136,7 +137,8 @@ function UserRow({
   const isHigherRank = ROLE_LEVEL[user.role] > ROLE_LEVEL[myRole];
   const isInactive = !user.isActive;
   // Controls other than activate/deactivate are locked for higher-rank or inactive users
-  const isEditLocked = isHigherRank || isInactive;
+  const isMyEntry = user.id == myId;
+  const isEditLocked = isHigherRank || isInactive
   // All controls (including activate) are locked for higher-rank users
   const isFullyLocked = isHigherRank;
   const myRoleLevel = ROLE_LEVEL[myRole];
@@ -291,7 +293,7 @@ function UserRow({
                   onChange={(e) => {
                     handleUpdate({ role: e.target.value as AdminUser['role'] });
                   }}
-                  disabled={isUpdating || !canChangeRole || isEditLocked}
+                  disabled={isUpdating || !canChangeRole || isEditLocked || isMyEntry}
                   className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring h-10"
                 >
                   {allRoles
@@ -319,7 +321,7 @@ function UserRow({
                   size="sm"
                   className={cn(
                     user.jackpotAllowed &&
-                      'bg-yellow-500/10 border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/20',
+                    'bg-yellow-500/10 border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/20',
                   )}
                 >
                   <Dices
@@ -341,7 +343,7 @@ function UserRow({
                 onClick={() => {
                   handleUpdate({ isActive: !user.isActive });
                 }}
-                disabled={isUpdating || isFullyLocked}
+                disabled={isUpdating || isFullyLocked || isMyEntry}
                 size="sm"
                 variant="outline"
                 className={cn(
@@ -364,7 +366,7 @@ function UserRow({
                     onClick={() => {
                       void handleDelete();
                     }}
-                    disabled={isDeleting || isEditLocked}
+                    disabled={isDeleting || isEditLocked || isMyEntry}
                     variant="destructive"
                     size="sm"
                   >
@@ -413,9 +415,9 @@ function CreateUserModal({
 
   const set =
     (k: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
-      setForm((f) => ({ ...f, [k]: e.target.value }));
-    };
+      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
+        setForm((f) => ({ ...f, [k]: e.target.value }));
+      };
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
@@ -574,6 +576,7 @@ export function AdminUsers(): React.JSX.Element {
   const { data: users, isLoading } = useAdminUsers();
   const { user: me, isAdmin, isModerator } = useAuth();
   const myRole: Role = me?.role ?? 'member';
+  const myId = me?.id;
   const { data: config } = useAuthConfig();
   const [depositTarget, setDepositTarget] = useState<AdminUser | null>(null);
   const [resetTarget, setResetTarget] = useState<AdminUser | null>(null);
@@ -627,6 +630,7 @@ export function AdminUsers(): React.JSX.Element {
             key={u.id}
             user={u}
             myRole={myRole}
+            myId={myId}
             canChangeRole={canChangeRole(u)}
             isModerator={isModerator}
             isAdmin={isAdmin}

@@ -13,6 +13,7 @@
 ## Priorität 3: UX Feinschliff & Testing
 
 - [ ] Nutzern die Möglichkeit geben ein Bild hochzuladen (Simpelste Variante: Lokales Filesystem)
+- [ ] Admin, Statistik und social tabs angleichen (komponente erstellen). Styling von social nehmen, Trennung der Tabs in einzelne Dateien wie bei Admin. Möglichkeiten links/rechts zu swipen um zwischen den Tabs zu wechseln
 - [ ] Anpassen auf Handy, Dark und Light mode, usw.
 - [ ] Emojis durch Icons ersetzen oder entfernen (außer ggf. bei achievements).
 
