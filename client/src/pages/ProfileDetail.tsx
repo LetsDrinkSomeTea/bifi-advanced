@@ -12,6 +12,7 @@ import { useBuyables } from '../hooks/useBuyables';
 import { useAuth } from '../hooks/useAuth';
 import { formatCents, cn } from '../lib/utils';
 import { ROLE_LABEL, ROLE_STYLE } from '../lib/constants';
+import { Avatar } from '../components/ui/Avatar';
 import type { FriendshipStatus } from '@shared/types';
 
 function FriendButton({
@@ -314,13 +315,12 @@ export function ProfileDetail(): React.JSX.Element {
 
         {/* Profile info */}
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold overflow-hidden flex-shrink-0">
-            {profile.avatarUrl !== null ? (
-              <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span>{profile.displayName[0]?.toUpperCase()}</span>
-            )}
-          </div>
+          <Avatar
+            displayName={profile.displayName}
+            avatarUrl={profile.avatarUrl}
+            size="lg"
+            className="text-2xl"
+          />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mt-1">
               <span
@@ -367,7 +367,7 @@ export function ProfileDetail(): React.JSX.Element {
               Statistiken
             </h2>
             <Link
-              href={`/profile/${profile.id}/stats`}
+              href={`/stats/${profile.id}`}
               className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline"
             >
               <BarChart2 size={12} />

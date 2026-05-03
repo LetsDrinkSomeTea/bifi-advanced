@@ -1,555 +1,540 @@
-import { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Edit2, Check, X, Eye, EyeOff } from 'lucide-react';
-import { AdminLayout } from './AdminLayout';
+import { useState, useMemo } from 'react';
+import { Plus, Pencil, ChevronDown, ChevronUp, Package, Search } from 'lucide-react';
 import { Modal } from '../../components/Modal';
-import { useAllBuyables, useUpdateBuyable, useUpdateVariant } from '../../hooks/useAdmin';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../lib/api';
-import type { BuyableWithVariants } from '@shared/types';
+import {
+  useAllBuyables,
+  useCreateBuyable,
+  useUpdateBuyable,
+  useCreateVariant,
+  useUpdateVariant,
+} from '../../hooks/useAdmin';
+import type { BuyableWithVariants, BuyableCategory } from '@shared/types';
 import { formatCents, cn } from '../../lib/utils';
-import { BUYABLE_CATEGORIES, CATEGORY_LABELS } from '@shared/schemas';
+import { CATEGORY_LABELS } from '@shared/schemas';
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
+import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
 
-// ─── Create Product Modal ─────────────────────────────────────────────────────
+// ─── Modals ───────────────────────────────────────────────────────────────────
 
-function CreateProductModal({
+function ProductModal({
+  product,
   open,
   onClose,
 }: {
+  product?: BuyableWithVariants;
   open: boolean;
   onClose: () => void;
 }): React.JSX.Element {
-  const [form, setForm] = useState({ name: '', category: '', variantName: '', variantPrice: '' });
+  const [name, setName] = useState(product?.name ?? '');
+  const [category, setCategory] = useState<BuyableCategory>(product?.category ?? 'other');
+  const [firstVariantName, setFirstVariantName] = useState('');
+  const [firstVariantPrice, setFirstVariantPrice] = useState('');
   const [error, setError] = useState('');
-  const qc = useQueryClient();
-  const { mutate, isPending } = useMutation({
-    mutationFn: () =>
-      api.post('/api/buyables', {
-        name: form.name,
-        category: form.category || undefined,
-        firstVariant: {
-          name: form.variantName,
-          price: Math.round(parseFloat(form.variantPrice) * 100),
+
+  const { mutate: create, isPending: isCreating } = useCreateBuyable();
+  const { mutate: update, isPending: isUpdating } = useUpdateBuyable();
+
+  const handleSubmit = (e: React.FormEvent): void => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    if (product) {
+      update(
+        { id: product.id, name: name.trim(), category },
+        {
+          onSuccess: onClose,
+          onError: (err) => {
+            setError(err instanceof Error ? err.message : 'Fehler');
+          },
         },
-      }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['buyables'] });
-      setForm({ name: '', category: '', variantName: '', variantPrice: '' });
-      onClose();
-    },
-    onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Fehler');
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent): void => {
-    e.preventDefault();
-    const price = parseFloat(form.variantPrice);
-    if (!form.name || !form.variantName || isNaN(price) || price < 0) {
-      setError('Alle Pflichtfelder ausfüllen');
-      return;
+      );
+    } else {
+      const priceCents = Math.round(parseFloat(firstVariantPrice) * 100);
+      if (isNaN(priceCents) || priceCents < 0) {
+        setError('Ungültiger Preis');
+        return;
+      }
+      create(
+        {
+          name: name.trim(),
+          category,
+          firstVariant: { name: firstVariantName.trim() || 'Standard', price: priceCents },
+        },
+        {
+          onSuccess: onClose,
+          onError: (err) => {
+            setError(err instanceof Error ? err.message : 'Fehler');
+          },
+        },
+      );
     }
-    mutate();
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Neues Produkt">
-      <form onSubmit={handleSubmit} className="space-y-3">
+    <Modal open={open} onClose={onClose} title={product ? 'Produkt bearbeiten' : 'Neues Produkt'}>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Produktname *</label>
-          <input
-            value={form.name}
-            onChange={(e) => {
-              setForm((f) => ({ ...f, name: e.target.value }));
-            }}
-            required
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Kategorie</label>
-          <select
-            value={form.category}
-            onChange={(e) => {
-              setForm((f) => ({ ...f, category: e.target.value }));
-            }}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="">Keine Kategorie</option>
-            {BUYABLE_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {CATEGORY_LABELS[cat]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="border-t border-border pt-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            Erste Variante
-          </p>
-          <div className="space-y-2">
-            <input
-              value={form.variantName}
-              onChange={(e) => {
-                setForm((f) => ({ ...f, variantName: e.target.value }));
-              }}
-              required
-              placeholder="Name (z.B. 0,5l) *"
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <input
-              value={form.variantPrice}
-              onChange={(e) => {
-                setForm((f) => ({ ...f, variantPrice: e.target.value }));
-              }}
-              required
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Preis in € *"
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-        </div>
-        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={isPending}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
-        >
-          {isPending ? 'Erstellen…' : 'Produkt erstellen'}
-        </button>
-      </form>
-    </Modal>
-  );
-}
-
-// ─── Add Variant Modal ────────────────────────────────────────────────────────
-
-function AddVariantModal({
-  buyable,
-  onClose,
-}: {
-  buyable: BuyableWithVariants | null;
-  onClose: () => void;
-}): React.JSX.Element {
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
-  const [error, setError] = useState('');
-  const qc = useQueryClient();
-  const { mutate, isPending } = useMutation({
-    mutationFn: () => {
-      if (!buyable) throw new Error('No product selected');
-      return api.post(`/api/buyables/${buyable.id}/variants`, {
-        name,
-        price: Math.round(parseFloat(price) * 100),
-      });
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['buyables'] });
-      setName('');
-      setPrice('');
-      onClose();
-    },
-    onError: (err) => {
-      setError(err instanceof Error ? err.message : 'Fehler');
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent): void => {
-    e.preventDefault();
-    const p = parseFloat(price);
-    if (!name || isNaN(p) || p < 0) {
-      setError('Name und gültigen Preis angeben');
-      return;
-    }
-    mutate();
-  };
-
-  return (
-    <Modal open={!!buyable} onClose={onClose} title={`Variante hinzufügen – ${buyable?.name}`}>
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div>
-          <label className="block text-sm font-medium mb-1">Name *</label>
-          <input
+          <label className="block text-sm font-medium mb-1">Name</label>
+          <Input
+            type="text"
             value={name}
             onChange={(e) => {
               setName(e.target.value);
             }}
             required
             autoFocus
-            placeholder="z.B. 0,3l"
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Preis (€) *</label>
-          <input
-            value={price}
+          <label className="block text-sm font-medium mb-1">Kategorie</label>
+          <select
+            value={category}
             onChange={(e) => {
-              setPrice(e.target.value);
+              setCategory(e.target.value as BuyableCategory);
             }}
-            required
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          >
+            {(Object.entries(CATEGORY_LABELS) as [BuyableCategory, string][]).map(([val, label]) => (
+              <option key={val} value={val}>
+                {label}
+              </option>
+            ))}
+          </select>
         </div>
+
+        {!product ? (
+          <div className="p-3 rounded-xl border border-dashed border-border space-y-3">
+            <p className="text-xs font-bold text-muted-foreground uppercase">Erste Variante</p>
+            <div>
+              <label className="block text-sm font-medium mb-1">Varianten-Name (z.B. 0,5l)</label>
+              <Input
+                type="text"
+                value={firstVariantName}
+                onChange={(e) => {
+                  setFirstVariantName(e.target.value);
+                }}
+                placeholder="Standard"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Preis (€)</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={firstVariantPrice}
+                onChange={(e) => {
+                  setFirstVariantPrice(e.target.value);
+                }}
+                required
+              />
+            </div>
+          </div>
+        ) : null}
+
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <button
+        <Button
           type="submit"
-          disabled={isPending}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
+          disabled={isCreating || isUpdating}
+          className="w-full"
         >
-          {isPending ? 'Hinzufügen…' : 'Variante hinzufügen'}
-        </button>
+          Speichern
+        </Button>
       </form>
     </Modal>
   );
 }
 
-// ─── Variant Row ──────────────────────────────────────────────────────────────
-
-function VariantRow({
-  buyableId,
+function VariantModal({
+  product,
   variant,
-  parentActive,
+  open,
+  onClose,
 }: {
-  buyableId: string;
-  variant: BuyableWithVariants['variants'][0];
-  parentActive: boolean;
+  product: BuyableWithVariants;
+  variant?: BuyableWithVariants['variants'][number];
+  open: boolean;
+  onClose: () => void;
 }): React.JSX.Element {
-  const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(variant.name);
-  const [price, setPrice] = useState((variant.price / 100).toString());
-  const { mutate: update, isPending } = useUpdateVariant();
-  const { mutate: toggleActive } = useUpdateVariant();
+  const [name, setName] = useState(variant?.name ?? '');
+  const [priceEuros, setPriceEuros] = useState(variant ? (variant.price / 100).toFixed(2) : '');
+  const [error, setError] = useState('');
 
-  const handleSave = (): void => {
-    const p = Math.round(parseFloat(price) * 100);
-    if (!name || isNaN(p) || p < 0) return;
-    update(
-      { buyableId, variantId: variant.id, name, price: p },
-      {
-        onSuccess: () => {
-          setIsEditing(false);
+  const { mutate: create, isPending: isCreating } = useCreateVariant();
+  const { mutate: update, isPending: isUpdating } = useUpdateVariant();
+
+  const handleSubmit = (e: React.FormEvent): void => {
+    e.preventDefault();
+    const priceCents = Math.round(parseFloat(priceEuros) * 100);
+    if (isNaN(priceCents) || priceCents < 0) {
+      setError('Ungültiger Preis');
+      return;
+    }
+
+    if (variant) {
+      update(
+        { buyableId: product.id, variantId: variant.id, name: name.trim(), price: priceCents },
+        {
+          onSuccess: onClose,
+          onError: (err) => {
+            setError(err instanceof Error ? err.message : 'Fehler');
+          },
         },
-      },
-    );
+      );
+    } else {
+      create(
+        { buyableId: product.id, name: name.trim(), price: priceCents },
+        {
+          onSuccess: onClose,
+          onError: (err) => {
+            setError(err instanceof Error ? err.message : 'Fehler');
+          },
+        },
+      );
+    }
   };
 
-  const effectiveActive = parentActive && variant.isActive;
-
-  if (isEditing) {
-    return (
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border/50 bg-accent/30">
-        <input
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-          }}
-          className="flex-1 min-w-0 px-2 py-1 rounded border border-input bg-background text-sm"
-          autoFocus
-        />
-        <div className="relative w-20">
-          <input
+  return (
+    <Modal open={open} onClose={onClose} title={variant ? 'Variante bearbeiten' : 'Neue Variante'}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Name (z.B. „0,5l" oder „Kiste")</label>
+          <Input
+            type="text"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
+            required
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Preis (€)</label>
+          <Input
             type="number"
             step="0.01"
-            value={price}
+            value={priceEuros}
             onChange={(e) => {
-              setPrice(e.target.value);
+              setPriceEuros(e.target.value);
             }}
-            className="w-full px-2 py-1 rounded border border-input bg-background text-sm pr-4"
+            required
           />
-          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
-            €
-          </span>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={isPending}
-          className="p-1.5 text-green-500 hover:bg-green-500/10 rounded"
+        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
+        <Button
+          type="submit"
+          disabled={isCreating || isUpdating}
+          className="w-full"
         >
-          <Check size={16} />
-        </button>
-        <button
-          onClick={() => {
-            setIsEditing(false);
-          }}
-          className="p-1.5 text-red-500 hover:bg-red-500/10 rounded"
-        >
-          <X size={16} />
-        </button>
-      </div>
-    );
-  }
+          Speichern
+        </Button>
+      </form>
+    </Modal>
+  );
+}
 
+// ─── Sub-Components ───────────────────────────────────────────────────────────
+
+function VariantRow({
+  variant,
+  onEdit,
+  onToggleActive,
+  isUpdating,
+}: {
+  variant: BuyableWithVariants['variants'][number];
+  onEdit: () => void;
+  onToggleActive: () => void;
+  isUpdating: boolean;
+}): React.JSX.Element {
   return (
     <div
       className={cn(
-        'flex items-center gap-3 px-4 py-2.5 border-b border-border/50 last:border-0',
-        !effectiveActive && 'opacity-50',
+        'flex items-center gap-3 p-3 rounded-xl border transition-all bg-background/50',
+        variant.isActive ? 'border-border' : 'border-dashed opacity-60',
       )}
     >
-      <div className="flex-1 min-w-0 flex items-center gap-2">
-        <div className="flex-1 min-w-0">
-          <span className="text-sm">{variant.name}</span>
-          <span className="ml-2 text-xs text-muted-foreground">{formatCents(variant.price)}</span>
-          {!effectiveActive && (
-            <span className="ml-2 text-xs text-muted-foreground">(inaktiv)</span>
-          )}
-        </div>
-        <button
-          onClick={() => {
-            setIsEditing(true);
-          }}
-          disabled={!parentActive}
-          className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-all ml-1 disabled:opacity-0"
-        >
-          <Edit2 size={14} />
-        </button>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-bold truncate">{variant.name}</p>
+        <p className="text-sm font-black tabular-nums">{formatCents(variant.price)}</p>
       </div>
       <div className="flex items-center gap-1">
-        <button
-          onClick={() => {
-            toggleActive({ buyableId, variantId: variant.id, isActive: !variant.isActive });
-          }}
-          disabled={!parentActive}
-          className={cn(
-            'p-2 rounded-lg border transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed',
-            variant.isActive
-              ? 'border-border text-muted-foreground hover:bg-muted'
-              : 'border-red-500/30 text-red-600 hover:bg-red-500/10',
-          )}
-          title={
-            !parentActive ? 'Produkt ist inaktiv' : variant.isActive ? 'Deaktivieren' : 'Aktivieren'
-          }
+        <Button
+          onClick={onEdit}
+          variant="ghost"
+          size="icon"
+          title="Variante bearbeiten"
         >
-          {variant.isActive ? <Eye size={16} /> : <EyeOff size={16} />}
-        </button>
+          <Pencil size={16} />
+        </Button>
+        <ToggleSwitch
+          active={variant.isActive}
+          disabled={isUpdating}
+          onToggle={onToggleActive}
+          mode="visibility"
+          variant="ghost"
+          label={variant.isActive ? 'Deaktivieren' : 'Aktivieren'}
+        />
       </div>
     </div>
   );
 }
 
-// ─── Product Row ──────────────────────────────────────────────────────────────
+// ─── Main Content ──────────────────────────────────────────────────────────────
 
-function ProductRow({
-  item,
-  onAddVariant,
-}: {
-  item: BuyableWithVariants;
-  onAddVariant: () => void;
-}): React.JSX.Element {
-  const [expanded, setExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(item.name);
-  const [category, setCategory] = useState(item.category ?? '');
-  const { mutate: update, isPending } = useUpdateBuyable();
-  const { mutate: toggleActive } = useUpdateBuyable();
+export function AdminProductsContent(): React.JSX.Element {
+  const { data: products, isLoading } = useAllBuyables();
+  const { mutate: updateBuyable, isPending: isUpdatingBuyable } = useUpdateBuyable();
+  const { mutate: updateVariant, isPending: isUpdatingVariant } = useUpdateVariant();
 
-  const handleSave = (): void => {
-    if (!name) return;
-    update(
-      { id: item.id, name, category: category || null },
-      {
-        onSuccess: () => {
-          setIsEditing(false);
-        },
-      },
+  const [search, setSearch] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [productModal, setProductModal] = useState<{ open: boolean; product?: BuyableWithVariants }>({
+    open: false,
+  });
+  const [variantModal, setVariantModal] = useState<{
+    open: boolean;
+    product?: BuyableWithVariants;
+    variant?: BuyableWithVariants['variants'][number];
+  }>({ open: false });
+
+  // Stable sort order for products: only update order when products length or search changes
+  const [stableOrder, setStableOrder] = useState<string[]>([]);
+  const [prevSearch, setPrevSearch] = useState('');
+  const [prevCount, setPrevCount] = useState(0);
+
+  // Stable sort order for variants: map of buyableId -> variantId order
+  const [stableVariantOrders, setStableVariantOrders] = useState<Record<string, string[]>>({});
+
+  const sortedProducts = useMemo(() => {
+    if (!products) return [];
+
+    const s = search.toLowerCase().trim();
+    const filtered = products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(s) ||
+        (p.category && CATEGORY_LABELS[p.category].toLowerCase().includes(s)),
     );
+
+    // If search or count changed, or we don't have an order yet, recalculate order
+    if (search !== prevSearch || filtered.length !== prevCount || stableOrder.length === 0) {
+      const newOrder = [...filtered]
+        .sort((a, b) => {
+          if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+          return a.name.localeCompare(b.name);
+        })
+        .map((p) => p.id);
+
+      setStableOrder(newOrder);
+      setPrevSearch(search);
+      setPrevCount(filtered.length);
+
+      return [...filtered].sort((a, b) => {
+        const idxA = newOrder.indexOf(a.id);
+        const idxB = newOrder.indexOf(b.id);
+        return idxA - idxB;
+      });
+    }
+
+    // Otherwise, use the existing order
+    return [...filtered].sort((a, b) => {
+      const idxA = stableOrder.indexOf(a.id);
+      const idxB = stableOrder.indexOf(b.id);
+      if (idxA === -1) return 1;
+      if (idxB === -1) return -1;
+      return idxA - idxB;
+    });
+  }, [products, search, stableOrder, prevSearch, prevCount]);
+
+  const getSortedVariants = (buyableId: string, variants: BuyableWithVariants['variants']): BuyableWithVariants['variants'] => {
+    const existingOrder = stableVariantOrders[buyableId];
+
+    // If we have an order and the count hasn't changed, use it
+    if (existingOrder?.length === variants.length) {
+      return [...variants].sort((a, b) => {
+        const idxA = existingOrder.indexOf(a.id);
+        const idxB = existingOrder.indexOf(b.id);
+        if (idxA === -1) return 1;
+        if (idxB === -1) return -1;
+        return idxA - idxB;
+      });
+    }
+
+    // Otherwise (new product or count changed), calculate new stable order
+    const newOrder = [...variants]
+      .sort((a, b) => {
+        if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      })
+      .map((v) => v.id);
+
+    setStableVariantOrders(prev => ({ ...prev, [buyableId]: newOrder }));
+
+    return [...variants].sort((a, b) => {
+      const idxA = newOrder.indexOf(a.id);
+      const idxB = newOrder.indexOf(b.id);
+      return idxA - idxB;
+    });
   };
 
   return (
-    <div
-      className={cn(
-        'rounded-xl border border-border bg-card overflow-hidden',
-        !item.isActive && 'opacity-60',
-      )}
-    >
-      {/* Product header */}
-      <div className="flex items-center gap-2 px-4 py-3 group">
-        <button
-          onClick={() => {
-            setExpanded((e) => !e);
-          }}
-          className="flex items-center gap-2 flex-1 min-w-0 text-left"
-        >
-          {expanded ? (
-            <ChevronDown size={16} className="flex-shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronRight size={16} className="flex-shrink-0 text-muted-foreground" />
-          )}
-
-          {isEditing ? (
-            <div
-              className="flex flex-col gap-2 flex-1"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <input
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                  }}
-                  className="flex-1 min-w-0 px-2 py-1 rounded border border-input bg-background text-sm"
-                  autoFocus
-                />
-                <button
-                  onClick={handleSave}
-                  disabled={isPending}
-                  className="p-1.5 text-red-500 hover:bg-red-500/10 rounded"
-                >
-                  <Check size={16} />
-                </button>
-                <button
-                  onClick={() => {
-                    setIsEditing(false);
-                  }}
-                  className="p-1.5 text-muted-foreground hover:bg-muted rounded"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              <select
-                value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value);
-                }}
-                className="px-2 py-1 rounded border border-input bg-background text-xs w-full"
-              >
-                <option value="">Keine Kategorie</option>
-                {BUYABLE_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {CATEGORY_LABELS[cat]}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <div className="min-w-0 flex-1 flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm truncate">{item.name}</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditing(true);
-                  }}
-                  className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-all"
-                >
-                  <Edit2 size={14} />
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                {item.category ? (
-                  <span className="text-xs text-muted-foreground">
-                    {CATEGORY_LABELS[item.category]}
-                  </span>
-                ) : null}
-                {!item.isActive && <span className="text-xs text-muted-foreground">(inaktiv)</span>}
-              </div>
-            </div>
-          )}
-        </button>
-
-        {!isEditing && (
-          <button
+    <div className="space-y-4">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Produkte & Preise
+          </h2>
+          <Button
             onClick={() => {
-              toggleActive({ id: item.id, isActive: !item.isActive });
+              setProductModal({ open: true });
             }}
-            className={cn(
-              'p-2 rounded-lg border transition-colors flex-shrink-0',
-              item.isActive
-                ? 'border-border text-muted-foreground hover:bg-muted'
-                : 'border-red-500/30 text-red-600 hover:bg-red-500/10',
-            )}
-            title={item.isActive ? 'Deaktivieren' : 'Aktivieren'}
+            size="sm"
+            className="h-8 gap-1.5"
           >
-            {item.isActive ? <Eye size={18} /> : <EyeOff size={18} />}
-          </button>
-        )}
+            <Plus size={14} /> Neu
+          </Button>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+          <Input
+            placeholder="Suchen nach Name oder Kategorie…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
+            className="pl-10"
+          />
+        </div>
       </div>
 
-      {/* Variants */}
-      {expanded ? (
-        <div className="border-t border-border">
-          {item.variants.map((v) => (
-            <VariantRow key={v.id} buyableId={item.id} variant={v} parentActive={item.isActive} />
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-16 rounded-2xl bg-muted animate-pulse" />
           ))}
-          <button
-            onClick={onAddVariant}
-            disabled={!item.isActive}
-            className="flex items-center gap-1.5 w-full px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <Plus size={14} />
-            Variante hinzufügen
-          </button>
         </div>
+      ) : (
+        <div className="space-y-2">
+          {sortedProducts.map((p) => (
+            <div
+              key={p.id}
+              className={cn(
+                'rounded-2xl border transition-all overflow-hidden',
+                expandedId === p.id ? 'border-primary bg-primary/5' : 'border-border bg-card',
+                !p.isActive && expandedId !== p.id && 'opacity-60 grayscale-[0.5]',
+              )}
+            >
+              <div
+                className="px-4 py-3 flex items-center gap-3 cursor-pointer"
+                onClick={() => {
+                  setExpandedId(expandedId === p.id ? null : p.id);
+                }}
+              >
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                  p.isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                )}>
+                  <Package size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={cn("text-sm font-bold truncate", !p.isActive && "text-muted-foreground")}>
+                    {p.name}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                    {p.category ? CATEGORY_LABELS[p.category] : 'Keine Kategorie'} • {p.variants.length} Varianten
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setProductModal({ open: true, product: p });
+                    }}
+
+                    variant="ghost"
+                    size="icon"
+                    title="Variante bearbeiten"
+                  >
+                    <Pencil size={16} />
+                  </Button>
+                  <ToggleSwitch
+                    active={p.isActive}
+                    disabled={isUpdatingBuyable}
+                    onToggle={() => {
+                      updateBuyable({ id: p.id, isActive: !p.isActive });
+                    }}
+                    mode="visibility"
+                    variant="ghost"
+                    label={p.isActive ? 'Deaktivieren' : 'Aktivieren'}
+                  />
+                  <div className="p-1 text-muted-foreground">
+                    {expandedId === p.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </div>
+                </div>
+              </div>
+
+              {expandedId === p.id ? (
+                <div className="px-4 pb-4 pt-2 border-t border-primary/10 space-y-4">
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                      Varianten
+                    </p>
+                    <div className="space-y-1.5">
+                      {getSortedVariants(p.id, p.variants).map((v) => (
+                        <VariantRow
+                          key={v.id}
+                          variant={v}
+                          isUpdating={isUpdatingVariant}
+                          onEdit={() => {
+                            setVariantModal({ open: true, product: p, variant: v });
+                          }}
+                          onToggleActive={() => {
+                            updateVariant({ buyableId: p.id, variantId: v.id, isActive: !v.isActive });
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setVariantModal({ open: true, product: p });
+                      }}
+                      className="w-full py-2 rounded-xl border border-dashed border-primary/30 text-primary text-xs font-bold hover:bg-primary/5 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Plus size={14} /> Variante hinzufügen
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ))}
+          {sortedProducts.length === 0 && (
+            <div className="py-12 text-center text-muted-foreground">
+              <p>Keine Produkte gefunden.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {productModal.open ? (
+        <ProductModal
+          open={productModal.open}
+          product={productModal.product}
+          onClose={() => {
+            setProductModal({ open: false });
+          }}
+        />
+      ) : null}
+      {variantModal.open && variantModal.product ? (
+        <VariantModal
+          open={variantModal.open}
+          product={variantModal.product}
+          variant={variantModal.variant}
+          onClose={() => {
+            setVariantModal({ open: false });
+          }}
+        />
       ) : null}
     </div>
-  );
-}
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
-export function AdminProducts(): React.JSX.Element {
-  const { data: items, isLoading } = useAllBuyables();
-  const [createOpen, setCreateOpen] = useState(false);
-  const [addVariantTarget, setAddVariantTarget] = useState<BuyableWithVariants | null>(null);
-
-  return (
-    <AdminLayout>
-      <div className="space-y-2">
-        <div className="flex justify-end">
-          <button
-            onClick={() => {
-              setCreateOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
-          >
-            <Plus size={15} />
-            Produkt
-          </button>
-        </div>
-
-        {isLoading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />
-            ))}
-          </div>
-        ) : null}
-
-        {items?.map((item) => (
-          <ProductRow
-            key={item.id}
-            item={item}
-            onAddVariant={() => {
-              setAddVariantTarget(item);
-            }}
-          />
-        ))}
-
-        {!isLoading && items?.length === 0 && (
-          <p className="text-center text-muted-foreground text-sm py-8">Noch keine Produkte</p>
-        )}
-      </div>
-
-      <CreateProductModal
-        open={createOpen}
-        onClose={() => {
-          setCreateOpen(false);
-        }}
-      />
-      <AddVariantModal
-        buyable={addVariantTarget}
-        onClose={() => {
-          setAddVariantTarget(null);
-        }}
-      />
-    </AdminLayout>
   );
 }

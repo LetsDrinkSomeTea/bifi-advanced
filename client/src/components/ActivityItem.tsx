@@ -1,34 +1,12 @@
 import type { ReactNode } from 'react';
 import { Link } from 'wouter';
 import { cn, formatTimestamp } from '../lib/utils';
+import { Avatar } from './ui/Avatar';
 
 export interface ActivityUser {
   id: string;
   displayName: string;
   avatarUrl: string | null;
-}
-
-export function UserAvatar({
-  user,
-  className,
-}: {
-  user: Pick<ActivityUser, 'displayName' | 'avatarUrl'>;
-  className?: string;
-}): React.JSX.Element {
-  return (
-    <div
-      className={cn(
-        'w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold overflow-hidden flex-shrink-0',
-        className,
-      )}
-    >
-      {user.avatarUrl !== null ? (
-        <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
-      ) : (
-        <span>{user.displayName[0]?.toUpperCase()}</span>
-      )}
-    </div>
-  );
 }
 
 export function ProfileLink({
@@ -67,7 +45,7 @@ export function ActivityItem({
       <div className="flex flex-col items-center flex-shrink-0">
         <div className="relative">
           <Link href={`/profile/${user.id}`}>
-            <UserAvatar user={user} />
+            <Avatar displayName={user.displayName} avatarUrl={user.avatarUrl} size="sm" />
           </Link>
           {icon ? (
             <span className="absolute -bottom-1 -right-1 text-[11px] leading-none select-none bg-background rounded-full">

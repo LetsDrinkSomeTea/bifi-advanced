@@ -47,24 +47,42 @@ export function formatRelative(date: string | Date): string {
   const now = Date.now();
   const then = new Date(date).getTime();
   const diffMs = now - then;
-  const diffMin = Math.floor(diffMs / 60_000);
-  const diffH = Math.floor(diffMin / 60);
-  const diffD = Math.floor(diffH / 24);
+  const absDiffMin = Math.floor(Math.abs(diffMs) / 60_000);
+  const absDiffH = Math.floor(absDiffMin / 60);
+  const absDiffD = Math.floor(absDiffH / 24);
 
-  if (diffMin < 1) return 'gerade eben';
-  if (diffMin < 60) return `vor ${diffMin} Min.`;
-  if (diffH < 24) return `vor ${diffH} Std.`;
-  if (diffD < 7) return `vor ${diffD} Tag${diffD === 1 ? '' : 'en'}`;
-  return formatDate(date);
+  if (Math.abs(diffMs) < 60_000) return 'gerade eben';
+
+  if (diffMs > 0) {
+    // Past
+    if (absDiffMin < 60) return `vor ${absDiffMin} Min.`;
+    if (absDiffH < 24) return `vor ${absDiffH} Std.`;
+    if (absDiffD < 7) return `vor ${absDiffD} Tag${absDiffD === 1 ? '' : 'en'}`;
+    return formatDate(date);
+  } else {
+    // Future
+    if (absDiffMin < 60) return `in ${absDiffMin} Min.`;
+    if (absDiffH < 24) return `in ${absDiffH} Std.`;
+    if (absDiffD < 7) return `in ${absDiffD} Tag${absDiffD === 1 ? '' : 'en'}`;
+    return formatDate(date);
+  }
 }
 
 export function formatTimestamp(date: string | Date): string {
   const now = Date.now();
   const then = new Date(date).getTime();
-  const diffMin = Math.floor((now - then) / 60_000);
+  const diffMs = now - then;
+  const absDiffMin = Math.floor(Math.abs(diffMs) / 60_000);
 
-  if (diffMin < 1) return 'gerade eben';
-  if (diffMin < 60) return `vor ${diffMin} Min.`;
+  if (Math.abs(diffMs) < 60_000) return 'gerade eben';
+
+  if (diffMs > 0) {
+    // Past
+    if (absDiffMin < 60) return `vor ${absDiffMin} Min.`;
+  } else {
+    // Future
+    if (absDiffMin < 60) return `in ${absDiffMin} Min.`;
+  }
 
   const d = new Date(date);
   const timeStr = d.toLocaleTimeString('de-DE', {
@@ -78,6 +96,10 @@ export function formatTimestamp(date: string | Date): string {
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
   if (d.toDateString() === yesterday.toDateString()) return `gestern, ${timeStr}`;
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  if (d.toDateString() === tomorrow.toDateString()) return `morgen, ${timeStr}`;
 
   const dateStr = d.toLocaleDateString('de-DE', {
     day: 'numeric',

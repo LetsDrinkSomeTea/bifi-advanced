@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link, useSearch, useLocation } from 'wouter';
+import { Link } from 'wouter';
 import {
   Search,
   Users2,
@@ -11,12 +11,9 @@ import {
   Hash,
   Crown,
   X,
-  Lock,
 } from 'lucide-react';
-import { Layout } from '../components/layout/Layout';
-import { Modal } from '../components/Modal';
-import { FeedTimeline } from '../components/FeedTimeline';
-import { useGroups, useCreateGroup, useJoinGroup } from '../hooks/useGroups';
+import { Modal } from '../../components/Modal';
+import { useGroups, useCreateGroup, useJoinGroup } from '../../hooks/useGroups';
 import {
   useFriends,
   useFriendRequests,
@@ -24,13 +21,9 @@ import {
   useSendFriendRequest,
   useAcceptFriendRequest,
   useRemoveFriend,
-} from '../hooks/useFriends';
-import { useLeaderboard } from '../hooks/useLeaderboard';
-import { useFeed } from '../hooks/useFeed';
-import { useAuth } from '../hooks/useAuth';
-import { formatCents, cn } from '../lib/utils';
-import type { FeedEntry } from '@shared/types';
-import { Button } from '@/components/ui/Button';
+} from '../../hooks/useFriends';
+import { Button } from '../../components/ui/Button';
+import { Avatar } from '../../components/ui/Avatar';
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
@@ -150,26 +143,6 @@ function JoinGroupModal({
         </button>
       </form>
     </Modal>
-  );
-}
-
-// ─── Avatar helper ────────────────────────────────────────────────────────────
-
-function Avatar({
-  displayName,
-  avatarUrl,
-}: {
-  displayName: string;
-  avatarUrl: string | null;
-}): React.JSX.Element {
-  return (
-    <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold overflow-hidden flex-shrink-0">
-      {avatarUrl !== null ? (
-        <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-      ) : (
-        <span>{displayName[0]?.toUpperCase()}</span>
-      )}
-    </div>
   );
 }
 
@@ -448,214 +421,7 @@ function SearchResults({
   );
 }
 
-// ─── Leaderboard tab ──────────────────────────────────────────────────────────
-
-type LeaderboardType =
-  | 'total_spent'
-  | 'total_purchases'
-  | 'achievements'
-  | 'prost_sent'
-  | 'jackpot_spins';
-type LeaderboardPeriod = 'week' | 'month' | 'alltime';
-
-const PERIOD_LABELS: Record<LeaderboardPeriod, string> = {
-  week: 'Woche',
-  month: 'Monat',
-  alltime: 'Gesamt',
-};
-
-function formatValue(type: LeaderboardType, value: number): string {
-  if (type === 'total_spent') return formatCents(value);
-  if (type === 'achievements') return `${value} 🏆`;
-  if (type === 'prost_sent') return `${value} 🥂`;
-  if (type === 'jackpot_spins') return `${value} 🎰`;
-  return String(value);
-}
-
-function RankMedal({ rank }: { rank: number }): React.JSX.Element {
-  if (rank === 1) return <span className="text-lg leading-none">🥇</span>;
-  if (rank === 2) return <span className="text-lg leading-none">🥈</span>;
-  if (rank === 3) return <span className="text-lg leading-none">🥉</span>;
-  return (
-    <span className="w-6 text-center text-sm font-semibold text-muted-foreground">{rank}</span>
-  );
-}
-
-function LeaderboardSection({
-  type,
-  title,
-  period,
-  currentUserId,
-}: {
-  type: LeaderboardType;
-  title: string;
-  period: LeaderboardPeriod;
-  currentUserId: string | undefined;
-}): React.JSX.Element {
-  const { data, isLoading } = useLeaderboard(type, period);
-  const top3 = (data ?? []).slice(0, 3);
-
-  return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-        {title}
-      </h3>
-      {isLoading ? (
-        <div className="space-y-1.5">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 rounded-xl bg-muted animate-pulse" />
-          ))}
-        </div>
-      ) : top3.length === 0 ? (
-        <div className="rounded-2xl border border-border px-4 py-4 text-sm text-muted-foreground text-center">
-          Noch keine Einträge
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-border overflow-hidden">
-          {top3.map((entry) => {
-            const isSelf = entry.userId === currentUserId;
-            return (
-              <Link key={entry.userId} href={isSelf ? '/profile' : `/profile/${entry.userId}`}>
-                <div
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-accent/50 transition-colors',
-                    isSelf ? 'bg-primary/5' : 'bg-card',
-                  )}
-                >
-                  <div className="w-6 flex items-center justify-center flex-shrink-0">
-                    <RankMedal rank={entry.rank} />
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold overflow-hidden flex-shrink-0">
-                    {entry.avatarUrl !== null ? (
-                      <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <span>{entry.displayName[0]?.toUpperCase()}</span>
-                    )}
-                  </div>
-                  <span
-                    className={cn('flex-1 text-sm font-medium truncate', isSelf && 'text-primary')}
-                  >
-                    {isSelf ? `${entry.displayName} (du)` : entry.displayName}
-                  </span>
-                  {entry.value === null ? (
-                    <span className="flex items-center gap-1 text-muted-foreground text-sm">
-                      <Lock size={11} />
-                      <span className="tabular-nums">––</span>
-                    </span>
-                  ) : (
-                    <span className="text-sm font-semibold tabular-nums">
-                      {formatValue(type, entry.value)}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LeaderboardTab(): React.JSX.Element {
-  const [period, setPeriod] = useState<LeaderboardPeriod>('alltime');
-  const { user } = useAuth();
-
-  return (
-    <div className="space-y-5">
-      {/* Period pills */}
-      <div className="flex gap-2">
-        {(Object.keys(PERIOD_LABELS) as LeaderboardPeriod[]).map((p) => (
-          <button
-            key={p}
-            onClick={() => {
-              setPeriod(p);
-            }}
-            className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
-              period === p
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'border-border text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {PERIOD_LABELS[p]}
-          </button>
-        ))}
-      </div>
-
-      <LeaderboardSection
-        type="total_spent"
-        title="Ausgaben"
-        period={period}
-        currentUserId={user?.id}
-      />
-      <LeaderboardSection
-        type="total_purchases"
-        title="Käufe"
-        period={period}
-        currentUserId={user?.id}
-      />
-      <LeaderboardSection
-        type="achievements"
-        title="Achievements"
-        period={period}
-        currentUserId={user?.id}
-      />
-      <LeaderboardSection
-        type="prost_sent"
-        title="Prost gesendet"
-        period={period}
-        currentUserId={user?.id}
-      />
-      <LeaderboardSection
-        type="jackpot_spins"
-        title="Spins"
-        period={period}
-        currentUserId={user?.id}
-      />
-    </div>
-  );
-}
-
-// ─── Activity tab ─────────────────────────────────────────────────────────────
-
-function ActivityTab(): React.JSX.Element {
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useFeed();
-  const entries: FeedEntry[] = data?.pages.flatMap((p) => p.data) ?? [];
-
-  return (
-    <FeedTimeline
-      entries={entries}
-      isLoading={isLoading}
-      hasNextPage={hasNextPage}
-      fetchNextPage={() => {
-        void fetchNextPage();
-      }}
-      isFetchingNextPage={isFetchingNextPage}
-    />
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-const TABS = ['social', 'leaderboard', 'activity'] as const;
-type Tab = (typeof TABS)[number];
-
-export function Social(): React.JSX.Element {
-  const search = useSearch();
-  const [, navigate] = useLocation();
-
-  const initialTab: Tab = (() => {
-    const t = new URLSearchParams(search).get('tab');
-    return TABS.includes(t as Tab) ? (t as Tab) : 'social';
-  })();
-
-  const [tab, setTab] = useState<Tab>(initialTab);
-
-  const changeTab = (newTab: Tab): void => {
-    setTab(newTab);
-    navigate(newTab === 'social' ? '/social' : `/social?tab=${newTab}`, { replace: true });
-  };
+export function SocialMainContent(): React.JSX.Element {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
@@ -665,14 +431,13 @@ export function Social(): React.JSX.Element {
   const { data: friends } = useFriends();
 
   useEffect(() => {
-    if (tab !== 'social') return;
     const t = setTimeout(() => {
       setDebouncedQuery(query);
     }, 300);
     return () => {
       clearTimeout(t);
     };
-  }, [query, tab]);
+  }, [query]);
 
   const isSearching = debouncedQuery.length >= 2;
 
@@ -680,89 +445,49 @@ export function Social(): React.JSX.Element {
   const currentFriends = friends ?? [];
 
   return (
-    <Layout>
-      <div className="px-4 py-4 max-w-lg mx-auto space-y-4">
-        {/* Tab switcher */}
-        <div className="flex gap-1 bg-muted rounded-xl p-1">
-          {(
-            [
-              ['social', 'Sozial'],
-              ['activity', 'Aktivität'],
-              ['leaderboard', 'Rangliste'],
-            ] as [Tab, string][]
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              onClick={() => {
-                changeTab(value);
-              }}
-              className={cn(
-                'flex-1 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                tab === value
-                  ? 'bg-background shadow-sm text-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {tab === 'social' ? (
-          <div className="space-y-5">
-            {/* Search */}
-            <div className="relative">
-              <Search
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-              />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                }}
-                placeholder="Gruppen und Personen suchen…"
-                className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              {query !== '' ? (
-                <button
-                  onClick={() => {
-                    setQuery('');
-                  }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X size={14} />
-                </button>
-              ) : null}
-            </div>
-
-            {isSearching ? (
-              <SearchResults
-                query={debouncedQuery}
-                groups={currentGroups}
-                friends={currentFriends}
-              />
-            ) : (
-              <>
-                <GroupsSection
-                  onCreateOpen={() => {
-                    setCreateOpen(true);
-                  }}
-                  onJoinOpen={() => {
-                    setJoinOpen(true);
-                  }}
-                />
-                <FriendsSection />
-              </>
-            )}
-          </div>
-        ) : tab === 'activity' ? (
-          <ActivityTab />
-        ) : (
-          <LeaderboardTab />
-        )}
+    <div className="space-y-5">
+      {/* Search */}
+      <div className="relative">
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+        />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+          }}
+          placeholder="Gruppen und Personen suchen…"
+          className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        {query !== '' ? (
+          <button
+            onClick={() => {
+              setQuery('');
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X size={14} />
+          </button>
+        ) : null}
       </div>
+
+      {isSearching ? (
+        <SearchResults query={debouncedQuery} groups={currentGroups} friends={currentFriends} />
+      ) : (
+        <>
+          <GroupsSection
+            onCreateOpen={() => {
+              setCreateOpen(true);
+            }}
+            onJoinOpen={() => {
+              setJoinOpen(true);
+            }}
+          />
+          <FriendsSection />
+        </>
+      )}
 
       <CreateGroupModal
         open={createOpen}
@@ -776,6 +501,6 @@ export function Social(): React.JSX.Element {
           setJoinOpen(false);
         }}
       />
-    </Layout>
+    </div>
   );
 }

@@ -212,7 +212,7 @@ export function Home(): React.JSX.Element {
               Aktivität
             </h2>
             <Link
-              href="/social?tab=activity"
+              href="/social/activity"
               className="flex items-center gap-0.5 text-xs text-primary hover:underline"
             >
               Alle <ChevronRight size={13} />

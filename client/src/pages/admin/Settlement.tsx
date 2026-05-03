@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { Bell } from 'lucide-react';
-import { AdminLayout } from './AdminLayout';
-import { Modal } from '../../components/Modal';
-import { useSettlement, useDeposit, useSendReminder } from '../../hooks/useAdmin';
+import { useState } from 'react';
+import { Coins, CheckCircle2, History, Bell, ChevronDown } from 'lucide-react';
+import { useSettlement, useSendReminder, useDeposit } from '../../hooks/useAdmin';
+import { cn, formatCents } from '../../lib/utils';
+import { Avatar } from '../../components/ui/Avatar';
 import type { SettlementEntry } from '@shared/types';
-import { formatCents, cn } from '../../lib/utils';
+import { Modal } from '../../components/Modal';
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
+
+// ─── Local Deposit Modal ──────────────────────────────────────────────────────
 
 function DepositModal({
   user,
@@ -14,7 +18,7 @@ function DepositModal({
   onClose: () => void;
 }): React.JSX.Element {
   const [euros, setEuros] = useState('');
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState('Schuldenbegleichung');
   const [error, setError] = useState('');
   const { mutate: deposit, isPending } = useDeposit();
 
@@ -40,14 +44,10 @@ function DepositModal({
 
   return (
     <Modal open={!!user} onClose={onClose} title={`Einzahlung – ${user?.displayName}`}>
-      <p className="text-sm text-muted-foreground mb-4">
-        Aktueller Kontostand:{' '}
-        <span className="font-semibold text-red-500">{user ? formatCents(user.balance) : ''}</span>
-      </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Betrag (€)</label>
-          <input
+          <Input
             type="number"
             step="0.01"
             min="0.01"
@@ -57,136 +57,162 @@ function DepositModal({
               setEuros(e.target.value);
               setError('');
             }}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             autoFocus
           />
+          {user ? <p className="text-[10px] text-muted-foreground mt-1 uppercase font-bold">
+            Schuldenstand: {formatCents(user.balance)}
+          </p> : null}
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Notiz (optional)</label>
-          <input
+          <Input
             type="text"
             placeholder="z.B. Bareinzahlung"
             value={note}
             onChange={(e) => {
               setNote(e.target.value);
             }}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <button
+        <Button
           type="submit"
           disabled={isPending}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
+          className="w-full"
         >
-          {isPending ? 'Wird gebucht…' : 'Einzahlen'}
-        </button>
+          {isPending ? 'Verarbeiten…' : 'Bestätigen'}
+        </Button>
       </form>
     </Modal>
   );
 }
 
-export function AdminSettlement(): React.JSX.Element {
-  const { data: debtors, isLoading } = useSettlement();
-  const [depositTarget, setDepositTarget] = useState<SettlementEntry | null>(null);
+// ─── Main Content ──────────────────────────────────────────────────────────────
+
+export function AdminSettlementContent(): React.JSX.Element {
+  const { data: debts, isLoading } = useSettlement();
   const { mutate: sendReminder, isPending: isReminding } = useSendReminder();
-  const [lastNudgeId, setLastNudgeId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [depositUser, setDepositUser] = useState<SettlementEntry | null>(null);
+  const [remindedIds, setRemindedIds] = useState<Record<string, boolean>>({});
 
-  const total = debtors?.reduce((sum, u) => sum + u.balance, 0) ?? 0;
-
-  const handleNudge = (userId: string): void => {
-    sendReminder(userId, {
+  const handleRemind = (debt: SettlementEntry): void => {
+    sendReminder(debt.id, {
       onSuccess: () => {
-        setLastNudgeId(userId);
+        setRemindedIds((prev) => ({ ...prev, [debt.id]: true }));
         setTimeout(() => {
-          setLastNudgeId(null);
-        }, 3000);
+          setRemindedIds((prev) => ({ ...prev, [debt.id]: false }));
+        }, 2000);
       },
     });
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-3">
-        {!isLoading && debtors && debtors.length > 0 ? (
-          <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">
-              {debtors.length} Nutzer mit Schulden
-            </span>
-            <span className="font-bold text-red-500 text-sm tabular-nums">
-              {formatCents(total)}
-            </span>
-          </div>
-        ) : null}
-
-        {isLoading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
-            ))}
-          </div>
-        ) : null}
-
-        {!isLoading && (!debtors || debtors.length === 0) ? (
-          <p className="text-center text-muted-foreground text-sm py-12">
-            Alle Konten sind ausgeglichen 🎉
-          </p>
-        ) : null}
-
-        {debtors?.map((u) => (
-          <div
-            key={u.id}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card"
-          >
-            <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold flex-shrink-0 overflow-hidden">
-              {u.avatarUrl !== null ? (
-                <img src={u.avatarUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                u.displayName[0]?.toUpperCase()
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm truncate">{u.displayName}</p>
-              <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-            </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <span className="font-bold text-sm text-red-500 tabular-nums mr-1">
-                {formatCents(u.balance)}
-              </span>
-              <button
-                onClick={() => {
-                  handleNudge(u.id);
-                }}
-                disabled={isReminding || lastNudgeId === u.id}
-                className={cn(
-                  'p-2 rounded-lg border transition-all',
-                  lastNudgeId === u.id
-                    ? 'bg-green-500/10 border-green-500/50 text-green-600'
-                    : 'border-border text-muted-foreground hover:bg-accent hover:text-foreground',
-                )}
-                title="Erinnerung senden"
-              >
-                <Bell size={15} className={lastNudgeId === u.id ? 'fill-current' : ''} />
-              </button>
-              <button
-                onClick={() => {
-                  setDepositTarget(u);
-                }}
-                className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent transition-colors"
-              >
-                + €
-              </button>
-            </div>
-          </div>
-        ))}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          Offene Schulden
+        </h2>
+        <div className="p-2 rounded-lg bg-muted text-muted-foreground">
+          <History size={16} />
+        </div>
       </div>
 
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
+          ))}
+        </div>
+      ) : (debts ?? []).length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
+          <CheckCircle2 className="mx-auto mb-2 text-green-500 opacity-40" size={32} />
+          <p className="text-sm font-medium text-foreground">Alle Konten ausgeglichen!</p>
+          <p className="text-xs mt-1">Es gibt aktuell keine negativen Kontostände.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {debts?.map((d) => {
+            const isExpanded = expandedId === d.id;
+            const isReminded = remindedIds[d.id];
+
+            return (
+              <div
+                key={d.id}
+                className={cn(
+                  'rounded-2xl border transition-all overflow-hidden',
+                  isExpanded ? 'border-primary bg-primary/5' : 'border-border bg-card',
+                )}
+              >
+                <div
+                  className="px-4 py-3 flex items-center gap-3 cursor-pointer"
+                  onClick={() => {
+                    setExpandedId(isExpanded ? null : d.id);
+                  }}
+                >
+                  <Avatar displayName={d.displayName} avatarUrl={d.avatarUrl} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate">{d.displayName}</p>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                      {d.email}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-black text-red-500 tabular-nums">
+                      {formatCents(d.balance)}
+                    </p>
+                  </div>
+                  <ChevronDown
+                    size={16}
+                    className={cn(
+                      'text-muted-foreground transition-transform',
+                      isExpanded && 'rotate-180',
+                    )}
+                  />
+                </div>
+
+                {isExpanded ? (
+                  <div className="px-4 pb-4 pt-2 border-t border-primary/10 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() => {
+                          setDepositUser(d);
+                        }}
+                        className="gap-2"
+                      >
+                        <Coins size={16} /> Einzahlen
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          handleRemind(d);
+                        }}
+                        disabled={isReminding || isReminded}
+                        className={cn(
+                          'gap-2 transition-all duration-300',
+                          isReminded
+                            ? 'bg-green-50 border-green-200 text-green-600'
+                            : 'border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700',
+                        )}
+                      >
+                        {isReminded ? <CheckCircle2 size={16} /> : <Bell size={16} />}
+                        {isReminded ? 'Erinnert!' : 'Erinnern'}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <DepositModal
-        user={depositTarget}
+        user={depositUser}
         onClose={() => {
-          setDepositTarget(null);
+          setDepositUser(null);
         }}
       />
-    </AdminLayout>
+    </div>
   );
 }

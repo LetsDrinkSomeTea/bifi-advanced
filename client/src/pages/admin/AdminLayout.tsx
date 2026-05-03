@@ -1,37 +1,32 @@
-import { Link, useLocation } from 'wouter';
+import { useLocation } from 'wouter';
 import { Layout } from '../../components/layout/Layout';
-import { cn } from '../../lib/utils';
+import { Tabs, TabContent, type TabItem } from '../../components/ui/Tabs';
 
-const TABS = [
-  { href: '/admin/users', label: 'Nutzer' },
-  { href: '/admin/products', label: 'Produkte' },
-  { href: '/admin/promotions', label: 'Rabatte' },
-  { href: '/admin/settlement', label: 'Schulden' },
+const ADMIN_TABS: TabItem[] = [
+  { id: 'users', label: 'Nutzer', href: '/admin/users' },
+  { id: 'products', label: 'Produkte', href: '/admin/products' },
+  { id: 'promotions', label: 'Rabatte', href: '/admin/promotions' },
+  { id: 'settlement', label: 'Schulden', href: '/admin/settlement' },
 ];
 
 export function AdminLayout({ children }: { children: React.ReactNode }): React.JSX.Element {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+
+  const activeTab = ADMIN_TABS.find((tab) => location.startsWith(tab.href))?.id ?? 'users';
+
+  const handleTabChange = (id: string): void => {
+    const tab = ADMIN_TABS.find((t) => t.id === id);
+    if (tab) navigate(tab.href);
+  };
+
   return (
     <Layout>
-      <div className="border-b border-border sticky bg-background z-10">
-        <div className="flex px-2 max-w-lg mx-auto">
-          {TABS.map((tab) => (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={cn(
-                'px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors',
-                location.startsWith(tab.href)
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </div>
+      <div className="px-4 py-4 max-w-lg mx-auto space-y-4">
+        <Tabs items={ADMIN_TABS} activeId={activeTab} />
+        <TabContent activeId={activeTab} items={ADMIN_TABS} onTabChange={handleTabChange}>
+          {children}
+        </TabContent>
       </div>
-      <div className="px-4 py-4 max-w-lg mx-auto">{children}</div>
     </Layout>
   );
 }

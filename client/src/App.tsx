@@ -10,18 +10,16 @@ import { History } from './pages/History';
 import { Feed } from './pages/Feed';
 import { Profile } from './pages/Profile';
 import { ProfileDetail } from './pages/ProfileDetail';
-import { Social } from './pages/Social';
+import { SocialPage } from './pages/social/SocialPage';
+import { StatsPage } from './pages/stats/StatsPage';
+import { AdminPage } from './pages/admin/AdminPage';
 import { GroupDetail } from './pages/GroupDetail';
 import { AllAchievements } from './pages/AllAchievements';
-import { ProfileStats } from './pages/ProfileStats';
-import { AdminUsers } from './pages/admin/Users';
-import { AdminProducts } from './pages/admin/Products';
-import { AdminPromotions } from './pages/admin/Promotions';
-import { AdminSettlement } from './pages/admin/Settlement';
-import { JoinGroup } from './pages/JoinGroup';
+
 
 import { GlobalDialog } from './components/GlobalDialog';
 import { DialogProvider } from './hooks/dialogContext';
+import { JoinGroup } from './pages/JoinGroup';
 
 export function App(): React.JSX.Element {
   return (
@@ -46,22 +44,27 @@ export function App(): React.JSX.Element {
               <Profile />
             </ProtectedRoute>
           </Route>
-          <Route path="/profile/stats">
-            <ProtectedRoute>
-              <ProfileStats />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/profile/:userId">
-            {(): React.JSX.Element => (
+          {/* Stats Routes */}
+          <Route path="/stats/:userId?/:type?">
+            {() => (
               <ProtectedRoute>
-                <ProfileDetail />
+                <StatsPage />
               </ProtectedRoute>
             )}
           </Route>
+
+          <Route path="/profile/stats">
+            <Redirect to="/stats" />
+          </Route>
           <Route path="/profile/:userId/stats">
-            {(): React.JSX.Element => (
+            {(params) => (
+              <Redirect to={`/stats/${params.userId}`} />
+            )}
+          </Route>
+          <Route path="/profile/:userId">
+            {() => (
               <ProtectedRoute>
-                <ProfileStats />
+                <ProfileDetail />
               </ProtectedRoute>
             )}
           </Route>
@@ -71,11 +74,15 @@ export function App(): React.JSX.Element {
               <Feed />
             </ProtectedRoute>
           </Route>
-          <Route path="/social">
-            <ProtectedRoute>
-              <Social />
-            </ProtectedRoute>
+          {/* Social Routes */}
+          <Route path="/social/:tab?">
+            {() => (
+              <ProtectedRoute>
+                <SocialPage />
+              </ProtectedRoute>
+            )}
           </Route>
+
           <Route path="/groups/:groupId">
             {(): React.JSX.Element => (
               <ProtectedRoute>
@@ -107,28 +114,12 @@ export function App(): React.JSX.Element {
           </Route>
 
           {/* Admin */}
-          <Route path="/admin">
-            <Redirect to="/admin/users" />
-          </Route>
-          <Route path="/admin/users">
-            <ProtectedRoute requireRole="moderator">
-              <AdminUsers />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/admin/products">
-            <ProtectedRoute requireRole="moderator">
-              <AdminProducts />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/admin/promotions">
-            <ProtectedRoute requireRole="moderator">
-              <AdminPromotions />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/admin/settlement">
-            <ProtectedRoute requireRole="moderator">
-              <AdminSettlement />
-            </ProtectedRoute>
+          <Route path="/admin/:page?">
+            {() => (
+              <ProtectedRoute requireRole="moderator">
+                <AdminPage />
+              </ProtectedRoute>
+            )}
           </Route>
 
           {/* Catch-all */}

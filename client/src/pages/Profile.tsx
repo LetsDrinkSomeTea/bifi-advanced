@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { usePublicProfile, useUpdateProfile } from '../hooks/useProfile';
 import { type ProstVoucher, useProstVouchers } from '../hooks/useProst';
 import { formatCents, balanceColor, cn } from '../lib/utils';
+import { Avatar } from '../components/ui/Avatar';
 import { type Role } from '@shared/types';
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -201,13 +202,12 @@ export function Profile(): React.JSX.Element {
       <div className="px-4 py-4 max-w-lg mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold overflow-hidden flex-shrink-0">
-            {user?.avatarUrl ? (
-              <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <span>{user?.displayName[0]?.toUpperCase()}</span>
-            )}
-          </div>
+          <Avatar
+            displayName={user?.displayName ?? ''}
+            avatarUrl={user?.avatarUrl ?? null}
+            size="lg"
+            className="text-2xl"
+          />
           <div className="flex-1 min-w-0 pt-1">
             <h1 className="text-xl font-bold truncate">{user?.displayName}</h1>
             {user?.username ? (
@@ -254,7 +254,7 @@ export function Profile(): React.JSX.Element {
               Statistiken
             </h2>
             <Link
-              href="/profile/stats"
+              href="/stats"
               className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline"
             >
               <BarChart2 size={12} />

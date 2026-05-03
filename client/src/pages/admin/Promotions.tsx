@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Plus, Trash2, Play, Square, Edit2, Calendar } from 'lucide-react';
-import { AdminLayout } from './AdminLayout';
+import { useState, useMemo } from 'react';
+import { Plus, Trash2, Tag, Package, Search, Pencil, Calendar } from 'lucide-react';
 import { Modal } from '../../components/Modal';
+import { useAllBuyables } from '../../hooks/useAdmin';
 import {
   usePromotions,
   useCreatePromotion,
@@ -9,11 +9,13 @@ import {
   useDeletePromotion,
   type Promotion,
 } from '../../hooks/usePromotions';
-import { useAllBuyables } from '../../hooks/useAdmin';
-import { formatCents, cn, toLocalISO, fromLocalISO, APP_TZ } from '../../lib/utils';
-
+import { formatCents, formatTimestamp, cn, toLocalISO, fromLocalISO } from '../../lib/utils';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
+import { useDialog } from '../../hooks/useDialog';
+
+// ─── Promotion Modal ──────────────────────────────────────────────────────────
 
 function PromotionModal({
   open,
@@ -30,7 +32,7 @@ function PromotionModal({
 
   const [name, setName] = useState('');
   const [type, setType] = useState<'percent' | 'fixed'>('percent');
-  const [value, setValue] = useState('0');
+  const [value, setValue] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [targetBuyableId, setTargetBuyableId] = useState('');
@@ -38,7 +40,7 @@ function PromotionModal({
   const [quantityLimit, setQuantityLimit] = useState('');
   const [error, setError] = useState('');
 
-  // Sync state when promotion or open state changes without using useEffect for internal resets
+  // Sync state when promotion or open state changes
   const [lastSyncId, setLastSyncId] = useState<string | null>(null);
   const syncId = open ? (promotion?.id ?? 'new') : null;
 
@@ -46,13 +48,9 @@ function PromotionModal({
     setLastSyncId(syncId);
     if (open) {
       setName(promotion?.name ?? '');
-      setType(
-        promotion?.discountFixedCents !== null && promotion?.discountFixedCents !== undefined
-          ? 'fixed'
-          : 'percent',
-      );
+      setType(promotion?.discountFixedCents != null ? 'fixed' : 'percent');
       setValue(
-        promotion?.discountFixedCents !== null && promotion?.discountFixedCents !== undefined
+        promotion?.discountFixedCents != null
           ? (promotion.discountFixedCents / 100).toString()
           : (promotion?.discountPercent ?? '0').toString(),
       );
@@ -64,6 +62,8 @@ function PromotionModal({
       setError('');
     }
   }
+
+  const selectedBuyable = buyables?.find((b) => b.id === targetBuyableId);
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
@@ -84,18 +84,7 @@ function PromotionModal({
       return;
     }
 
-    interface PromotionPayload {
-      name: string;
-      discountPercent: number | null;
-      discountFixedCents: number | null;
-      startTime: string | null;
-      endTime: string | null;
-      appliesTo: { buyableId: string; variantId?: string } | null;
-      isActive: boolean;
-      quantityLimit: number | null;
-    }
-
-    const body: PromotionPayload = {
+    const body = {
       name: name.trim(),
       discountPercent: type === 'percent' ? Math.round(numericValue) : null,
       discountFixedCents: type === 'fixed' ? Math.round(numericValue * 100) : null,
@@ -131,10 +120,12 @@ function PromotionModal({
     }
   };
 
-  const selectedBuyable = buyables?.find((b) => b.id === targetBuyableId);
-
   return (
-    <Modal open={open} onClose={onClose} title={promotion ? 'Rabatt bearbeiten' : 'Neuer Rabatt'}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={promotion ? 'Rabatt bearbeiten' : 'Neuer Rabatt'}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Name (z.B. "Happy Hour")</label>
@@ -145,6 +136,7 @@ function PromotionModal({
               setName(e.target.value);
             }}
             placeholder="Happy Hour"
+            autoFocus
           />
         </div>
 
@@ -201,7 +193,7 @@ function PromotionModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Ziel-Produkt (optional)</label>
+          <label className="block text-sm font-medium mb-1">Gilt für...</label>
           <select
             value={targetBuyableId}
             onChange={(e) => {
@@ -234,7 +226,7 @@ function PromotionModal({
               <option value="">Alle Varianten von {selectedBuyable.name}</option>
               {selectedBuyable.variants.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.name}
+                  {v.name} ({formatCents(v.price)})
                 </option>
               ))}
             </select>
@@ -254,215 +246,247 @@ function PromotionModal({
             placeholder="z.B. 20 (leer = unbegrenzt)"
           />
           <p className="text-[11px] text-muted-foreground mt-1">
-            Wenn gesetzt, gilt der Rabatt nur für die ersten N Einheiten global. Danach wird die
-            Aktion automatisch deaktiviert.
+            Gilt global für die ersten N Einheiten.
           </p>
         </div>
 
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        <Button type="submit" disabled={creating || updating} className="w-full">
-          {promotion !== null && promotion !== undefined ? 'Aktualisieren' : 'Rabatt erstellen'}
+        <Button
+          type="submit"
+          disabled={creating || updating}
+          className="w-full"
+        >
+          {promotion ? 'Aktualisieren' : 'Rabatt erstellen'}
         </Button>
       </form>
     </Modal>
   );
 }
 
-import { useDialog } from '../../hooks/useDialog';
+// ─── Main Content ──────────────────────────────────────────────────────────────
 
-export function AdminPromotions(): React.JSX.Element {
+export function AdminPromotionsContent(): React.JSX.Element {
   const { data: promotions, isLoading } = usePromotions();
-  const { mutate: update } = useUpdatePromotion();
-  const { mutate: remove } = useDeletePromotion();
   const { data: buyables } = useAllBuyables();
+  const { mutate: updatePromo, isPending: isUpdating } = useUpdatePromotion();
+  const { mutate: deletePromo } = useDeletePromotion();
   const dialog = useDialog();
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
   const [selectedPromo, setSelectedPromo] = useState<Promotion | null>(null);
 
-  const handleEdit = (p: Promotion): void => {
-    setSelectedPromo(p);
-    setModalOpen(true);
-  };
+  // Stable sort order: only update order when products length or search changes
+  const [stableOrder, setStableOrder] = useState<string[]>([]);
+  const [prevSearch, setPrevSearch] = useState('');
+  const [prevCount, setPrevCount] = useState(0);
 
-  const handleToggle = (p: Promotion): void => {
-    update({ id: p.id, isActive: !p.isActive });
-  };
+  const filteredPromotions = useMemo(() => {
+    if (!promotions) return [];
+    const s = search.toLowerCase().trim();
+    const filtered = promotions.filter((p) => p.name.toLowerCase().includes(s));
 
-  const getTargetLabel = (p: Promotion): string => {
+    if (search !== prevSearch || filtered.length !== prevCount || stableOrder.length === 0) {
+      const newOrder = [...filtered]
+        .sort((a, b) => {
+          if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+          return a.name.localeCompare(b.name);
+        })
+        .map((p) => p.id);
+      
+      setStableOrder(newOrder);
+      setPrevSearch(search);
+      setPrevCount(filtered.length);
+      
+      return [...filtered].sort((a, b) => {
+        const idxA = newOrder.indexOf(a.id);
+        const idxB = newOrder.indexOf(b.id);
+        return idxA - idxB;
+      });
+    }
+
+    return [...filtered].sort((a, b) => {
+      const idxA = stableOrder.indexOf(a.id);
+      const idxB = stableOrder.indexOf(b.id);
+      if (idxA === -1) return 1;
+      if (idxB === -1) return -1;
+      return idxA - idxB;
+    });
+  }, [promotions, search, stableOrder, prevSearch, prevCount]);
+
+  const getScopeLabel = (p: Promotion): string => {
     if (!p.appliesTo) return 'Alle Produkte';
-    const b = buyables?.find((b) => b.id === p.appliesTo?.buyableId);
-    if (!b) return 'Unbekanntes Produkt';
-    if (!p.appliesTo.variantId) return b.name;
-    const v = b.variants.find((v) => v.id === p.appliesTo?.variantId);
-    return `${b.name} (${v?.name ?? '?'})`;
+    const buyable = buyables?.find((b) => b.id === p.appliesTo?.buyableId);
+    if (!buyable) return 'Unbekanntes Produkt';
+    if (!p.appliesTo.variantId) return buyable.name;
+    const variant = buyable.variants.find((v) => v.id === p.appliesTo?.variantId);
+    return `${buyable.name} (${variant?.name ?? 'Unbekannte Variante'})`;
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-4">
+    <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">Rabatte & Aktionen</h1>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Aktionen & Rabatte
+          </h2>
           <Button
             onClick={() => {
               setSelectedPromo(null);
-              setModalOpen(true);
+              setCreateOpen(true);
             }}
             size="sm"
+            className="h-8 gap-1.5"
           >
-            <Plus size={16} className="mr-1.5" />
-            Neu
+            <Plus size={14} /> Neu
           </Button>
         </div>
 
-        {isLoading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 rounded-xl bg-muted animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {promotions?.map((p) => (
-              <div
-                key={p.id}
-                className={cn(
-                  'rounded-2xl border border-border p-4 bg-card transition-opacity',
-                  !p.isActive && 'opacity-60',
-                )}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold truncate">{p.name}</h3>
-                      <span
-                        className={cn(
-                          'text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider',
-                          p.discountFixedCents != null
-                            ? 'bg-orange-500/10 text-orange-500'
-                            : 'bg-green-500/10 text-green-500',
-                        )}
-                      >
-                        {p.discountFixedCents != null
-                          ? `${formatCents(p.discountFixedCents)} Fix`
-                          : `-${p.discountPercent}%`}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Target:{' '}
-                      <span className="text-foreground font-medium">{getTargetLabel(p)}</span>
-                    </p>
-                    {p.quantityLimit != null && (
-                      <div className="flex items-center gap-1.5 text-[10px] mt-1">
-                        <span
-                          className={cn(
-                            'font-semibold',
-                            p.quantityUsed >= p.quantityLimit
-                              ? 'text-destructive'
-                              : 'text-blue-500',
-                          )}
-                        >
-                          {p.quantityUsed >= p.quantityLimit
-                            ? 'Kontingent aufgebraucht'
-                            : `Kontingent: ${p.quantityLimit - p.quantityUsed} von ${p.quantityLimit} übrig`}
-                        </span>
-                      </div>
-                    )}
-                    {p.startTime || p.endTime ? (
-                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                        <Calendar size={10} />
-                        <span>
-                          {p.startTime
-                            ? new Date(p.startTime).toLocaleString('de-DE', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                timeZone: APP_TZ,
-                              })
-                            : '∞'}
-                          {' – '}
-                          {p.endTime
-                            ? new Date(p.endTime).toLocaleString('de-DE', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                timeZone: APP_TZ,
-                              })
-                            : '∞'}
-                        </span>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        handleToggle(p);
-                      }}
-                      className={cn(
-                        p.isActive
-                          ? 'text-orange-500 hover:text-orange-500'
-                          : 'text-green-500 hover:text-green-500',
-                      )}
-                      title={p.isActive ? 'Deaktivieren' : 'Aktivieren'}
-                    >
-                      {p.isActive ? <Square size={16} /> : <Play size={16} />}
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        handleEdit(p);
-                      }}
-                      title="Bearbeiten"
-                    >
-                      <Edit2 size={16} />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        void (async () => {
-                          if (
-                            await dialog.confirmDelete(
-                              'Löschen?',
-                              'Soll die Aktion wirklich gelöscht werden?',
-                            )
-                          )
-                            remove(p.id);
-                        })();
-                      }}
-                      className="hover:text-destructive"
-                      title="Löschen"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {(promotions?.length ?? 0) === 0 ? (
-              <div className="text-center py-12 text-muted-foreground text-sm border-2 border-dashed border-border rounded-2xl">
-                Keine Rabatte konfiguriert
-              </div>
-            ) : null}
-          </div>
-        )}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+          <Input
+            placeholder="Suchen nach Aktionsname…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
+            className="pl-10"
+          />
+        </div>
       </div>
 
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-24 rounded-2xl bg-muted animate-pulse" />
+          ))}
+        </div>
+      ) : filteredPromotions.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
+          <Tag className="mx-auto mb-2 opacity-20" size={32} />
+          <p className="text-sm">Keine Aktionen gefunden.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredPromotions.map((p) => (
+            <div
+              key={p.id}
+              className={cn(
+                'rounded-2xl border border-border bg-card p-4 space-y-3 transition-all',
+                !p.isActive && 'opacity-60 grayscale-[0.5]',
+              )}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={cn(
+                    "p-2 rounded-lg transition-colors",
+                    p.isActive ? "bg-orange-500/10 text-orange-500" : "bg-muted text-muted-foreground"
+                  )}>
+                    <Tag size={16} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm leading-tight">{p.name}</h3>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                        Seit {formatTimestamp(p.createdAt)}
+                      </p>
+                      {p.endTime && (
+                        <div className="flex items-center gap-1 text-[10px] text-orange-600 font-bold uppercase">
+                          <Calendar size={10} />
+                          Bis {formatTimestamp(p.endTime)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <ToggleSwitch
+                    active={p.isActive}
+                    disabled={isUpdating}
+                    onToggle={() => {
+                      updatePromo({ id: p.id, isActive: !p.isActive });
+                    }}
+                    mode="playback"
+                    variant="ghost"
+                    label={p.isActive ? 'Pausieren' : 'Starten'}
+                  />
+                  <button
+                    onClick={() => {
+                      setSelectedPromo(p);
+                      setCreateOpen(true);
+                    }}
+                    className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      void (async () => {
+                        if (await dialog.confirmDelete('Aktion beenden', `Soll die Aktion "${p.name}" wirklich gelöscht werden?`)) {
+                          deletePromo(p.id);
+                        }
+                      })();
+                    }}
+                    className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-muted/50 border border-border/50">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase mb-0.5">
+                    Anwendbar auf
+                  </p>
+                  <p className="text-xs font-semibold truncate">
+                    {getScopeLabel(p)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase mb-0.5">
+                    Rabatt
+                  </p>
+                  <p className="text-sm font-black tabular-nums text-primary">
+                    {p.discountFixedCents != null
+                      ? `Fixpreis ${formatCents(p.discountFixedCents)}`
+                      : `-${p.discountPercent}%`}
+                  </p>
+                </div>
+              </div>
+
+              {p.quantityLimit !== null ? (
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Package size={12} />
+                    <span>
+                      Verfügbar: <b>{Math.max(0, p.quantityLimit - p.quantityUsed)}</b> von {p.quantityLimit}
+                    </span>
+                  </div>
+                  <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all"
+                      style={{
+                        width: `${Math.min(100, (Math.max(0, p.quantityLimit - p.quantityUsed) / p.quantityLimit) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+
       <PromotionModal
-        open={modalOpen}
+        open={createOpen}
         onClose={() => {
-          setModalOpen(false);
+          setCreateOpen(false);
           setSelectedPromo(null);
         }}
         promotion={selectedPromo}
       />
-    </AdminLayout>
+    </div>
   );
 }

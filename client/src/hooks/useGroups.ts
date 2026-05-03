@@ -5,7 +5,7 @@ import {
   type UseQueryResult,
   type UseMutationResult,
 } from '@tanstack/react-query';
-import { api } from '../lib/api';
+import { api, type ApiError } from '../lib/api';
 
 export type GroupRole = 'owner' | 'member';
 
@@ -62,7 +62,7 @@ export function useCreateGroup(): UseMutationResult<
   });
 }
 
-export function useJoinGroup(): UseMutationResult<GroupSummary, Error, string> {
+export function useJoinGroup(): UseMutationResult<GroupSummary, ApiError, string> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (inviteCode: string) => api.post<GroupSummary>('/api/groups/join', { inviteCode }),

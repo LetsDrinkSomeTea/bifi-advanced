@@ -93,6 +93,22 @@ export function useSettlement(): UseQueryResult<SettlementEntry[]> {
   });
 }
 
+export function useSettleDebt(): UseMutationResult<
+  void,
+  Error,
+  { userId: string; amount: number }
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, amount }: { userId: string; amount: number }) =>
+      api.post(`/api/admin/users/${userId}/deposit`, { amount, note: 'Schuldenbegleichung' }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+      void qc.invalidateQueries({ queryKey: ['admin', 'settlement'] });
+    },
+  });
+}
+
 export function useResetPassword(): UseMutationResult<
   void,
   Error,
@@ -131,7 +147,6 @@ export function useSendReminder(): UseMutationResult<void, Error, string> {
     mutationFn: (userId: string) => api.post(`/api/admin/users/${userId}/remind`, {}),
   });
 }
-
 export function useUpdateBuyable(): UseMutationResult<
   void,
   Error,
@@ -157,6 +172,65 @@ export function useUpdateBuyable(): UseMutationResult<
       isActive?: boolean;
       sortOrder?: number;
     }) => api.put(`/api/buyables/${id}`, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['buyables'] });
+      void qc.invalidateQueries({ queryKey: ['admin', 'users'] }); // Potentially affects shop visibility
+    },
+  });
+}
+
+export function useCreateBuyable(): UseMutationResult<
+  void,
+  Error,
+  {
+    name: string;
+    imageUrl?: string;
+    category?: string;
+    sortOrder?: number;
+    firstVariant: { name: string; price: number };
+  }
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      name: string;
+      imageUrl?: string;
+      category?: string;
+      sortOrder?: number;
+      firstVariant: { name: string; price: number };
+    }) => api.post('/api/buyables', body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['buyables'] });
+    },
+  });
+}
+
+export function useDeleteBuyable(): UseMutationResult<void, Error, string> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/buyables/${id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['buyables'] });
+    },
+  });
+}
+
+export function useCreateVariant(): UseMutationResult<
+  void,
+  Error,
+  { buyableId: string; name: string; price: number; sortOrder?: number }
+> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      buyableId,
+      ...body
+    }: {
+      buyableId: string;
+      name: string;
+      price: number;
+      sortOrder?: number;
+    }) => api.post(`/api/buyables/${buyableId}/variants`, body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['buyables'] });
     },
