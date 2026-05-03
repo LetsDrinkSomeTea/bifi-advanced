@@ -22,6 +22,13 @@ export interface AchievementDef {
   progressFormat?: 'count' | 'cents'; // how to display the progress value (default: count)
 }
 
+export type PublicAchievementDef = Omit<AchievementDef, 'check' | 'events' | 'progress'>;
+
+export interface AchievementMetaResponse {
+  publicMeta: PublicAchievementDef[];
+  hiddenCount: number;
+}
+
 // ─── Event types ──────────────────────────────────────────────────────────────
 
 export type AchievementEventType =

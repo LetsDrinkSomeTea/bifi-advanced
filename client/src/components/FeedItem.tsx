@@ -363,7 +363,7 @@ export function FeedItem({ entry, hasConnector = false }: Props): React.JSX.Elem
       hasConnector={hasConnector}
       createdAt={entry.createdAt}
     >
-      {feedText(entry, currentUser?.id, achievements)}
+      {feedText(entry, currentUser?.id, achievements?.publicMeta)}
     </ActivityItem>
   );
 }

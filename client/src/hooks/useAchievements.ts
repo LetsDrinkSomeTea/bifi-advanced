@@ -1,11 +1,11 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { AchievementDef } from '@shared/achievements';
+import type { AchievementMetaResponse } from '@shared/achievements';
 
-export function useAchievementMeta(): UseQueryResult<AchievementDef[]> {
-  return useQuery<AchievementDef[]>({
+export function useAchievementMeta(): UseQueryResult<AchievementMetaResponse> {
+  return useQuery<AchievementMetaResponse>({
     queryKey: ['achievements', 'meta'],
-    queryFn: () => api.get<AchievementDef[]>('/api/achievements/meta'),
+    queryFn: () => api.get<AchievementMetaResponse>('/api/achievements/meta'),
     staleTime: Infinity, // Meta data doesn't change often
   });
 }

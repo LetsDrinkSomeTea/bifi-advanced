@@ -1,6 +1,6 @@
 import { useParams, useLocation } from 'wouter';
-import { ArrowLeft } from 'lucide-react';
 import { Layout } from '../components/layout/Layout';
+import { PageHeader } from '../components/PageHeader';
 import { AchievementGrid } from '@/components/AchievementGrid';
 import { usePublicProfile } from '../hooks/useProfile';
 import { useAuth } from '../hooks/useAuth';
@@ -18,19 +18,12 @@ export function AllAchievements(): React.JSX.Element {
   return (
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={() => {
-              navigate(isOwn ? '/profile' : `/profile/${userId}`);
-            }}
-            className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-xl font-bold">
-            {isOwn ? 'Meine Achievements' : `${profile?.displayName ?? '...'}'s Achievements`}
-          </h1>
-        </div>
+        <PageHeader
+          title={isOwn ? 'Meine Achievements' : `${profile?.displayName ?? '...'}'s Achievements`}
+          onBack={() => {
+            navigate(isOwn ? '/profile' : `/profile/${userId}`);
+          }}
+        />
 
         {isLoading ? (
           <div className="grid grid-cols-4 gap-2">

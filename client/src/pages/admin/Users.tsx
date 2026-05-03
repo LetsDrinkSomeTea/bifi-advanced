@@ -9,6 +9,7 @@ import {
   Trash2,
   Eye,
   EyeOff,
+  Coins,
 } from 'lucide-react';
 import { AdminLayout } from './AdminLayout';
 import { Modal } from '../../components/Modal';
@@ -21,7 +22,8 @@ import {
   useDeleteUser,
 } from '../../hooks/useAdmin';
 import { useAuth, useAuthConfig } from '../../hooks/useAuth';
-import type { AdminUser } from '@shared/types';
+import type { AdminUser, Role } from '@shared/types';
+import { ROLE_LEVEL } from '@shared/types';
 import { cn, formatCents } from '../../lib/utils';
 import { ROLE_LABEL, ROLE_STYLE } from '../../lib/constants';
 
@@ -105,8 +107,12 @@ function DepositModal({
 
 // ─── User Row ─────────────────────────────────────────────────────────────────
 
+import { useDialog } from '../../hooks/useDialog';
+import { Button } from '@/components/ui/Button';
+
 function UserRow({
   user,
+  myRole,
   canChangeRole,
   isModerator,
   isAdmin,
@@ -114,6 +120,7 @@ function UserRow({
   onResetPassword,
 }: {
   user: AdminUser;
+  myRole: Role;
   canChangeRole: boolean;
   isModerator: boolean;
   isAdmin: boolean;
@@ -124,13 +131,31 @@ function UserRow({
   const { mutate: update, isPending: isUpdating } = useUpdateUser();
   const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser();
   const [deleteError, setDeleteError] = useState('');
+  const dialog = useDialog();
+
+  const isHigherRank = ROLE_LEVEL[user.role] > ROLE_LEVEL[myRole];
+  const isInactive = !user.isActive;
+  // Controls other than activate/deactivate are locked for higher-rank or inactive users
+  const isEditLocked = isHigherRank || isInactive;
+  // All controls (including activate) are locked for higher-rank users
+  const isFullyLocked = isHigherRank;
+  const myRoleLevel = ROLE_LEVEL[myRole];
+  const allRoles = (Object.keys(ROLE_LEVEL) as Role[]).sort(
+    (a, b) => ROLE_LEVEL[a] - ROLE_LEVEL[b],
+  );
 
   const handleUpdate = (patch: Partial<AdminUser>): void => {
     update({ id: user.id, ...patch });
   };
 
-  const handleDelete = (): void => {
-    if (!window.confirm(`Möchtest du ${user.displayName} wirklich löschen?`)) return;
+  const handleDelete = async (): Promise<void> => {
+    if (
+      !(await dialog.confirmDelete(
+        'Nutzer löschen',
+        `Möchtest du ${user.displayName} wirklich löschen?`,
+      ))
+    )
+      return;
     deleteUser(user.id, {
       onError: (err) => {
         setDeleteError(
@@ -212,31 +237,38 @@ function UserRow({
           }}
         >
           {isModerator ? (
-            <button
+            <Button
               onClick={onDeposit}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-accent transition-colors"
+              size="icon"
+              variant="outline"
+              title="Guthaben aufladen"
+              disabled={isInactive}
             >
-              + €
-            </button>
+              <Plus size={13} />
+              <Coins size={18} />
+            </Button>
           ) : null}
           {isAdmin ? (
-            <button
+            <Button
               onClick={onResetPassword}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              size="icon"
+              variant="outline"
               title="Passwort setzen"
+              disabled={isEditLocked}
             >
-              <KeyRound size={15} />
-            </button>
+              <KeyRound size={18} />
+            </Button>
           ) : null}
-          <button
+          <Button
             onClick={() => {
               setExpanded(!expanded);
             }}
-            className="p-1.5 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+            size="icon"
+            variant="ghost"
             title={expanded ? 'Einklappen' : 'Ausklappen'}
           >
             {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -259,12 +291,16 @@ function UserRow({
                   onChange={(e) => {
                     handleUpdate({ role: e.target.value as AdminUser['role'] });
                   }}
-                  disabled={isUpdating || !canChangeRole}
-                  className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  disabled={isUpdating || !canChangeRole || isEditLocked}
+                  className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring h-10"
                 >
-                  <option value="member">Member</option>
-                  <option value="moderator">Moderator</option>
-                  <option value="admin">Admin</option>
+                  {allRoles
+                    .filter((r) => ROLE_LEVEL[r] <= myRoleLevel || r === user.role)
+                    .map((r) => (
+                      <option key={r} value={r} disabled={ROLE_LEVEL[r] > myRoleLevel}>
+                        {ROLE_LABEL[r]}
+                      </option>
+                    ))}
                 </select>
               </div>
             }
@@ -274,21 +310,24 @@ function UserRow({
                 Status & Features
               </label>
               <div className="flex flex-wrap gap-2">
-                <button
+                <Button
                   onClick={() => {
                     handleUpdate({ jackpotAllowed: !user.jackpotAllowed });
                   }}
-                  disabled={isUpdating}
+                  disabled={isUpdating || isEditLocked}
+                  variant={user.jackpotAllowed ? 'default' : 'outline'}
+                  size="sm"
                   className={cn(
-                    'flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold',
-                    user.jackpotAllowed
-                      ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/20'
-                      : 'bg-muted border-border text-muted-foreground hover:bg-muted/80',
+                    user.jackpotAllowed &&
+                      'bg-yellow-500/10 border-yellow-500/50 text-yellow-600 hover:bg-yellow-500/20',
                   )}
                 >
-                  <Dices size={14} className={user.jackpotAllowed ? 'text-yellow-500' : ''} />
+                  <Dices
+                    size={14}
+                    className={cn('mr-2', user.jackpotAllowed && 'text-yellow-500')}
+                  />
                   Jackpot
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -298,32 +337,40 @@ function UserRow({
               ID: {user.id}
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <button
+              <Button
                 onClick={() => {
                   handleUpdate({ isActive: !user.isActive });
                 }}
-                disabled={isUpdating}
+                disabled={isUpdating || isFullyLocked}
+                size="sm"
+                variant="outline"
                 className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold',
                   user.isActive
                     ? 'bg-orange-500/10 border-orange-500/50 text-orange-600 hover:bg-orange-500/20'
                     : 'bg-green-500/10 border-green-500/50 text-green-600 hover:bg-green-500/20',
                 )}
               >
-                {user.isActive ? <EyeOff size={14} /> : <Eye size={14} />}
+                {user.isActive ? (
+                  <EyeOff size={14} className="mr-1.5" />
+                ) : (
+                  <Eye size={14} className="mr-1.5" />
+                )}
                 {user.isActive ? 'Deaktivieren' : 'Aktivieren'}
-              </button>
+              </Button>
 
               {isAdmin ? (
                 <div className="flex flex-col items-end gap-1">
-                  <button
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all text-xs font-semibold"
+                  <Button
+                    onClick={() => {
+                      void handleDelete();
+                    }}
+                    disabled={isDeleting || isEditLocked}
+                    variant="destructive"
+                    size="sm"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={14} className="mr-1.5" />
                     Nutzer löschen
-                  </button>
+                  </Button>
                   {deleteError !== '' ? (
                     <p className="text-[10px] text-destructive max-w-[200px] text-right">
                       {deleteError}
@@ -344,10 +391,16 @@ function UserRow({
 function CreateUserModal({
   open,
   onClose,
+  myRole,
 }: {
   open: boolean;
   onClose: () => void;
+  myRole: Role;
 }): React.JSX.Element {
+  const myRoleLevel = ROLE_LEVEL[myRole];
+  const allRoles = (Object.keys(ROLE_LEVEL) as Role[]).sort(
+    (a, b) => ROLE_LEVEL[a] - ROLE_LEVEL[b],
+  );
   const [form, setForm] = useState({
     email: '',
     username: '',
@@ -407,9 +460,13 @@ function CreateUserModal({
             onChange={set('role')}
             className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            <option value="member">Member</option>
-            <option value="moderator">Moderator</option>
-            <option value="admin">Admin</option>
+            {allRoles
+              .filter((r) => ROLE_LEVEL[r] <= myRoleLevel)
+              .map((r) => (
+                <option key={r} value={r}>
+                  {ROLE_LABEL[r]}
+                </option>
+              ))}
           </select>
         </div>
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -515,7 +572,8 @@ function ResetPasswordModal({
 
 export function AdminUsers(): React.JSX.Element {
   const { data: users, isLoading } = useAdminUsers();
-  const { isAdmin, isModerator } = useAuth();
+  const { user: me, isAdmin, isModerator } = useAuth();
+  const myRole: Role = me?.role ?? 'member';
   const { data: config } = useAuthConfig();
   const [depositTarget, setDepositTarget] = useState<AdminUser | null>(null);
   const [resetTarget, setResetTarget] = useState<AdminUser | null>(null);
@@ -568,6 +626,7 @@ export function AdminUsers(): React.JSX.Element {
           <UserRow
             key={u.id}
             user={u}
+            myRole={myRole}
             canChangeRole={canChangeRole(u)}
             isModerator={isModerator}
             isAdmin={isAdmin}
@@ -602,6 +661,7 @@ export function AdminUsers(): React.JSX.Element {
         onClose={() => {
           setCreateOpen(false);
         }}
+        myRole={myRole}
       />
     </AdminLayout>
   );

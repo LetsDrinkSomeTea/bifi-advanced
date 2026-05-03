@@ -9,6 +9,7 @@ import { sessionMiddleware } from './middleware/session.ts';
 import { APP_TZ } from './services/achievements.ts';
 import { globalRateLimit } from './middleware/rateLimit.ts';
 import { initRedis } from './db/redis.ts';
+import { initOIDC } from './services/oidc.ts';
 import { openApiSpec } from './openapi.ts';
 import authRoutes from './routes/auth.ts';
 import localAuthRoutes from './routes/auth.local.ts';
@@ -109,6 +110,7 @@ if (process.env.NODE_ENV === 'production') {
 
 async function main(): Promise<void> {
   await initRedis();
+  await initOIDC();
   console.log(`Starting BiFi with TZ: ${APP_TZ}`);
   const port = parseInt(process.env.PORT ?? '3000');
   serve({ fetch: app.fetch, port }, () => {

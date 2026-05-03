@@ -173,9 +173,10 @@ export function Home(): React.JSX.Element {
                         toggleFav({ variantId: fav.variantId, isFav: true });
                       }}
                       className={cn(
-                        'absolute -top-1 -right-1 p-1 rounded-full bg-background border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all opacity-0 group-hover:opacity-100 shadow-sm z-10',
+                        'absolute -top-1 -right-1 p-1 rounded-full bg-background border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all shadow-sm z-10',
                         !fav.isAvailable && 'opacity-100',
                       )}
+                      hidden={fav.isAvailable}
                       title="Aus Favoriten entfernen"
                     >
                       <X size={10} />

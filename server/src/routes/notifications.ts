@@ -79,8 +79,7 @@ router.get('/stream', requireAuth, (c) => {
       });
 
       // Keep-alive pings every 30 s
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      while (true) {
+      for (;;) {
         await stream.sleep(30_000);
         await stream.writeSSE({ event: 'ping', data: '{}' });
       }

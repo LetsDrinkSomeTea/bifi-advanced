@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import { useState } from 'react';
 import { Copy, RefreshCw, LogOut, Trash2, UserX, QrCode, X } from 'lucide-react';
 import { Layout } from '../components/layout/Layout';
+import { PageHeader } from '../components/PageHeader';
 import {
   useGroupDetail,
   useLeaveGroup,
@@ -12,6 +13,8 @@ import {
 } from '../hooks/useGroups';
 import { useAuth } from '../hooks/useAuth';
 import { cn } from '../lib/utils';
+
+import { useDialog } from '../hooks/useDialog';
 
 function copyToClipboard(text: string): Promise<void> {
   return navigator.clipboard.writeText(text);
@@ -58,6 +61,7 @@ function QRModal({
 export function GroupDetail(): React.JSX.Element {
   const { groupId } = useParams<{ groupId: string }>();
   const { user } = useAuth();
+  const dialog = useDialog();
   const { data: group, isLoading } = useGroupDetail(groupId);
   const { mutate: leave, isPending: leaving } = useLeaveGroup();
   const { mutate: remove, isPending: removing } = useRemoveMember();
@@ -108,13 +112,13 @@ export function GroupDetail(): React.JSX.Element {
   return (
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-xl font-bold">{group.name}</h1>
-          {group.description ? (
-            <p className="text-sm text-muted-foreground mt-1">{group.description}</p>
-          ) : null}
-        </div>
+        <PageHeader
+          title={group.name}
+          subtitle={group.description ?? undefined}
+          onBack={() => {
+            navigate('/social');
+          }}
+        />
 
         {/* Invite code */}
         <div className="rounded-2xl border border-border bg-card px-4 py-4 space-y-3">
@@ -211,11 +215,20 @@ export function GroupDetail(): React.JSX.Element {
         <div className="space-y-2 pb-4">
           <button
             onClick={() => {
-              leave(group.id, {
-                onSuccess: () => {
-                  navigate('/social');
-                },
-              });
+              void (async () => {
+                if (
+                  await dialog.confirmDelete(
+                    'Gruppe verlassen',
+                    `Gruppe "${group.name}" wirklich verlassen?`,
+                  )
+                ) {
+                  leave(group.id, {
+                    onSuccess: () => {
+                      navigate('/social');
+                    },
+                  });
+                }
+              })();
             }}
             disabled={leaving}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-1 disabled:opacity-50"
@@ -227,13 +240,20 @@ export function GroupDetail(): React.JSX.Element {
           {isOwner ? (
             <button
               onClick={() => {
-                if (confirm(`Gruppe „${group.name}" wirklich löschen?`)) {
-                  deleteGroup(group.id, {
-                    onSuccess: () => {
-                      navigate('/social');
-                    },
-                  });
-                }
+                void (async () => {
+                  if (
+                    await dialog.confirmDelete(
+                      'Gruppe löschen',
+                      `Gruppe „${group.name}" wirklich löschen?`,
+                    )
+                  ) {
+                    deleteGroup(group.id, {
+                      onSuccess: () => {
+                        navigate('/social');
+                      },
+                    });
+                  }
+                })();
               }}
               disabled={deleting}
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-1 disabled:opacity-50"

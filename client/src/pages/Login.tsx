@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth, useAuthConfig } from '../hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
-import { cn } from '../lib/utils';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 
 export function Login(): React.JSX.Element | null {
   const { user, isLoading } = useAuth();
@@ -90,12 +91,9 @@ export function Login(): React.JSX.Element | null {
         ) : null}
 
         {showOIDC ? (
-          <button
-            onClick={handleSSOLogin}
-            className="w-full py-2.5 px-4 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors text-sm"
-          >
+          <Button onClick={handleSSOLogin} className="w-full">
             Mit SSO anmelden
-          </button>
+          </Button>
         ) : null}
 
         {showOIDC && showLocal ? (
@@ -118,17 +116,12 @@ export function Login(): React.JSX.Element | null {
           >
             <div>
               <label className="block text-sm font-medium mb-1.5">E-Mail oder Benutzername</label>
-              <input
+              <Input
                 type="text"
                 value={login}
                 onChange={(e) => {
                   setLogin(e.target.value);
                 }}
-                className={cn(
-                  'w-full px-3 py-2 rounded-md border bg-background text-sm',
-                  'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
-                  'border-input',
-                )}
                 placeholder="name@verein.de"
                 autoComplete="username"
                 autoCorrect="off"
@@ -138,28 +131,24 @@ export function Login(): React.JSX.Element | null {
 
             <div>
               <label className="block text-sm font-medium mb-1.5">Passwort</label>
-              <input
+              <Input
                 type="password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
                 }}
-                className={cn(
-                  'w-full px-3 py-2 rounded-md border bg-background text-sm',
-                  'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
-                  'border-input',
-                )}
                 autoComplete="current-password"
               />
             </div>
 
-            <button
+            <Button
               type="submit"
+              variant="secondary"
               disabled={submitting || !login || !password}
-              className="w-full py-2.5 px-4 rounded-md bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50 text-sm"
+              className="w-full"
             >
               {submitting ? 'Anmelden…' : 'Anmelden'}
-            </button>
+            </Button>
           </form>
         ) : null}
       </div>

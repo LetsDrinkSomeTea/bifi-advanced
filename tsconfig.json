@@ -9,17 +9,9 @@
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "paths": {
-      "@shared/*": [
-        "./shared/src/*"
-      ],
-      "@/*": [
-        "./client/src/*"
-      ]
+      "@shared/*": ["./shared/src/*"],
+      "@/*": ["./client/src/*"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "client/dev-dist"
-  ]
+  "exclude": ["node_modules", "dist", "client/dev-dist"]
 }

@@ -1,8 +1,6 @@
 import { Redirect } from 'wouter';
 import { useAuth } from '../../hooks/useAuth';
-import type { Role } from '@shared/types';
-
-const ROLE_LEVEL: Record<Role, number> = { member: 0, moderator: 1, admin: 2 };
+import { ROLE_LEVEL, type Role } from '@shared/types';
 
 interface Props {
   children: React.ReactNode;

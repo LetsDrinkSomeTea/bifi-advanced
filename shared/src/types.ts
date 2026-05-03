@@ -10,10 +10,16 @@ import {
   type FRIENDSHIP_STATUSES,
   type GROUP_ROLES,
 } from './schemas.ts';
-import type { AchievementKey, AchievementTier } from './achievements.ts';
+import type { AchievementKey, AchievementTier, PublicAchievementDef } from './achievements.ts';
 
 export type User = z.infer<typeof MeResponseSchema>;
 export type Role = (typeof ROLES)[number];
+
+export const ROLE_LEVEL: Record<Role, number> = {
+  member: 0,
+  moderator: 1,
+  admin: 2,
+};
 
 export type BuyableCategory = (typeof BUYABLE_CATEGORIES)[number];
 
@@ -143,7 +149,7 @@ export interface PublicProfile {
     favoriteProduct: { name: string; count: number } | null;
     friendCount: number;
   };
-  achievements: { key: string; unlockedAt: string }[];
+  achievements: { key: string; unlockedAt: string; meta?: PublicAchievementDef }[];
   achievementProgress: Record<string, number>;
 }
 

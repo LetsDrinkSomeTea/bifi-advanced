@@ -92,7 +92,7 @@ router.get('/:id/profile', requireAuth, async (c) => {
   // Find all unique groupKeys that have a progress function
   const groupProgressFns = new Map<string, (userId: string) => Promise<number> | number>();
   for (const def of ACHIEVEMENT_REGISTRY) {
-    if (def.groupKey && def.progress && !groupProgressFns.has(def.groupKey)) {
+    if (def.groupKey && def.progress && !def.hidden && !groupProgressFns.has(def.groupKey)) {
       groupProgressFns.set(def.groupKey, def.progress);
     }
   }
@@ -210,6 +210,15 @@ router.get('/:id/profile', requireAuth, async (c) => {
     achievementProgress[key] = progressValues[i] ?? 0;
   });
 
+  const enrichedAchievements = achievementRows.map((row) => {
+    const def = ACHIEVEMENT_REGISTRY.find((d) => d.key === row.key);
+    if (def?.hidden) {
+      const { check: _check, events: _events, progress: _progress, ...rest } = def;
+      return { ...row, meta: rest };
+    }
+    return row;
+  });
+
   return c.json({
     ...user,
     friendshipStatus,
@@ -219,7 +228,7 @@ router.get('/:id/profile', requireAuth, async (c) => {
       favoriteProduct: favProduct ?? null,
       friendCount: friendCountRow?.count ?? 0,
     },
-    achievements: achievementRows,
+    achievements: enrichedAchievements,
     achievementProgress,
   });
 });

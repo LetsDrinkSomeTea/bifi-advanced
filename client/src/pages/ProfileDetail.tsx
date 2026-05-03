@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useParams, Link } from 'wouter';
+import { useParams, Link, useLocation } from 'wouter';
 import { UserPlus, UserCheck, UserX, Clock, Bell, X, Beer, BarChart2 } from 'lucide-react';
 import { Layout } from '../components/layout/Layout';
+import { PageHeader } from '../components/PageHeader';
 import { AchievementGrid } from '@/components/AchievementGrid';
 import { usePublicProfile } from '../hooks/useProfile';
 import { useSendFriendRequest, useAcceptFriendRequest, useRemoveFriend } from '../hooks/useFriends';
@@ -262,6 +263,7 @@ function ProstSheet({
 
 export function ProfileDetail(): React.JSX.Element {
   const { userId } = useParams<{ userId: string }>();
+  const [, navigate] = useLocation();
   const { user: currentUser } = useAuth();
   const { data: profile, isLoading } = usePublicProfile(userId);
   const [nudgeOpen, setNudgeOpen] = useState(false);
@@ -303,7 +305,14 @@ export function ProfileDetail(): React.JSX.Element {
   return (
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto space-y-6">
-        {/* Header */}
+        <PageHeader
+          title={profile.displayName}
+          onBack={() => {
+            navigate('/social');
+          }}
+        />
+
+        {/* Profile info */}
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-2xl font-bold overflow-hidden flex-shrink-0">
             {profile.avatarUrl !== null ? (
@@ -313,7 +322,6 @@ export function ProfileDetail(): React.JSX.Element {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold truncate">{profile.displayName}</h1>
             <div className="flex items-center gap-2 mt-1">
               <span
                 className={cn(

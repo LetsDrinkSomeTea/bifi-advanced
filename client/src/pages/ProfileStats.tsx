@@ -1,22 +1,12 @@
 import { useState } from 'react';
 import { useParams, useLocation } from 'wouter';
-import {
-  ArrowLeft,
-  TrendingUp,
-  Users,
-  Wallet,
-  Beer,
-  Dices,
-  Clock,
-  Bell,
-  Target,
-  Tag,
-} from 'lucide-react';
+import { TrendingUp, Users, Wallet, Beer, Dices, Clock, Bell, Target, Tag } from 'lucide-react';
 import { Layout } from '../components/layout/Layout';
 import { useUserStats, useSystemStats } from '../hooks/useStats';
 import { useAuth } from '../hooks/useAuth';
 import { usePublicProfile } from '../hooks/useProfile';
 import { formatCents, cn } from '../lib/utils';
+import { PageHeader } from '../components/PageHeader';
 import {
   BarChart as ReBarChart,
   Bar,
@@ -87,21 +77,13 @@ export function ProfileStats(): React.JSX.Element {
   return (
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto pb-20">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <button
-            onClick={handleBack}
-            className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold">Statistiken</h1>
-            <p className="text-xs text-muted-foreground">
-              {isOwn ? 'Deine Auswertungen' : `Statistiken von ${profile?.displayName ?? '...'}`}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title="Statistiken"
+          subtitle={
+            isOwn ? 'Deine Auswertungen' : `Statistiken von ${profile?.displayName ?? '...'}`
+          }
+          onBack={handleBack}
+        />
 
         {/* Filters */}
         <div className="space-y-4 mb-6">

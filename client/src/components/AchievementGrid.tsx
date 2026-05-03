@@ -324,10 +324,10 @@ export const AchievementGrid = ({
   allLink,
   progress,
 }: Props): React.JSX.Element => {
-  const { data: meta, isLoading } = useAchievementMeta();
+  const { data: metaData, isLoading } = useAchievementMeta();
   const unlockedMap = new Map(achievements.map((a) => [a.key, new Date(a.unlockedAt)]));
 
-  if (isLoading || !meta) {
+  if (isLoading || !metaData) {
     return (
       <div>
         <div className="h-4 w-32 bg-muted animate-pulse mb-3 rounded" />
@@ -340,7 +340,43 @@ export const AchievementGrid = ({
     );
   }
 
+  // Start with global public meta
+  const meta: AchievementDef[] = [...metaData.publicMeta];
+
+  const unlockedHiddenGroups = new Set<string>();
+  let unlockedHiddenStandaloneCount = 0;
+
+  // Add metadata for unlocked hidden achievements (passed inline by the backend)
+  for (const a of achievements as (AchievementEntry & { meta?: AchievementDef })[]) {
+    if (a.meta && !meta.find((m) => m.key === a.key)) {
+      meta.push(a.meta);
+      if (a.meta.hidden) {
+        if (a.meta.groupKey) unlockedHiddenGroups.add(a.meta.groupKey);
+        else unlockedHiddenStandaloneCount++;
+      }
+    }
+  }
+
   const allCards = buildCards(unlockedMap, meta);
+
+  // Add dummy cards for the locked hidden achievements
+  const lockedHiddenCount = Math.max(
+    0,
+    metaData.hiddenCount - (unlockedHiddenGroups.size + unlockedHiddenStandaloneCount),
+  );
+
+  for (let i = 0; i < lockedHiddenCount; i++) {
+    allCards.push({
+      kind: 'standalone',
+      key: `hidden_locked_dummy_${i}`,
+      name: '???',
+      icon: '🔒',
+      description: 'Dieses Achievement ist geheim.',
+      hidden: true,
+      unlocked: false,
+      unlockedAt: null,
+    });
+  }
 
   allCards.sort((a, b) => {
     const aDate = a.kind === 'group' ? a.latestUnlockedAt : a.unlockedAt;

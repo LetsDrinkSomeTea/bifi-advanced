@@ -3,13 +3,7 @@ import { createMiddleware } from 'hono/factory';
 import { db } from '../db/index.ts';
 import { users } from '../db/schema.ts';
 import { eq } from 'drizzle-orm';
-import { type Role } from '../../../shared/src/types.ts';
-
-const ROLE_LEVEL: Record<Role, number> = {
-  member: 0,
-  moderator: 1,
-  admin: 2,
-};
+import { ROLE_LEVEL, type Role } from '../../../shared/src/types.ts';
 
 declare module 'hono' {
   interface ContextVariableMap {
@@ -39,8 +33,9 @@ export const requireAuth: MiddlewareHandler = createMiddleware(async (c, next) =
 export function requireRole(minRole: Role): MiddlewareHandler {
   return createMiddleware(async (c, next) => {
     const user = c.get('user');
+    const userRole = user.role as Role;
 
-    if (ROLE_LEVEL[user.role as Role] < ROLE_LEVEL[minRole]) {
+    if (ROLE_LEVEL[userRole] < ROLE_LEVEL[minRole]) {
       return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
     }
 

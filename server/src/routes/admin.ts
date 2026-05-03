@@ -25,6 +25,7 @@ import { writeAuditLog } from '../services/audit.ts';
 import { pushInvalidate, createNotification } from '../services/notifications.ts';
 import { checkAchievements } from '../services/achievements.ts';
 import { ROLES } from '../../../shared/src/schemas.ts';
+import { ROLE_LEVEL, type Role } from '@shared/types.ts';
 
 const router = new Hono();
 
@@ -69,10 +70,14 @@ const CreateUserSchema = z.object({
   role: z.enum(ROLES).default('member'),
 });
 
-router.post('/users', requireRole('admin'), zValidator('json', CreateUserSchema), async (c) => {
+router.post('/users', requireRole('moderator'), zValidator('json', CreateUserSchema), async (c) => {
   const body = c.req.valid('json');
   const actor = c.get('user');
   const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
+
+  if (ROLE_LEVEL[body.role] > ROLE_LEVEL[actor.role as Role]) {
+    throw new HTTPException(403, { message: "Can't create a user with higher privileges" });
+  }
 
   const passwordHash = await argon2.hash(body.password);
 
@@ -147,6 +152,9 @@ router.patch('/users/:id', zValidator('json', UpdateUserSchema), async (c) => {
 
   const [before] = await db.select().from(users).where(eq(users.id, id));
   if (!before) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
+  if (ROLE_LEVEL[before.role as Role] > ROLE_LEVEL[actor.role as Role]) {
+    throw new HTTPException(403, { message: "Can't update a user with higher privileges" });
+  }
 
   const [updated] = await db
     .update(users)

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Minus, Plus, X, Users2, Dices } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Users2, Dices } from 'lucide-react';
 import type { BuyableWithVariants } from '@shared/types';
 import { usePurchase } from '../hooks/useTransactions';
 import { useVoucherMap } from '../hooks/useProst';
@@ -7,6 +7,8 @@ import { useGroups } from '../hooks/useGroups';
 import { useJackpotEligibility } from '../hooks/useJackpot';
 import { cn, formatCents } from '../lib/utils';
 import { JackpotModal } from './JackpotModal';
+import { Button } from './ui/Button';
+import { NumericCounter } from './ui/NumericCounter';
 
 interface Props {
   buyable: BuyableWithVariants | null;
@@ -20,6 +22,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
   const [feedback, setFeedback] = useState<string | null>(null);
   const [groupId, setGroupId] = useState<string | null>(null);
   const [jackpotOpen, setJackpotOpen] = useState(false);
+  const [show, setShow] = useState(false);
 
   const { mutate, isPending } = usePurchase();
   const { data: groups } = useGroups();
@@ -44,6 +47,17 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
       setJackpotOpen(false);
     }
   }
+
+  useEffect(() => {
+    if (!buyable) return;
+    const raf = requestAnimationFrame(() => setShow(true));
+    return () => cancelAnimationFrame(raf);
+  }, [buyable, buyable?.id]);
+
+  const handleClose = (): void => {
+    setShow(false);
+    setTimeout(onClose, 300);
+  };
 
   if (!buyable) return null;
 
@@ -83,7 +97,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
       {
         onSuccess: (data) => {
           setFeedback(data.voucherRedeemed ? 'Gutschein eingelöst! 🎁' : 'Gekauft! ✓');
-          setTimeout(onClose, 1000);
+          setTimeout(handleClose, 1000);
         },
         onError: (err) => {
           setFeedback(err instanceof Error ? err.message : 'Fehler beim Kauf');
@@ -103,13 +117,24 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl shadow-2xl overflow-hidden">
+      <div
+        className={cn(
+          'fixed inset-0 z-40 bg-black/50 transition-opacity duration-300',
+          show ? 'opacity-100' : 'opacity-0',
+        )}
+        onClick={handleClose}
+      />
+      <div
+        className={cn(
+          'fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl shadow-2xl overflow-hidden transition-transform duration-300 ease-out',
+          show ? 'translate-y-0' : 'translate-y-full',
+        )}
+      >
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div className="w-10 h-1 bg-border rounded-full mx-auto absolute left-0 right-0 top-3" />
           <h2 className="text-lg font-semibold">{buyable.name}</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             title="Schließen"
             className="p-1 text-muted-foreground hover:text-foreground"
           >
@@ -126,23 +151,19 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
               </span>
               <div className="flex flex-wrap gap-2">
                 {variants.map((v) => (
-                  <button
+                  <Button
                     key={v.id}
                     onClick={() => {
                       setVariantId(v.id);
                     }}
-                    className={cn(
-                      'px-4 py-2 rounded-xl border text-sm transition-all relative overflow-hidden',
-                      variantId === v.id
-                        ? 'bg-primary border-primary text-primary-foreground font-bold shadow-md shadow-primary/20'
-                        : 'bg-background border-border text-muted-foreground hover:border-muted-foreground',
-                    )}
+                    variant={variantId === v.id ? 'default' : 'outline'}
+                    className="relative"
                   >
                     {v.name}
                     {v.activeDiscount ? (
                       <div className="absolute top-0 right-0 w-2 h-2 bg-orange-500 rounded-bl-full" />
                     ) : null}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -208,28 +229,9 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
           {/* Quantity Selection */}
           <div className="flex items-center justify-between py-1">
             <div>
-              <p className="text-sm font-bold">Anzahl</p>
-              <p className="text-[10px] text-muted-foreground">Wie viele möchtest du?</p>
+              <p className="text-lg font-bold">Anzahl</p>
             </div>
-            <div className="flex items-center gap-4 bg-muted/50 p-1 rounded-2xl border border-border">
-              <button
-                onClick={() => {
-                  setQuantity((q) => Math.max(1, q - 1));
-                }}
-                className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
-              >
-                <Minus size={18} />
-              </button>
-              <span className="w-8 text-center font-black text-lg">{quantity}</span>
-              <button
-                onClick={() => {
-                  setQuantity((q) => Math.min(99, q + 1));
-                }}
-                className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
-              >
-                <Plus size={18} />
-              </button>
-            </div>
+            <NumericCounter value={quantity} onChange={setQuantity} />
           </div>
 
           {/* Group split */}
@@ -242,41 +244,28 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button
+                <Button
                   onClick={() => {
                     setGroupId(null);
                   }}
-                  className={cn(
-                    'px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm',
-                    !groupId
-                      ? 'bg-foreground text-background border-foreground'
-                      : 'bg-background border-border text-muted-foreground hover:border-muted-foreground',
-                  )}
+                  variant={!groupId ? 'default' : 'outline'}
+                  size="sm"
                 >
                   Nur ich
-                </button>
+                </Button>
                 {groups.map((g) => (
-                  <button
+                  <Button
                     key={g.id}
                     onClick={() => {
                       setGroupId(g.id === groupId ? null : g.id);
                     }}
-                    className={cn(
-                      'px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm',
-                      groupId === g.id
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background border-border text-muted-foreground hover:border-muted-foreground',
-                    )}
+                    variant={groupId === g.id ? 'default' : 'outline'}
+                    size="sm"
                   >
                     {g.name}
-                  </button>
+                  </Button>
                 ))}
               </div>
-              {groupId && memberCount > 1 ? (
-                <p className="text-[10px] font-medium text-primary bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10">
-                  Fair-Share: {formatCents(pricePerPerson)} pro Person ({memberCount} Mitglieder)
-                </p>
-              ) : null}
             </div>
           ) : null}
 
@@ -305,9 +294,10 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
                 transition: 'width 300ms ease, padding-right 300ms ease',
               }}
             >
-              <button
+              <Button
                 onClick={handleJackpot}
-                className="w-full h-16 rounded-2xl border-2 border-dashed border-amber-500/50 text-amber-600 dark:text-amber-400 font-black flex flex-col items-center justify-center gap-0.5 hover:bg-amber-500/5 transition-colors active:scale-[0.98]"
+                variant="yellow_dashed"
+                className="w-full h-16 active:scale-[0.98]"
               >
                 <div className="flex items-center gap-1.5 text-sm">
                   <Dices size={15} />
@@ -316,17 +306,14 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
                 <span className="text-[10px] font-semibold opacity-70 leading-tight">
                   0 € – {formatCents(2 * discountedUnitPrice)}
                 </span>
-              </button>
+              </Button>
             </div>
 
-            <button
+            <Button
               disabled={!canBuy || isPending}
               onClick={handleBuy}
               className={cn(
                 'flex-1 min-w-0 h-16 rounded-xl font-black transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-0.5 px-3',
-                canBuy
-                  ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/30'
-                  : 'bg-muted text-muted-foreground cursor-not-allowed',
                 'disabled:opacity-60',
               )}
             >
@@ -342,7 +329,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
                   </span>
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -352,7 +339,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
           open={jackpotOpen}
           onClose={() => {
             setJackpotOpen(false);
-            onClose();
+            handleClose();
           }}
           buyableId={buyable.id}
           variantId={variantId}

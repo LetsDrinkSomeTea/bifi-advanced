@@ -30,6 +30,7 @@ import { useFeed } from '../hooks/useFeed';
 import { useAuth } from '../hooks/useAuth';
 import { formatCents, cn } from '../lib/utils';
 import type { FeedEntry } from '@shared/types';
+import { Button } from '@/components/ui/Button';
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
@@ -190,20 +191,22 @@ function GroupsSection({
           Gruppen
         </h2>
         <div className="flex items-center gap-3">
-          <button
+          <Button
             onClick={onJoinOpen}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            variant="outline"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <Hash size={13} />
+            <Hash size={15} />
             Code
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onCreateOpen}
-            className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+            variant="outline"
+            className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
           >
-            <Plus size={13} />
+            <Plus size={15} />
             Neu
-          </button>
+          </Button>
         </div>
       </div>
 

@@ -12,6 +12,9 @@ import {
 import { useAllBuyables } from '../../hooks/useAdmin';
 import { formatCents, cn, toLocalISO, fromLocalISO, APP_TZ } from '../../lib/utils';
 
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
+
 function PromotionModal({
   open,
   onClose,
@@ -135,13 +138,12 @@ function PromotionModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Name (z.B. "Happy Hour")</label>
-          <input
+          <Input
             type="text"
             value={name}
             onChange={(e) => {
               setName(e.target.value);
             }}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Happy Hour"
           />
         </div>
@@ -154,7 +156,7 @@ function PromotionModal({
               onChange={(e) => {
                 setType(e.target.value as 'percent' | 'fixed');
               }}
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring h-10"
             >
               <option value="percent">Prozent (%)</option>
               <option value="fixed">Fixpreis (€)</option>
@@ -164,14 +166,13 @@ function PromotionModal({
             <label className="block text-sm font-medium mb-1">
               {type === 'percent' ? 'Rabatt (%)' : 'Neuer Preis (€)'}
             </label>
-            <input
+            <Input
               type="number"
               step={type === 'percent' ? '1' : '0.01'}
               value={value}
               onChange={(e) => {
                 setValue(e.target.value);
               }}
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </div>
@@ -179,24 +180,22 @@ function PromotionModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">Start (optional)</label>
-            <input
+            <Input
               type="datetime-local"
               value={startTime}
               onChange={(e) => {
                 setStartTime(e.target.value);
               }}
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Ende (optional)</label>
-            <input
+            <Input
               type="datetime-local"
               value={endTime}
               onChange={(e) => {
                 setEndTime(e.target.value);
               }}
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </div>
@@ -209,7 +208,7 @@ function PromotionModal({
               setTargetBuyableId(e.target.value);
               setTargetVariantId('');
             }}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring h-10"
           >
             <option value="">Alle Produkte</option>
             {buyables?.map((b) => (
@@ -230,7 +229,7 @@ function PromotionModal({
               onChange={(e) => {
                 setTargetVariantId(e.target.value);
               }}
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring h-10"
             >
               <option value="">Alle Varianten von {selectedBuyable.name}</option>
               {selectedBuyable.variants.map((v) => (
@@ -244,7 +243,7 @@ function PromotionModal({
 
         <div>
           <label className="block text-sm font-medium mb-1">Kontingent (optional)</label>
-          <input
+          <Input
             type="number"
             min="1"
             step="1"
@@ -253,7 +252,6 @@ function PromotionModal({
               setQuantityLimit(e.target.value);
             }}
             placeholder="z.B. 20 (leer = unbegrenzt)"
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <p className="text-[11px] text-muted-foreground mt-1">
             Wenn gesetzt, gilt der Rabatt nur für die ersten N Einheiten global. Danach wird die
@@ -263,23 +261,22 @@ function PromotionModal({
 
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
 
-        <button
-          type="submit"
-          disabled={creating || updating}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
-        >
+        <Button type="submit" disabled={creating || updating} className="w-full">
           {promotion !== null && promotion !== undefined ? 'Aktualisieren' : 'Rabatt erstellen'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
 }
+
+import { useDialog } from '../../hooks/useDialog';
 
 export function AdminPromotions(): React.JSX.Element {
   const { data: promotions, isLoading } = usePromotions();
   const { mutate: update } = useUpdatePromotion();
   const { mutate: remove } = useDeletePromotion();
   const { data: buyables } = useAllBuyables();
+  const dialog = useDialog();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPromo, setSelectedPromo] = useState<Promotion | null>(null);
@@ -307,16 +304,16 @@ export function AdminPromotions(): React.JSX.Element {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">Rabatte & Aktionen</h1>
-          <button
+          <Button
             onClick={() => {
               setSelectedPromo(null);
               setModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            size="sm"
           >
-            <Plus size={16} />
+            <Plus size={16} className="mr-1.5" />
             Neu
-          </button>
+          </Button>
         </div>
 
         {isLoading ? (
@@ -335,7 +332,7 @@ export function AdminPromotions(): React.JSX.Element {
                   !p.isActive && 'opacity-60',
                 )}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-bold truncate">{p.name}</h3>
@@ -401,38 +398,50 @@ export function AdminPromotions(): React.JSX.Element {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <button
+                    <Button
+                      size="icon"
+                      variant="ghost"
                       onClick={() => {
                         handleToggle(p);
                       }}
                       className={cn(
-                        'p-2 rounded-lg transition-colors',
                         p.isActive
-                          ? 'text-orange-500 hover:bg-orange-500/10'
-                          : 'text-green-500 hover:bg-green-500/10',
+                          ? 'text-orange-500 hover:text-orange-500'
+                          : 'text-green-500 hover:text-green-500',
                       )}
                       title={p.isActive ? 'Deaktivieren' : 'Aktivieren'}
                     >
                       {p.isActive ? <Square size={16} /> : <Play size={16} />}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
                       onClick={() => {
                         handleEdit(p);
                       }}
-                      className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                       title="Bearbeiten"
                     >
                       <Edit2 size={16} />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
                       onClick={() => {
-                        if (confirm('Löschen?')) remove(p.id);
+                        void (async () => {
+                          if (
+                            await dialog.confirmDelete(
+                              'Löschen?',
+                              'Soll die Aktion wirklich gelöscht werden?',
+                            )
+                          )
+                            remove(p.id);
+                        })();
                       }}
-                      className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      className="hover:text-destructive"
                       title="Löschen"
                     >
                       <Trash2 size={16} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
