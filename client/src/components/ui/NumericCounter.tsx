@@ -24,21 +24,11 @@ const NumericCounter = React.forwardRef<HTMLDivElement, NumericCounterProps>(
         ref={ref}
         className="flex items-center gap-4 bg-muted/50 p-1 rounded-2xl border border-border"
       >
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={handleDecrement}
-          className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
-        >
+        <Button size="icon" variant="outline" onClick={handleDecrement}>
           <Minus size={18} />
         </Button>
         <span className="w-8 text-center font-black text-lg">{value}</span>
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={handleIncrement}
-          className="w-10 h-10 rounded-xl bg-background border border-border flex items-center justify-center hover:bg-accent transition-all active:scale-90 shadow-sm"
-        >
+        <Button size="icon" variant="outline" onClick={handleIncrement}>
           <Plus size={18} />
         </Button>
       </div>

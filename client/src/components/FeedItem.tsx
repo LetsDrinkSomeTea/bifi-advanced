@@ -20,20 +20,20 @@ export interface GroupedFeedEntry extends FeedEntry {
 // ─── Type icon map ────────────────────────────────────────────────────────────
 
 const TYPE_ICON: Record<FeedType, { name: string; color: string }> = {
-  purchase: { name: 'shopping-bag', color: 'text-blue-500' },
-  achievement: { name: 'trophy', color: 'text-yellow-500' },
-  prost_sent: { name: 'beer', color: 'text-amber-500' },
-  prost_received: { name: 'beer', color: 'text-amber-500' },
-  nudge: { name: 'hand', color: 'text-slate-500' },
-  group_join: { name: 'user-plus', color: 'text-green-500' },
-  group_created: { name: 'plus-square', color: 'text-blue-500' },
-  group_left: { name: 'user-minus', color: 'text-red-500' },
-  group_deleted: { name: 'trash-2', color: 'text-slate-500' },
-  friendship_started: { name: 'users', color: 'text-purple-500' },
-  goal_reached: { name: 'target', color: 'text-emerald-500' },
-  jackpot_win: { name: 'dices', color: 'text-indigo-500' },
-  promotion_started: { name: 'flame', color: 'text-orange-500' },
-  promotion_ended: { name: 'timer', color: 'text-slate-500' },
+  purchase: { name: 'shopping-bag', color: 'text-primary-strong' },
+  achievement: { name: 'trophy', color: 'text-accent-strong' },
+  prost_sent: { name: 'beer', color: 'text-accent-strong' },
+  prost_received: { name: 'beer', color: 'text-accent-strong' },
+  nudge: { name: 'hand', color: 'text-muted-foreground' },
+  group_join: { name: 'user-plus', color: 'text-confirm-strong' },
+  group_created: { name: 'plus-square', color: 'text-primary-strong' },
+  group_left: { name: 'user-minus', color: 'text-destructive-strong' },
+  group_deleted: { name: 'trash-2', color: 'text-muted-foreground' },
+  friendship_started: { name: 'users', color: 'text-secondary-strong' },
+  goal_reached: { name: 'target', color: 'text-confirm-strong' },
+  jackpot_win: { name: 'dices', color: 'text-secondary-strong' },
+  promotion_started: { name: 'flame', color: 'text-accent-strong' },
+  promotion_ended: { name: 'timer', color: 'text-muted-foreground' },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -312,7 +312,7 @@ function feedText(
       return (
         <>
           Eine neue Aktion wurde gestartet:{' '}
-          <span className="font-bold text-orange-500 uppercase tracking-tighter">
+          <span className="font-bold text-accent-strong uppercase tracking-tighter">
             „{name ?? 'Sonderangebot'}"
           </span>
           {qty != null ? (

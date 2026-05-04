@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { Layout } from '../components/layout/Layout';
 import { PageHeader } from '../components/PageHeader';
 import { TransactionList } from '../components/TransactionList';
+import { Button } from '../components/ui/Button';
 import { useTransactionHistory } from '../hooks/useTransactions';
 
 import type { TransactionWithItems } from '@shared/types';
@@ -27,15 +28,16 @@ export function History(): React.JSX.Element {
         <TransactionList transactions={allTxns} isLoading={isLoading} />
 
         {hasNextPage ? (
-          <button
+          <Button
+            variant="outline"
             onClick={() => {
               void fetchNextPage();
             }}
             disabled={isFetchingNextPage}
-            className="w-full mt-4 py-2.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-xl transition-colors disabled:opacity-50"
+            className="w-full mt-4 rounded-xl text-muted-foreground"
           >
             {isFetchingNextPage ? 'Laden…' : 'Mehr anzeigen'}
-          </button>
+          </Button>
         ) : null}
       </div>
     </Layout>

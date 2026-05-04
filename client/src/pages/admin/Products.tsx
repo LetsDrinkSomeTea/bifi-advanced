@@ -12,6 +12,7 @@ import type { BuyableWithVariants, BuyableCategory } from '@shared/types';
 import { formatCents, cn } from '../../lib/utils';
 import { CATEGORY_LABELS } from '@shared/schemas';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
 
@@ -88,19 +89,20 @@ function ProductModal({
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Kategorie</label>
-          <select
+          <Select
             value={category}
             onChange={(e) => {
               setCategory(e.target.value as BuyableCategory);
             }}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            {(Object.entries(CATEGORY_LABELS) as [BuyableCategory, string][]).map(([val, label]) => (
-              <option key={val} value={val}>
-                {label}
-              </option>
-            ))}
-          </select>
+            {(Object.entries(CATEGORY_LABELS) as [BuyableCategory, string][]).map(
+              ([val, label]) => (
+                <option key={val} value={val}>
+                  {label}
+                </option>
+              ),
+            )}
+          </Select>
         </div>
 
         {!product ? (
@@ -133,11 +135,7 @@ function ProductModal({
         ) : null}
 
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button
-          type="submit"
-          disabled={isCreating || isUpdating}
-          className="w-full"
-        >
+        <Button type="submit" disabled={isCreating || isUpdating} className="w-full">
           Speichern
         </Button>
       </form>
@@ -222,11 +220,7 @@ function VariantModal({
           />
         </div>
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button
-          type="submit"
-          disabled={isCreating || isUpdating}
-          className="w-full"
-        >
+        <Button type="submit" disabled={isCreating || isUpdating} className="w-full">
           Speichern
         </Button>
       </form>
@@ -259,12 +253,7 @@ function VariantRow({
         <p className="text-sm font-black tabular-nums">{formatCents(variant.price)}</p>
       </div>
       <div className="flex items-center gap-1">
-        <Button
-          onClick={onEdit}
-          variant="ghost"
-          size="icon"
-          title="Variante bearbeiten"
-        >
+        <Button onClick={onEdit} variant="ghost" size="icon" title="Variante bearbeiten">
           <Pencil size={16} />
         </Button>
         <ToggleSwitch
@@ -289,7 +278,10 @@ export function AdminProductsContent(): React.JSX.Element {
 
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [productModal, setProductModal] = useState<{ open: boolean; product?: BuyableWithVariants }>({
+  const [productModal, setProductModal] = useState<{
+    open: boolean;
+    product?: BuyableWithVariants;
+  }>({
     open: false,
   });
   const [variantModal, setVariantModal] = useState<{
@@ -323,14 +315,19 @@ export function AdminProductsContent(): React.JSX.Element {
   }, [products, search]);
 
   // Derive stable order during render if search or count changed
-  if (products && (search !== orderState.search || filtered.length !== orderState.count || (orderState.order.length === 0 && filtered.length > 0))) {
+  if (
+    products &&
+    (search !== orderState.search ||
+      filtered.length !== orderState.count ||
+      (orderState.order.length === 0 && filtered.length > 0))
+  ) {
     const newOrder = [...filtered]
       .sort((a, b) => {
         if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
         return a.name.localeCompare(b.name);
       })
       .map((p) => p.id);
-    
+
     setOrderState({
       order: newOrder,
       search,
@@ -348,7 +345,10 @@ export function AdminProductsContent(): React.JSX.Element {
     });
   }, [filtered, orderState.order]);
 
-  const getSortedVariants = (buyableId: string, variants: BuyableWithVariants['variants']): BuyableWithVariants['variants'] => {
+  const getSortedVariants = (
+    buyableId: string,
+    variants: BuyableWithVariants['variants'],
+  ): BuyableWithVariants['variants'] => {
     const existingOrder = stableVariantOrders[buyableId];
 
     // If we have an order and the count hasn't changed, use it
@@ -370,7 +370,7 @@ export function AdminProductsContent(): React.JSX.Element {
       })
       .map((v) => v.id);
 
-    setStableVariantOrders(prev => ({ ...prev, [buyableId]: newOrder }));
+    setStableVariantOrders((prev) => ({ ...prev, [buyableId]: newOrder }));
 
     return [...variants].sort((a, b) => {
       const idxA = newOrder.indexOf(a.id);
@@ -398,7 +398,10 @@ export function AdminProductsContent(): React.JSX.Element {
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            size={16}
+          />
           <Input
             placeholder="Suchen nach Name oder Kategorie…"
             value={search}
@@ -433,18 +436,26 @@ export function AdminProductsContent(): React.JSX.Element {
                   setExpandedId(expandedId === p.id ? null : p.id);
                 }}
               >
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-                  p.isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                )}>
+                <div
+                  className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center transition-colors',
+                    p.isActive ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
+                  )}
+                >
                   <Package size={20} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={cn("text-sm font-bold truncate", !p.isActive && "text-muted-foreground")}>
+                  <p
+                    className={cn(
+                      'text-sm font-bold truncate',
+                      !p.isActive && 'text-muted-foreground',
+                    )}
+                  >
                     {p.name}
                   </p>
                   <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                    {p.category ? CATEGORY_LABELS[p.category] : 'Keine Kategorie'} • {p.variants.length} Varianten
+                    {p.category ? CATEGORY_LABELS[p.category] : 'Keine Kategorie'} •{' '}
+                    {p.variants.length} Varianten
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
@@ -453,7 +464,6 @@ export function AdminProductsContent(): React.JSX.Element {
                       e.stopPropagation();
                       setProductModal({ open: true, product: p });
                     }}
-
                     variant="ghost"
                     size="icon"
                     title="Variante bearbeiten"
@@ -492,19 +502,24 @@ export function AdminProductsContent(): React.JSX.Element {
                             setVariantModal({ open: true, product: p, variant: v });
                           }}
                           onToggleActive={() => {
-                            updateVariant({ buyableId: p.id, variantId: v.id, isActive: !v.isActive });
+                            updateVariant({
+                              buyableId: p.id,
+                              variantId: v.id,
+                              isActive: !v.isActive,
+                            });
                           }}
                         />
                       ))}
                     </div>
-                    <button
+                    <Button
                       onClick={() => {
                         setVariantModal({ open: true, product: p });
                       }}
-                      className="w-full py-2 rounded-xl border border-dashed border-primary/30 text-primary text-xs font-bold hover:bg-primary/5 transition-colors flex items-center justify-center gap-1.5"
+                      variant="dashed"
+                      size="full"
                     >
                       <Plus size={14} /> Variante hinzufügen
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : null}

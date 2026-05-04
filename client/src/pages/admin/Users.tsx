@@ -24,11 +24,13 @@ import {
 import { useAuth, useAuthConfig } from '../../hooks/useAuth';
 import type { AdminUser, Role } from '@shared/types';
 import { ROLE_LEVEL } from '@shared/types';
-import { cn, formatCents } from '../../lib/utils';
+import { cn, formatCents, balanceColor } from '../../lib/utils';
 import { ROLE_LABEL, ROLE_STYLE } from '../../lib/constants';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
+import { Badge } from '../../components/ui/Badge';
 
 import { Check } from 'lucide-react';
 
@@ -95,14 +97,10 @@ function DepositModal({
             }}
           />
         </div>
-        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={isPending}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
-        >
+        {error !== '' ? <p className="text-sm text-destructive-strong">{error}</p> : null}
+        <Button type="submit" disabled={isPending} className="w-full">
           {isPending ? 'Verarbeiten…' : 'Bestätigen'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -179,14 +177,10 @@ function ResetPasswordModal({
             }}
           />
         </div>
-        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={isPending}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
-        >
+        {error !== '' ? <p className="text-sm text-destructive-strong">{error}</p> : null}
+        <Button type="submit" disabled={isPending} className="w-full">
           {isPending ? 'Speichern…' : 'Passwort setzen'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -249,7 +243,7 @@ function CreateUserModal({
             </p>
             <p className="text-lg font-mono font-bold break-all select-all">{createdPassword}</p>
           </div>
-          <button
+          <Button
             onClick={() => {
               setCreatedPassword('');
               setDisplayName('');
@@ -261,7 +255,7 @@ function CreateUserModal({
             className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm"
           >
             Fertig
-          </button>
+          </Button>
         </div>
       </Modal>
     );
@@ -304,28 +298,23 @@ function CreateUserModal({
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Rolle</label>
-          <select
+          <Select
             value={role}
             onChange={(e) => {
               setRole(e.target.value as Role);
             }}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
             {assignableRoles.map((r) => (
               <option key={r} value={r}>
                 {ROLE_LABEL[r]}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
-        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={isPending || !displayName.trim()}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
-        >
+        {error !== '' ? <p className="text-sm text-destructive-strong">{error}</p> : null}
+        <Button type="submit" disabled={isPending || !displayName.trim()} className="w-full">
           {isPending ? 'Erstellen…' : 'Nutzer erstellen'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -372,32 +361,31 @@ function EditRoleModal({
                   setRole(r);
                 }}
                 className={cn(
-                  'w-full px-4 py-3 rounded-xl border text-left flex items-center justify-between transition-colors',
-                  role === r ? 'border-primary bg-primary/5' : 'border-border bg-card',
+                  'w-full px-4 py-3 rounded-xl border text-left flex items-center justify-between transition-all',
+                  role === r
+                    ? 'border-primary bg-primary text-primary-foreground shadow-md ring-2 ring-primary ring-offset-2'
+                    : 'border-border bg-card text-foreground hover:bg-muted',
                 )}
               >
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold">{ROLE_LABEL[r]}</span>
+                  <span className="text-sm font-bold">{ROLE_LABEL[r]}</span>
                 </div>
-                {role === r ? <div className="w-2 h-2 rounded-full bg-primary" /> : null}
+                {role === r ? <Check size={18} className="text-primary-foreground" /> : null}
               </button>
             ))}
           </div>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-semibold text-sm"
-          >
+          <Button onClick={onClose} className="flex-1" variant="outline">
             Abbrechen
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleUpdate}
             disabled={isPending || role === user?.role}
-            className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
+            className="flex-1"
           >
             Speichern
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -453,19 +441,17 @@ function DeleteUserModal({
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-semibold text-sm"
-          >
+          <Button onClick={onClose} className="flex-1" variant="outline">
             Abbrechen
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleDelete}
             disabled={isPending || !isConfirmed}
-            className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-semibold text-sm disabled:opacity-40"
+            className="flex-1"
+            variant="destructive"
           >
             {isPending ? 'Lösche…' : 'Löschen'}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
@@ -541,38 +527,52 @@ function UserCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 min-w-0">
-            <p className={cn('text-sm font-bold truncate', !user.isActive && 'text-muted-foreground')}>
+            <p
+              className={cn(
+                'text-sm font-bold truncate',
+                !user.isActive && 'text-muted-foreground',
+              )}
+            >
               {user.displayName}
               {isSelf ? ' (Du)' : null}
             </p>
             <div className="flex items-center gap-1 flex-shrink-0">
-              {isSso ? <span title="SSO Login"><Link2 size={12} className="text-muted-foreground" /></span> : null}
-              {user.hasPassword && !isSso ? <span title="Lokales Passwort"><KeyRound size={12} className="text-muted-foreground" /></span> : null}
-              {user.jackpotAllowed ? <span title="Jackpot berechtigt"><Dices size={12} className="text-yellow-500" /></span> : null}
-              {!user.isActive && <span title="Inaktiv"><EyeOff size={12} className="text-destructive" /></span>}
+              {isSso ? (
+                <span title="SSO Login">
+                  <Link2 size={12} className="text-muted-foreground" />
+                </span>
+              ) : null}
+              {user.hasPassword && !isSso ? (
+                <span title="Lokales Passwort">
+                  <KeyRound size={12} className="text-muted-foreground" />
+                </span>
+              ) : null}
+              {user.jackpotAllowed ? (
+                <span title="Jackpot berechtigt">
+                  <Dices size={12} className="text-accent-500" />
+                </span>
+              ) : null}
+              {!user.isActive && (
+                <span title="Inaktiv">
+                  <EyeOff size={12} className="text-destructive" />
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span
-              className={cn(
-                'text-[10px] px-1.5 py-0 rounded-full font-bold uppercase tracking-tighter',
-                ROLE_STYLE[user.role],
-              )}
+            <Badge
+              variant={ROLE_STYLE[user.role]}
+              className="text-[9px] px-1.5 py-0 h-4 normal-case tracking-normal"
             >
               {ROLE_LABEL[user.role]}
-            </span>
+            </Badge>
             <span className="text-[10px] text-muted-foreground truncate">
               {isSso ? 'SSO' : `@${user.username}`}
             </span>
           </div>
         </div>
         <div className="text-right">
-          <p
-            className={cn(
-              'text-sm font-bold tabular-nums',
-              user.balance < 0 ? 'text-red-500' : 'text-green-500',
-            )}
-          >
+          <p className={cn('text-sm font-bold tabular-nums', balanceColor(user.balance))}>
             {formatCents(user.balance)}
           </p>
         </div>
@@ -584,25 +584,25 @@ function UserCard({
       {isExpanded ? (
         <div className="px-4 pb-4 pt-2 border-t border-primary/10 space-y-4">
           <div className="grid grid-cols-2 gap-2">
-            <button
+            <Button
               onClick={(e) => {
                 e.stopPropagation();
                 onDeposit(user);
               }}
-              className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors"
+              variant="default"
             >
               <Coins size={14} /> Einzahlen
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={(e) => {
                 e.stopPropagation();
                 onEditRole(user);
               }}
               disabled={!canManage || !canChangeRole}
-              className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/20 text-primary text-xs font-bold disabled:opacity-40 hover:bg-primary/5 transition-colors"
+              variant="primary-soft"
             >
               <KeyRound size={14} /> Rolle
-            </button>
+            </Button>
             <ToggleSwitch
               label="Aktiv"
               active={user.isActive}
@@ -619,46 +619,51 @@ function UserCard({
                 update({ id: user.id, jackpotAllowed: !user.jackpotAllowed });
               }}
             />
-            {isAdmin ? <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onResetPassword(user);
-                }}
-                disabled={isSso}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border text-foreground text-xs font-medium disabled:opacity-40 hover:bg-accent transition-colors"
-              >
-                <KeyRound size={14} /> PW Reset
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(user);
-                }}
-                disabled={!canManage}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-destructive/20 text-destructive text-xs font-bold disabled:opacity-40 hover:bg-destructive/5 transition-colors"
-              >
-                <Trash2 size={14} /> Löschen
-              </button>
-            </> : null}
+            {isAdmin ? (
+              <>
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onResetPassword(user);
+                  }}
+                  disabled={isSso}
+                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border text-foreground text-xs font-medium disabled:opacity-40 hover:bg-accent transition-colors"
+                >
+                  <KeyRound size={14} /> PW Reset
+                </Button>
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(user);
+                  }}
+                  disabled={!canManage}
+                  variant="outline"
+                  className="flex items-center justify-center gap-2 py-2.5 rounded-xl border-destructive-soft text-destructive-strong hover:bg-destructive-soft transition-colors"
+                >
+                  <Trash2 size={14} /> Löschen
+                </Button>
+              </>
+            ) : null}
           </div>
 
           <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-3">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">
               ID: {user.id}
             </div>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleCopyId}
               className={cn(
-                'flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-all text-[10px] font-medium',
+                'flex items-center gap-1.5 px-2.5 py-1 h-7 rounded-lg transition-all text-[10px] font-bold',
                 copied
-                  ? 'bg-green-500/10 border-green-500/50 text-green-600'
-                  : 'border-border text-muted-foreground hover:text-foreground',
+                  ? 'bg-confirm text-confirm-foreground border-confirm'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {copied ? <Check size={12} /> : <Copy size={12} />}
               {copied ? 'Kopiert!' : 'ID kopieren'}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
@@ -728,7 +733,10 @@ export function AdminUsersContent(): React.JSX.Element {
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            size={16}
+          />
           <Input
             placeholder="Suchen nach Name, Email, @username…"
             value={search}

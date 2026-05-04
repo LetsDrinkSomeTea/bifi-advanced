@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { Modal } from '../../components/Modal';
+import { Input } from '../../components/ui/Input';
 import { useGroups, useCreateGroup, useJoinGroup } from '../../hooks/useGroups';
 import {
   useFriends,
@@ -24,6 +25,7 @@ import {
 } from '../../hooks/useFriends';
 import { Button } from '../../components/ui/Button';
 import { Avatar } from '../../components/ui/Avatar';
+import { SectionHeader } from '../../components/ui/SectionHeader';
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
@@ -58,7 +60,7 @@ function CreateGroupModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Name</label>
-          <input
+          <Input
             type="text"
             value={name}
             onChange={(e) => {
@@ -66,30 +68,24 @@ function CreateGroupModal({
             }}
             maxLength={60}
             autoFocus
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">
             Beschreibung <span className="text-muted-foreground font-normal">(optional)</span>
           </label>
-          <input
+          <Input
             type="text"
             value={description}
             onChange={(e) => {
               setDescription(e.target.value);
             }}
             maxLength={200}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        <button
-          type="submit"
-          disabled={isPending || !name.trim()}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
-        >
+        <Button type="submit" disabled={isPending || !name.trim()} className="w-full">
           {isPending ? 'Erstellen…' : 'Erstellen'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -121,7 +117,7 @@ function JoinGroupModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Einladungscode</label>
-          <input
+          <Input
             type="text"
             value={code}
             onChange={(e) => {
@@ -130,17 +126,13 @@ function JoinGroupModal({
             maxLength={8}
             placeholder="A1B2C3D4"
             autoFocus
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm font-mono uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-ring"
+            className="font-mono uppercase tracking-widest"
           />
         </div>
-        {error !== null ? <p className="text-sm text-destructive">{error.message}</p> : null}
-        <button
-          type="submit"
-          disabled={isPending || code.length < 6}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
-        >
+        {error !== null ? <p className="text-sm text-destructive-strong">{error.message}</p> : null}
+        <Button type="submit" disabled={isPending || code.length < 6} className="w-full">
           {isPending ? 'Beitreten…' : 'Beitreten'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -159,29 +151,32 @@ function GroupsSection({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          Gruppen
-        </h2>
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={onJoinOpen}
-            variant="outline"
-            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Hash size={15} />
-            Code
-          </Button>
-          <Button
-            onClick={onCreateOpen}
-            variant="outline"
-            className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
-          >
-            <Plus size={15} />
-            Neu
-          </Button>
-        </div>
-      </div>
+      <SectionHeader
+        rightElement={
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={onJoinOpen}
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1 px-2.5 rounded-lg"
+            >
+              <Hash size={14} />
+              Code
+            </Button>
+            <Button
+              onClick={onCreateOpen}
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1 px-2.5 rounded-lg"
+            >
+              <Plus size={14} />
+              Neu
+            </Button>
+          </div>
+        }
+      >
+        Gruppen
+      </SectionHeader>
 
       {isLoading ? (
         <div className="space-y-2">
@@ -192,20 +187,20 @@ function GroupsSection({
       ) : (groups?.length ?? 0) === 0 ? (
         <p className="text-sm text-muted-foreground py-3">
           Noch keine Gruppen.{' '}
-          <button onClick={onCreateOpen} className="text-primary hover:underline">
+          <Button onClick={onCreateOpen} variant="link">
             Erstellen
-          </button>{' '}
+          </Button>{' '}
           oder{' '}
-          <button onClick={onJoinOpen} className="text-primary hover:underline">
+          <Button onClick={onJoinOpen} variant="link">
             beitreten
-          </button>
+          </Button>
           .
         </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
           {groups?.map((g) => (
             <Link key={g.id} href={`/groups/${g.id}`}>
-              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent transition-colors cursor-pointer">
+              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent-soft transition-colors cursor-pointer">
                 <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                   <Users2 size={16} className="text-muted-foreground" />
                 </div>
@@ -213,7 +208,7 @@ function GroupsSection({
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium truncate">{g.name}</span>
                     {g.myRole === 'owner' ? (
-                      <Crown size={11} className="text-amber-500 flex-shrink-0" />
+                      <Crown size={11} className="text-accent-strong flex-shrink-0" />
                     ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">{g.memberCount} Mitglieder</p>
@@ -238,9 +233,7 @@ function FriendsSection(): React.JSX.Element {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-        Freunde
-      </h2>
+      <SectionHeader>Freunde</SectionHeader>
 
       {requestCount > 0 && requests ? (
         <div className="space-y-2">
@@ -257,25 +250,29 @@ function FriendsSection(): React.JSX.Element {
                 >
                   {r.displayName}
                 </Link>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <button
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Button
+                    size="icon"
+                    variant="primary-soft"
                     onClick={() => {
                       accept(r.id);
                     }}
-                    className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    className="h-8 w-8 rounded-lg"
                     title="Annehmen"
                   >
-                    <UserCheck size={15} />
-                  </button>
-                  <button
+                    <UserCheck size={16} />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="destructive-soft"
                     onClick={() => {
                       remove(r.id);
                     }}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    className="h-8 w-8 rounded-lg"
                     title="Ablehnen"
                   >
-                    <UserX size={15} />
-                  </button>
+                    <UserX size={16} />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -297,7 +294,7 @@ function FriendsSection(): React.JSX.Element {
         <div className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
           {friends?.map((f) => (
             <Link key={f.id} href={`/profile/${f.id}`}>
-              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent transition-colors cursor-pointer">
+              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent-soft transition-colors cursor-pointer">
                 <Avatar displayName={f.displayName} avatarUrl={f.avatarUrl} />
                 <span className="flex-1 min-w-0 text-sm font-medium truncate">{f.displayName}</span>
                 <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
@@ -372,7 +369,7 @@ function SearchResults({
         if (item.kind === 'group') {
           return (
             <Link key={`g-${item.id}`} href={`/groups/${item.id}`}>
-              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent transition-colors cursor-pointer">
+              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent-soft transition-colors cursor-pointer">
                 <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                   <Users2 size={16} className="text-muted-foreground" />
                 </div>
@@ -401,15 +398,15 @@ function SearchResults({
               </p>
             </Link>
             {item.kind === 'new_person' ? (
-              <button
+              <Button
                 onClick={() => {
                   sendRequest(item.id);
                 }}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-primary-strong hover:bg-primary-soft transition-colors"
                 title="Freundschaft anfragen"
               >
                 <UserPlus size={15} />
-              </button>
+              </Button>
             ) : null}
             <Link href={`/profile/${item.id}`}>
               <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
@@ -452,24 +449,24 @@ export function SocialMainContent(): React.JSX.Element {
           size={16}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
         />
-        <input
+        <Input
           type="text"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
           }}
           placeholder="Gruppen und Personen suchen…"
-          className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="pl-9 pr-9 py-2.5 rounded-xl"
         />
         {query !== '' ? (
-          <button
+          <Button
             onClick={() => {
               setQuery('');
             }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X size={14} />
-          </button>
+          </Button>
         ) : null}
       </div>
 

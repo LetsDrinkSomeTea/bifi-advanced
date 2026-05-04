@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { TrendingUp, Users, Wallet, Dices, Tag } from 'lucide-react';
 import { useSystemStats } from '../../hooks/useStats';
-import { formatCents, cn } from '../../lib/utils';
+import { formatCents } from '../../lib/utils';
 import { SectionHeader, StatTile } from '../../components/ui/Stats';
+import { Button } from '../../components/ui/Button';
 
 const PERIOD_LABELS: Record<string, string> = {
   week: 'Woche',
@@ -18,20 +19,17 @@ export function SystemStatsContent(): React.JSX.Element {
     <div className="space-y-6">
       <div className="flex gap-2 mb-6">
         {(Object.keys(PERIOD_LABELS) as ('week' | 'month' | 'alltime')[]).map((p) => (
-          <button
+          <Button
             key={p}
             onClick={() => {
               setPeriod(p);
             }}
-            className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
-              period === p
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'border-border text-muted-foreground hover:text-foreground',
-            )}
+            variant={period === p ? 'default' : 'secondary'}
+            size="sm"
+            className="rounded-full flex-shrink-0"
           >
             {PERIOD_LABELS[p]}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -98,7 +96,9 @@ export function SystemStatsContent(): React.JSX.Element {
                 label="Systemweite Bilanz"
                 value={formatCents(systemStats?.systemJackpotBalance ?? 0)}
                 valueClassName={
-                  (systemStats?.systemJackpotBalance ?? 0) >= 0 ? 'text-green-500' : 'text-red-500'
+                  (systemStats?.systemJackpotBalance ?? 0) >= 0
+                    ? 'text-confirm'
+                    : 'text-destructive'
                 }
               />
             </div>
@@ -115,7 +115,7 @@ export function SystemStatsContent(): React.JSX.Element {
                 <StatTile
                   label="Gespart systemweit"
                   value={formatCents(systemStats?.totalSystemSaved ?? 0)}
-                  valueClassName="text-green-500"
+                  valueClassName="text-confirm"
                 />
               </div>
             </section>

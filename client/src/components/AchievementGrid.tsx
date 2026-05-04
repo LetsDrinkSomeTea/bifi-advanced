@@ -6,6 +6,7 @@ import type { AchievementDef, AchievementTier } from '@shared/achievements';
 import { cn, formatCents } from '../lib/utils';
 import { useAchievementMeta } from '../hooks/useAchievements';
 import { DynamicIcon } from './ui/DynamicIcon';
+import { Button } from './ui/Button';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -172,9 +173,9 @@ function useJustUnlocked(latestUnlockedAt: Date | null, id: string): boolean {
 }
 
 const TIER_COLORS: Record<AchievementTier, string> = {
-  bronze: 'text-amber-700',
-  silver: 'text-slate-400',
-  gold: 'text-yellow-500',
+  bronze: 'text-medal-bronze',
+  silver: 'text-medal-silver',
+  gold: 'text-medal-gold',
 };
 
 function TierBadge({
@@ -247,8 +248,8 @@ function GroupCardComponent({
   const tooltip = isHiddenAndLocked
     ? '???'
     : card.tiers
-      .map((t) => `${TIER_META[t.tier].label}: ${t.description}${t.unlocked ? ' ✓' : ''}`)
-      .join('\n');
+        .map((t) => `${TIER_META[t.tier].label}: ${t.description}${t.unlocked ? ' ✓' : ''}`)
+        .join('\n');
 
   const justUnlocked = useJustUnlocked(card.latestUnlockedAt, card.groupKey);
 
@@ -275,9 +276,9 @@ function GroupCardComponent({
     <div
       title={tooltip}
       className={cn(
-        'flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border text-center h-full min-h-[90px]',
+        'flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border text-center h-full min-h-[90px] transition-all',
         card.anyUnlocked
-          ? 'border-primary/20 bg-primary/5'
+          ? 'border-border bg-card shadow-sm'
           : 'border-border bg-muted/30 opacity-60',
         justUnlocked && 'achievement-glow',
       )}
@@ -286,7 +287,11 @@ function GroupCardComponent({
         {isHiddenAndLocked ? (
           <Lock className="w-6 h-6 text-muted-foreground" />
         ) : (
-          <DynamicIcon name={card.icon} size={24} className={card.color} />
+          <DynamicIcon
+            name={card.icon}
+            size={24}
+            className={cn(card.anyUnlocked && card.color ? card.color : 'text-inherit')}
+          />
         )}
       </span>
       <span
@@ -315,8 +320,8 @@ function StandaloneCardComponent({ card }: { card: StandaloneCard }): React.JSX.
     <div
       title={isHiddenAndLocked ? '???' : `${card.name}: ${card.description}`}
       className={cn(
-        'flex flex-col items-center justify-center gap-1 p-2 rounded-xl border text-center h-full min-h-[90px]',
-        card.unlocked ? 'border-primary/20 bg-primary/5' : 'border-border bg-muted/30 opacity-60',
+        'flex flex-col items-center justify-center gap-1 p-2 rounded-xl border text-center h-full min-h-[90px] transition-all',
+        card.unlocked ? 'border-border bg-card shadow-sm' : 'border-border bg-muted/30 opacity-60',
         justUnlocked && 'achievement-glow',
       )}
     >
@@ -324,7 +329,11 @@ function StandaloneCardComponent({ card }: { card: StandaloneCard }): React.JSX.
         {isHiddenAndLocked ? (
           <Lock className="w-6 h-6 text-muted-foreground" />
         ) : (
-          <DynamicIcon name={card.icon} size={24} className={card.color} />
+          <DynamicIcon
+            name={card.icon}
+            size={24}
+            className={cn(card.unlocked && card.color ? card.color : 'text-inherit')}
+          />
         )}
       </span>
       <span
@@ -428,11 +437,10 @@ export const AchievementGrid = ({
           Achievements
         </h2>
         {allLink ? (
-          <Link
-            href={allLink}
-            className="flex items-center gap-0.5 text-xs text-primary hover:underline"
-          >
-            Alle <ChevronRight size={13} />
+          <Link href={allLink}>
+            <Button variant="ghost" size="sm" className="h-7 gap-0.5 text-primary">
+              Alle <ChevronRight size={13} />
+            </Button>
           </Link>
         ) : null}
       </div>

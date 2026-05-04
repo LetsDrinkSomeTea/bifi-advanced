@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import type { TransactionWithItems, TransactionType } from '@shared/types';
 import { formatCents, formatRelative, cn } from '../lib/utils';
 import { type GroupSummary, useGroups } from '@/hooks/useGroups';
+import { Button } from './ui/Button';
 
 const TYPE_LABEL: Record<TransactionType, string> = {
   purchase: 'Kauf',
@@ -124,7 +125,7 @@ export function TransactionList({
               <span
                 className={cn(
                   'font-semibold text-sm tabular-nums',
-                  txn.totalAmount <= 0 ? 'text-red-500' : 'text-green-500',
+                  txn.totalAmount <= 0 ? 'text-destructive' : 'text-confirm',
                 )}
               >
                 {txn.totalAmount <= 0 ? '' : '+'}
@@ -132,16 +133,18 @@ export function TransactionList({
               </span>
 
               {canCancel ? (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => {
                     cancel(txn.id);
                   }}
                   disabled={cancelling}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                   title="Stornieren"
                 >
                   <Trash2 size={15} />
-                </button>
+                </Button>
               ) : null}
             </div>
           </div>

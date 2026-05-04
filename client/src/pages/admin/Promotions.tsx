@@ -11,6 +11,7 @@ import {
 } from '../../hooks/usePromotions';
 import { formatCents, formatTimestamp, cn, toLocalISO, fromLocalISO } from '../../lib/utils';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
 import { useDialog } from '../../hooks/useDialog';
@@ -121,11 +122,7 @@ function PromotionModal({
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={promotion ? 'Rabatt bearbeiten' : 'Neuer Rabatt'}
-    >
+    <Modal open={open} onClose={onClose} title={promotion ? 'Rabatt bearbeiten' : 'Neuer Rabatt'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Name (z.B. "Happy Hour")</label>
@@ -143,16 +140,15 @@ function PromotionModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">Typ</label>
-            <select
+            <Select
               value={type}
               onChange={(e) => {
                 setType(e.target.value as 'percent' | 'fixed');
               }}
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring h-10"
             >
               <option value="percent">Prozent (%)</option>
               <option value="fixed">Fixpreis (€)</option>
-            </select>
+            </Select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -194,13 +190,12 @@ function PromotionModal({
 
         <div>
           <label className="block text-sm font-medium mb-1">Gilt für...</label>
-          <select
+          <Select
             value={targetBuyableId}
             onChange={(e) => {
               setTargetBuyableId(e.target.value);
               setTargetVariantId('');
             }}
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring h-10"
           >
             <option value="">Alle Produkte</option>
             {buyables?.map((b) => (
@@ -208,7 +203,7 @@ function PromotionModal({
                 {b.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {targetBuyableId !== '' &&
@@ -216,12 +211,11 @@ function PromotionModal({
         selectedBuyable.variants.length > 0 ? (
           <div>
             <label className="block text-sm font-medium mb-1">Variante (optional)</label>
-            <select
+            <Select
               value={targetVariantId}
               onChange={(e) => {
                 setTargetVariantId(e.target.value);
               }}
-              className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring h-10"
             >
               <option value="">Alle Varianten von {selectedBuyable.name}</option>
               {selectedBuyable.variants.map((v) => (
@@ -229,7 +223,7 @@ function PromotionModal({
                   {v.name} ({formatCents(v.price)})
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         ) : null}
 
@@ -250,13 +244,9 @@ function PromotionModal({
           </p>
         </div>
 
-        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error !== '' ? <p className="text-sm text-destructive-strong">{error}</p> : null}
 
-        <Button
-          type="submit"
-          disabled={creating || updating}
-          className="w-full"
-        >
+        <Button type="submit" disabled={creating || updating} className="w-full">
           {promotion ? 'Aktualisieren' : 'Rabatt erstellen'}
         </Button>
       </form>
@@ -295,14 +285,19 @@ export function AdminPromotionsContent(): React.JSX.Element {
   }, [promotions, search]);
 
   // Derive stable order during render if search or count changed
-  if (promotions && (search !== orderState.search || filtered.length !== orderState.count || (orderState.order.length === 0 && filtered.length > 0))) {
+  if (
+    promotions &&
+    (search !== orderState.search ||
+      filtered.length !== orderState.count ||
+      (orderState.order.length === 0 && filtered.length > 0))
+  ) {
     const newOrder = [...filtered]
       .sort((a, b) => {
         if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
         return a.name.localeCompare(b.name);
       })
       .map((p) => p.id);
-    
+
     setOrderState({
       order: newOrder,
       search,
@@ -349,7 +344,10 @@ export function AdminPromotionsContent(): React.JSX.Element {
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            size={16}
+          />
           <Input
             placeholder="Suchen nach Aktionsname…"
             value={search}
@@ -377,17 +375,20 @@ export function AdminPromotionsContent(): React.JSX.Element {
           {filteredPromotions.map((p) => (
             <div
               key={p.id}
-              className={cn(
-                'rounded-2xl border border-border bg-card p-4 space-y-3 transition-all',
-                !p.isActive && 'opacity-60 grayscale-[0.5]',
-              )}
+              className="rounded-2xl border border-border bg-card p-4 space-y-3 transition-all"
             >
               <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={cn(
-                    "p-2 rounded-lg transition-colors",
-                    p.isActive ? "bg-orange-500/10 text-orange-500" : "bg-muted text-muted-foreground"
-                  )}>
+                <div
+                  className={cn('flex items-center gap-2', !p.isActive && 'opacity-50 grayscale')}
+                >
+                  <div
+                    className={cn(
+                      'p-2 rounded-lg transition-colors',
+                      p.isActive
+                        ? 'bg-accent-soft text-accent-strong'
+                        : 'bg-muted text-muted-foreground',
+                    )}
+                  >
                     <Tag size={16} />
                   </div>
                   <div>
@@ -396,10 +397,12 @@ export function AdminPromotionsContent(): React.JSX.Element {
                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
                         Seit {formatTimestamp(p.createdAt)}
                       </p>
-                      {p.endTime ? <div className="flex items-center gap-1 text-[10px] text-orange-600 font-bold uppercase">
+                      {p.endTime ? (
+                        <div className="flex items-center gap-1 text-[10px] text-accent-strong font-bold uppercase">
                           <Calendar size={10} />
                           Bis {formatTimestamp(p.endTime)}
-                        </div> : null}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -414,38 +417,48 @@ export function AdminPromotionsContent(): React.JSX.Element {
                     variant="ghost"
                     label={p.isActive ? 'Pausieren' : 'Starten'}
                   />
-                  <button
+                  <Button
                     onClick={() => {
                       setSelectedPromo(p);
                       setCreateOpen(true);
                     }}
-                    className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
+                    variant="ghost"
+                    size="icon"
                   >
                     <Pencil size={14} />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       void (async () => {
-                        if (await dialog.confirmDelete('Aktion beenden', `Soll die Aktion "${p.name}" wirklich gelöscht werden?`)) {
+                        if (
+                          await dialog.confirmDelete(
+                            'Aktion beenden',
+                            `Soll die Aktion "${p.name}" wirklich gelöscht werden?`,
+                          )
+                        ) {
                           deletePromo(p.id);
                         }
                       })();
                     }}
-                    className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                    variant="ghost_destructive"
+                    size="icon"
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </Button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-muted/50 border border-border/50">
+              <div
+                className={cn(
+                  'flex items-center justify-between gap-4 p-3 rounded-xl bg-muted/50 border border-border/50',
+                  !p.isActive && 'opacity-50 grayscale',
+                )}
+              >
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] text-muted-foreground font-bold uppercase mb-0.5">
                     Anwendbar auf
                   </p>
-                  <p className="text-xs font-semibold truncate">
-                    {getScopeLabel(p)}
-                  </p>
+                  <p className="text-xs font-semibold truncate">{getScopeLabel(p)}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] text-muted-foreground font-bold uppercase mb-0.5">
@@ -460,11 +473,17 @@ export function AdminPromotionsContent(): React.JSX.Element {
               </div>
 
               {p.quantityLimit !== null ? (
-                <div className="flex items-center justify-between px-1">
+                <div
+                  className={cn(
+                    'flex items-center justify-between px-1',
+                    !p.isActive && 'opacity-50 grayscale',
+                  )}
+                >
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Package size={12} />
                     <span>
-                      Verfügbar: <b>{Math.max(0, p.quantityLimit - p.quantityUsed)}</b> von {p.quantityLimit}
+                      Verfügbar: <b>{Math.max(0, p.quantityLimit - p.quantityUsed)}</b> von{' '}
+                      {p.quantityLimit}
                     </span>
                   </div>
                   <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">

@@ -1,17 +1,18 @@
 import { useMemo, useState } from 'react';
-import { Search, Star, Sparkles, Tag } from 'lucide-react';
+import { Search, Sparkles, Tag } from 'lucide-react';
 import { Layout } from '../components/layout/Layout';
 import { BuySheet } from '../components/BuySheet';
 import { useBuyables } from '../hooks/useBuyables';
 import { useFavorites, useToggleFavorite } from '../hooks/useFavorites';
 import type { BuyableWithVariants } from '@shared/types';
-import { formatCents, cn } from '../lib/utils';
 import { BUYABLE_CATEGORIES, CATEGORY_LABELS, type BuyableCategory } from '@shared/schemas';
 import { useVoucherMap } from '@/hooks/useProst';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { HorizontalScroll } from '../components/ui/HorizontalScroll';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { SectionHeader } from '../components/ui/SectionHeader';
 
 function formatTimeLeft(endTime: string | null): string | null {
   if (!endTime) return null;
@@ -27,6 +28,8 @@ function formatTimeLeft(endTime: string | null): string | null {
   if (hours > 0) return `noch ${hours} ${hours === 1 ? 'Stunde' : 'Stunden'}`;
   return `noch ${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'}`;
 }
+
+import { ShopVariantRow } from '../components/ShopVariantRow';
 
 function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.JSX.Element | null {
   const { title, summary, badge } = useMemo(() => {
@@ -76,11 +79,11 @@ function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.JSX.Ele
     } else if (typeof earliestEnd === 'number') {
       badge = formatTimeLeft(new Date(earliestEnd).toISOString()) ?? '';
     } else {
-      badge = 'zeitlich unbegrenzt';
+      badge = 'Aktion';
     }
 
     return {
-      title: discountedLabels.length > 1 ? 'Rabatte verfügbar' : 'Rabatt verfügbar',
+      title: discountedLabels.length > 1 ? 'Angebote' : 'Angebot',
       summary: summaryStr,
       badge,
     };
@@ -89,12 +92,12 @@ function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.JSX.Ele
   if (!summary) return null;
 
   return (
-    <div className="bg-orange-500 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/20 flex items-center gap-4 overflow-hidden relative group transition-all active:scale-[0.98]">
+    <div className="bg-primary rounded-2xl p-4 text-primary-foreground shadow-lg shadow-primary/10 flex items-center gap-4 overflow-hidden relative group transition-all active:scale-[0.98]">
       <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
         <Sparkles size={100} />
       </div>
       <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-        <Tag size={24} className="animate-bounce" />
+        <Tag size={24} className="animate-pulse" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
@@ -102,12 +105,15 @@ function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.JSX.Ele
             {title}
           </h3>
           {badge !== '' ? (
-            <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-bold whitespace-nowrap">
+            <Badge
+              variant="outline"
+              className="bg-white/10 border-white/20 text-white font-bold h-5"
+            >
               {badge}
-            </span>
+            </Badge>
           ) : null}
         </div>
-        <p className="text-sm font-medium opacity-95 truncate">{summary}</p>
+        <p className="text-sm font-medium opacity-90 truncate">{summary}</p>
       </div>
     </div>
   );
@@ -242,9 +248,9 @@ export function Shop(): React.JSX.Element {
           grouped.map(([category, products]) => (
             <section key={category}>
               {!activeCategory ? (
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                <SectionHeader className="mb-2">
                   {CATEGORY_LABELS[category as BuyableCategory]}
-                </h2>
+                </SectionHeader>
               ) : null}
               <div className="space-y-3">
                 {products.map((item) => {
@@ -274,90 +280,24 @@ export function Shop(): React.JSX.Element {
 
                       <CardContent className="p-0">
                         <div className="divide-y divide-border/50">
-                          {activeVariants.map((v) => {
-                            const isFav = favoriteIds.has(v.id);
-                            const voucherCount = voucherMap.get(v.id) ?? 0;
-                            const hasVoucher = voucherCount > 0;
-
-                            return (
-                              <div
-                                key={v.id}
-                                className="flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group"
-                              >
-                                <button
-                                  onClick={() => {
-                                    openSheet(item, v.id);
-                                  }}
-                                  className="flex-1 min-w-0 flex items-center gap-3 text-left"
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-semibold text-sm truncate">
-                                        {v.name}
-                                      </span>
-                                      {hasVoucher ? (
-                                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
-                                          {voucherCount}x 🎁
-                                        </span>
-                                      ) : null}
-                                    </div>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                      {v.activeDiscount !== null ? (
-                                        <>
-                                          <span className="text-sm font-bold text-orange-500">
-                                            {formatCents(v.discountedPrice)}
-                                          </span>
-                                          <span className="text-[10px] text-muted-foreground line-through decoration-muted-foreground/50">
-                                            {formatCents(v.price)}
-                                          </span>
-                                          <span className="text-[10px] font-black text-orange-500 uppercase tracking-tighter">
-                                            {v.activeDiscount.type === 'percent'
-                                              ? `-${v.activeDiscount.value}%`
-                                              : 'Aktion'}
-                                          </span>
-                                          {v.activeDiscount.quantityRemaining !== null ? (
-                                            <span className="text-[10px] font-medium text-blue-500">
-                                              noch {v.activeDiscount.quantityRemaining}x
-                                            </span>
-                                          ) : null}
-                                        </>
-                                      ) : (
-                                        <span className="text-sm font-medium text-foreground/80">
-                                          {formatCents(v.price)}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </button>
-
-                                <div className="flex items-center gap-1">
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleFav({ variantId: v.id, isFav });
-                                    }}
-                                    className={cn(
-                                      'transition-all',
-                                      isFav
-                                        ? 'text-yellow-500 hover:text-yellow-500/80'
-                                        : 'text-muted-foreground hover:text-yellow-500',
-                                    )}
-                                    title={
-                                      isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'
-                                    }
-                                  >
-                                    <Star
-                                      size={18}
-                                      fill={isFav ? 'currentColor' : 'none'}
-                                      strokeWidth={isFav ? 1.5 : 2}
-                                    />
-                                  </Button>
-                                </div>
-                              </div>
-                            );
-                          })}
+                          {activeVariants.map((v) => (
+                            <ShopVariantRow
+                              key={v.id}
+                              name={v.name}
+                              price={v.price}
+                              discountedPrice={v.discountedPrice}
+                              isAvailable={v.isActive}
+                              activeDiscount={v.activeDiscount}
+                              isFavorite={favoriteIds.has(v.id)}
+                              voucherCount={voucherMap.get(v.id) ?? 0}
+                              onOpenBuySheet={() => {
+                                openSheet(item, v.id);
+                              }}
+                              onToggleFavorite={() => {
+                                toggleFav({ variantId: v.id, isFav: favoriteIds.has(v.id) });
+                              }}
+                            />
+                          ))}
                         </div>
                       </CardContent>
                     </Card>

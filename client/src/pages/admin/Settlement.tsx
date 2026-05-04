@@ -59,9 +59,11 @@ function DepositModal({
             }}
             autoFocus
           />
-          {user ? <p className="text-[10px] text-muted-foreground mt-1 uppercase font-bold">
-            Schuldenstand: {formatCents(user.balance)}
-          </p> : null}
+          {user ? (
+            <p className="text-[10px] text-muted-foreground mt-1 uppercase font-bold">
+              Schuldenstand: {formatCents(user.balance)}
+            </p>
+          ) : null}
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Notiz (optional)</label>
@@ -75,11 +77,7 @@ function DepositModal({
           />
         </div>
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button
-          type="submit"
-          disabled={isPending}
-          className="w-full"
-        >
+        <Button type="submit" disabled={isPending} className="w-full">
           {isPending ? 'Verarbeiten…' : 'Bestätigen'}
         </Button>
       </form>
@@ -126,7 +124,7 @@ export function AdminSettlementContent(): React.JSX.Element {
         </div>
       ) : (debts ?? []).length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
-          <CheckCircle2 className="mx-auto mb-2 text-green-500 opacity-40" size={32} />
+          <CheckCircle2 className="mx-auto mb-2 text-confirm opacity-40" size={32} />
           <p className="text-sm font-medium text-foreground">Alle Konten ausgeglichen!</p>
           <p className="text-xs mt-1">Es gibt aktuell keine negativen Kontostände.</p>
         </div>
@@ -158,7 +156,7 @@ export function AdminSettlementContent(): React.JSX.Element {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-black text-red-500 tabular-nums">
+                    <p className="text-sm font-black text-destructive tabular-nums">
                       {formatCents(d.balance)}
                     </p>
                   </div>
@@ -191,8 +189,8 @@ export function AdminSettlementContent(): React.JSX.Element {
                         className={cn(
                           'gap-2 transition-all duration-300',
                           isReminded
-                            ? 'bg-green-50 border-green-200 text-green-600'
-                            : 'border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700',
+                            ? 'bg-confirm/10 border-confirm/50 text-confirm'
+                            : 'border-accent-300 text-accent-700 hover:bg-accent-100 hover:text-accent-800',
                         )}
                       >
                         {isReminded ? <CheckCircle2 size={16} /> : <Bell size={16} />}

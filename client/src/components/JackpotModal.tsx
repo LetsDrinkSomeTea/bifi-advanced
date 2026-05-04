@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Dices, Trophy, PartyPopper, Meh, Smile } from 'lucide-react';
 import { Modal } from './Modal';
+import { Button } from './ui/Button';
 import { useSpinJackpot, type SpinResult } from '../hooks/useJackpot';
 import { formatCents, cn } from '../lib/utils';
 
@@ -74,7 +76,7 @@ function Wheel({
               <path
                 d={`M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`}
                 fill={segmentColor(val)}
-                stroke="#111827"
+                stroke="var(--background-950)"
                 strokeWidth={0.8}
               />
               <text
@@ -92,10 +94,17 @@ function Wheel({
             </g>
           );
         })}
-        <circle cx={cx} cy={cy} r={26} fill="#111827" stroke="#374151" strokeWidth={2} />
-        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize={16}>
-          🎰
-        </text>
+        <circle
+          cx={cx}
+          cy={cy}
+          r={26}
+          fill="var(--background-950)"
+          stroke="var(--border)"
+          strokeWidth={2}
+        />
+        <g transform={`translate(${cx - 12}, ${cy - 12})`}>
+          <Dices size={24} className="text-white" />
+        </g>
       </svg>
     </div>
   );
@@ -170,63 +179,74 @@ export function JackpotModal({
           </p>
         </div>
 
-        <div className="relative">
-          <Wheel rotationDeg={totalRotation} animating={animating} basePrice={basePrice} />
-          {phase === 'result' && spinResult ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-background/95 backdrop-blur-sm border border-border rounded-2xl p-5 text-center shadow-xl mx-4 space-y-3 w-full">
-                <p className="text-4xl font-black">
-                  {spinResult.multiplierPct === 0
-                    ? '🍀'
-                    : spinResult.multiplierPct === 200
-                      ? '😬'
-                      : spinResult.multiplierPct < 100
-                        ? '🎉'
-                        : '😅'}
-                </p>
-                <p className="text-2xl font-bold">
+        <div className="flex flex-col items-center justify-center min-h-[280px]">
+          {phase !== 'result' ? (
+            <Wheel rotationDeg={totalRotation} animating={animating} basePrice={basePrice} />
+          ) : spinResult ? (
+            <div className="w-full text-center space-y-4 py-4 animate-in zoom-in-95 duration-300">
+              <div
+                className={cn(
+                  'w-24 h-24 mx-auto rounded-full flex items-center justify-center shadow-inner border-4',
+                  spinResult.multiplierPct <= 100
+                    ? 'bg-confirm-soft border-confirm-strong/20 text-confirm-strong'
+                    : 'bg-destructive-soft border-destructive-strong/20 text-destructive-strong',
+                )}
+              >
+                {spinResult.multiplierPct === 0 ? (
+                  <Trophy size={48} />
+                ) : spinResult.multiplierPct === 200 ? (
+                  <Meh size={48} />
+                ) : spinResult.multiplierPct < 100 ? (
+                  <PartyPopper size={48} />
+                ) : (
+                  <Smile size={48} />
+                )}
+              </div>
+              <div className="space-y-1">
+                <p className="text-4xl font-black tracking-tight">
                   {spinResult.multiplierPct === 0 ? 'Gratis!' : `${spinResult.multiplierPct}%`}
                 </p>
-                <div className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Bezahlt:{' '}
                   <span
                     className={cn(
-                      'font-semibold',
-                      spinResult.multiplierPct <= 100 ? 'text-green-500' : 'text-red-500',
+                      'font-bold',
+                      spinResult.multiplierPct <= 100
+                        ? 'text-confirm-strong'
+                        : 'text-destructive-strong',
                     )}
                   >
                     {formatCents(spinResult.pricePaid)}
                   </span>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
-                >
+                </p>
+              </div>
+              <div className="pt-4">
+                <Button onClick={onClose} className="w-full h-14 rounded-2xl font-bold text-lg">
                   Fertig
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}
         </div>
 
         {phase === 'ready' && (
-          <button
+          <Button
             onClick={() => {
               void handleSpin();
             }}
-            className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-bold text-lg active:scale-95 transition-transform"
+            className="w-full py-4 h-auto rounded-2xl font-bold text-lg active:scale-95 transition-transform"
           >
             Drehen!
-          </button>
+          </Button>
         )}
 
         {phase === 'spinning' && (
-          <button
+          <Button
             disabled
-            className="w-full py-4 rounded-2xl bg-muted text-muted-foreground font-bold text-lg cursor-not-allowed"
+            className="w-full py-4 h-auto rounded-2xl font-bold text-lg cursor-not-allowed bg-muted text-muted-foreground"
           >
             Glück am Rad...
-          </button>
+          </Button>
         )}
       </div>
     </Modal>

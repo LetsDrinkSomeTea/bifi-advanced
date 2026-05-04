@@ -193,7 +193,7 @@ async function notifyAchievement(userId: string, key: AchievementKey): Promise<v
   createNotification({
     userId,
     type: 'achievement',
-    title: `${def.icon} Achievement freigeschaltet!`,
+    title: `Achievement freigeschaltet!`,
     message: `${def.name}${tierSuffix}: ${def.description}`,
   }).catch(console.error);
   emitFeedEvent({

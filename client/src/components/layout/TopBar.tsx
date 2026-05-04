@@ -10,6 +10,7 @@ import {
   type AppNotification,
 } from '../../hooks/useNotifications';
 import { formatCents, formatRelative, balanceColor, cn } from '../../lib/utils';
+import { Button } from '../ui/Button';
 
 function notificationHref(n: AppNotification): string | null {
   switch (n.type) {
@@ -55,46 +56,53 @@ function NotificationDropdown({ onClose }: { onClose: () => void }): React.JSX.E
     <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-border bg-popover shadow-lg z-50 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <span className="text-sm font-semibold">Benachrichtigungen</span>
-        <button
+        <Button
+          variant="link"
           onClick={() => {
             markAll();
             onClose();
           }}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="text-xs text-muted-foreground hover:text-foreground p-0 h-auto"
         >
           Alle gelesen
-        </button>
+        </Button>
       </div>
       <div className="max-h-80 overflow-y-auto">
         {notifs.map((n) => {
           const href = notificationHref(n);
           return (
             <div key={n.id} className="flex items-start border-b border-border last:border-0">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => {
                   handleNavigate(n);
                 }}
                 className={cn(
-                  'flex-1 text-left px-4 py-3 hover:bg-accent transition-colors min-w-0',
-                  href && 'cursor-pointer',
-                  !href && 'cursor-default',
+                  'flex-1 h-auto flex-col items-start px-4 py-3 min-w-0 rounded-none w-full font-normal',
+                  href ? 'cursor-pointer' : 'cursor-default hover:bg-transparent',
                 )}
               >
-                <p className="text-sm font-medium leading-snug">{n.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">
+                <div className="text-sm font-medium leading-snug whitespace-normal text-left">
+                  {n.title}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5 whitespace-normal text-left">
+                  {n.message}
+                </div>
+                <div className="text-xs text-muted-foreground/60 mt-1 whitespace-normal text-left">
                   {formatRelative(n.createdAt)}
-                </p>
-              </button>
-              <button
+                </div>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   markRead(n.id);
                 }}
                 title="Als gelesen markieren"
-                className="flex-shrink-0 p-3 pt-3.5 text-muted-foreground hover:text-foreground transition-colors"
+                className="flex-shrink-0 h-8 w-8 text-muted-foreground m-2"
               >
                 <Check size={14} />
-              </button>
+              </Button>
             </div>
           );
         })}
@@ -114,41 +122,44 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }): React.JSX.Ele
   };
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-border bg-popover shadow-xl ring-1 ring-black/5 z-50 overflow-hidden">
+    <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-border bg-popover shadow-xl ring-1 ring-border/60 z-50 overflow-hidden">
       <div className="py-1.5">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => {
             go('/profile');
           }}
-          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors"
+          className="w-full flex items-center justify-start gap-3 px-4 py-2.5 text-sm font-medium rounded-none"
         >
           <UserCircle size={16} className="text-muted-foreground flex-shrink-0" />
           Profil
-        </button>
+        </Button>
         {isModerator ? (
-          <button
+          <Button
+            variant="ghost"
             onClick={() => {
               go('/admin/users');
             }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-accent transition-colors"
+            className="w-full flex items-center justify-start gap-3 px-4 py-2.5 text-sm font-medium rounded-none"
           >
             <ShieldCheck size={16} className="text-muted-foreground flex-shrink-0" />
             Admin
-          </button>
+          </Button>
         ) : null}
       </div>
       <div className="border-t border-border" />
       <div className="py-1.5">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => {
             void logout();
             onClose();
           }}
-          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+          className="w-full flex items-center justify-start gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive rounded-none"
         >
           <LogOut size={16} className="flex-shrink-0" />
           Abmelden
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -182,7 +193,7 @@ export function TopBar(): React.JSX.Element {
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between px-4 h-14 border-b border-border bg-background/80 backdrop-blur-sm">
       <div className="flex items-center gap-1.5">
-        <Beer className="w-5 h-5 text-amber-500" />
+        <Beer className="w-5 h-5 text-primary" />
         <span className="font-bold text-base tracking-tight">BiFi</span>
       </div>
 
@@ -198,12 +209,14 @@ export function TopBar(): React.JSX.Element {
 
         {/* Notification bell */}
         <div ref={notifRef} className="relative">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               setNotifOpen((o) => !o);
               setMenuOpen(false);
             }}
-            className="relative p-1 text-muted-foreground hover:text-foreground transition-colors"
+            className="relative h-8 w-8 text-muted-foreground"
             aria-label="Benachrichtigungen"
           >
             <Bell size={20} />
@@ -212,7 +225,7 @@ export function TopBar(): React.JSX.Element {
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
-          </button>
+          </Button>
           {notifOpen ? (
             <NotificationDropdown
               onClose={() => {
@@ -225,12 +238,14 @@ export function TopBar(): React.JSX.Element {
         {/* Avatar menu */}
         {user ? (
           <div ref={menuRef} className="relative">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => {
                 setMenuOpen((o) => !o);
                 setNotifOpen(false);
               }}
-              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-semibold overflow-hidden hover:ring-2 hover:ring-primary transition-all cursor-pointer flex-shrink-0"
+              className="w-8 h-8 rounded-full bg-muted overflow-hidden hover:ring-2 hover:ring-primary transition-all flex-shrink-0 p-0"
               aria-label="Menü"
             >
               {user.avatarUrl ? (
@@ -238,7 +253,7 @@ export function TopBar(): React.JSX.Element {
               ) : (
                 <span>{user.displayName[0]?.toUpperCase()}</span>
               )}
-            </button>
+            </Button>
             {menuOpen ? (
               <AvatarMenuDropdown
                 onClose={() => {

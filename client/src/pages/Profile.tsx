@@ -10,19 +10,10 @@ import { usePublicProfile, useUpdateProfile } from '../hooks/useProfile';
 import { type ProstVoucher, useProstVouchers } from '../hooks/useProst';
 import { formatCents, balanceColor, cn } from '../lib/utils';
 import { Avatar } from '../components/ui/Avatar';
-import { type Role } from '@shared/types';
-
-const ROLE_LABEL: Record<Role, string> = {
-  admin: 'Admin',
-  moderator: 'Moderator',
-  member: 'Mitglied',
-};
-
-const ROLE_STYLE: Record<Role, string> = {
-  admin: 'bg-primary/10 text-primary',
-  moderator: 'bg-orange-500/10 text-orange-500',
-  member: 'bg-muted text-muted-foreground',
-};
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { ROLE_LABEL, ROLE_STYLE } from '../lib/constants';
 
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
 
@@ -66,7 +57,7 @@ function EditProfileModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Profilbild-URL</label>
-          <input
+          <Input
             type="url"
             value={avatarUrl}
             onChange={(e) => {
@@ -74,7 +65,6 @@ function EditProfileModal({
               setError('');
             }}
             placeholder="https://…"
-            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
@@ -82,19 +72,18 @@ function EditProfileModal({
           <>
             <div>
               <label className="block text-sm font-medium mb-1">Anzeigename</label>
-              <input
+              <Input
                 type="text"
                 value={displayName}
                 onChange={(e) => {
                   setDisplayName(e.target.value);
                   setError('');
                 }}
-                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Benutzername (optional)</label>
-              <input
+              <Input
                 type="text"
                 value={username}
                 onChange={(e) => {
@@ -102,20 +91,15 @@ function EditProfileModal({
                   setError('');
                 }}
                 placeholder="z.B. max_mustermann"
-                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
           </>
         ) : null}
 
         {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={isPending}
-          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-60"
-        >
+        <Button type="submit" disabled={isPending} className="w-full rounded-xl">
           {isPending ? 'Speichern…' : 'Speichern'}
-        </button>
+        </Button>
       </form>
     </Modal>
   );
@@ -146,14 +130,14 @@ function ProstVoucherItem({ voucher }: { voucher: StackedVoucher }): React.JSX.E
       ) : null}
       <ActivityItem
         user={donor}
-        icon={<Beer size={10} className="text-amber-500" />}
+        icon={<Beer size={10} className="text-accent-600" />}
         createdAt={voucher.createdAt}
         className="relative z-10 rounded-xl border border-border bg-background px-3 py-2 transition-transform duration-200"
       >
         <div className="flex-1 pr-1">
           <span className="font-medium">{drink}</span>
           {' ('}
-          <span className="font-semibold text-green-500">+{formatCents(voucher.amount)}</span>) von{' '}
+          <span className="font-semibold text-confirm">+{formatCents(voucher.amount)}</span>) von{' '}
           {isLoading ? <span className="font-semibold">...</span> : <ProfileLink user={donor} />}
         </div>
         {/* Prominent, always-visible count badge */}
@@ -215,26 +199,26 @@ export function Profile(): React.JSX.Element {
             ) : null}
             <div className="flex items-center gap-2 mt-1">
               {user?.role ? (
-                <span
-                  className={cn(
-                    'text-xs px-1.5 py-0.5 rounded-full font-medium',
-                    ROLE_STYLE[user.role],
-                  )}
+                <Badge
+                  variant={ROLE_STYLE[user.role]}
+                  className="px-1.5 py-0.5 normal-case tracking-normal"
                 >
                   {ROLE_LABEL[user.role]}
-                </span>
+                </Badge>
               ) : null}
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               setEditOpen(true);
             }}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0"
+            className="text-muted-foreground flex-shrink-0"
             title="Profil bearbeiten"
           >
             <Pencil size={16} />
-          </button>
+          </Button>
         </div>
 
         {/* Balance */}
@@ -253,12 +237,11 @@ export function Profile(): React.JSX.Element {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               Statistiken
             </h2>
-            <Link
-              href="/stats"
-              className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline"
-            >
-              <BarChart2 size={12} />
-              Details
+            <Link href="/stats">
+              <Button variant="ghost" size="sm" className="h-7 gap-1 text-primary">
+                <BarChart2 size={12} />
+                Details
+              </Button>
             </Link>
           </div>
           {profileLoading ? (
@@ -295,7 +278,7 @@ export function Profile(): React.JSX.Element {
               <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                 Prost-Gutscheine
               </h2>
-              <Beer size={14} className="text-amber-500" />
+              <Beer size={14} className="text-accent-600" />
             </div>
             <div className="rounded-2xl bg-card p-3 space-y-2">
               {stackedVouchers.map((v) => (

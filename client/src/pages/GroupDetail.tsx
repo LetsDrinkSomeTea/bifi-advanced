@@ -1,7 +1,7 @@
 import { useParams, useLocation } from 'wouter';
 import { Link } from 'wouter';
 import { useState } from 'react';
-import { Copy, RefreshCw, LogOut, Trash2, UserX, QrCode, X } from 'lucide-react';
+import { Copy, RefreshCw, LogOut, Trash2, UserX, QrCode, X, LoaderCircle } from 'lucide-react';
 import { Layout } from '../components/layout/Layout';
 import { PageHeader } from '../components/PageHeader';
 import {
@@ -15,6 +15,7 @@ import { useAuth } from '../hooks/useAuth';
 import { cn } from '../lib/utils';
 
 import { useDialog } from '../hooks/useDialog';
+import { Button } from '../components/ui/Button';
 
 function copyToClipboard(text: string): Promise<void> {
   return navigator.clipboard.writeText(text);
@@ -35,9 +36,9 @@ function QRModal({
       <div className="relative bg-background rounded-2xl p-6 shadow-2xl flex flex-col items-center gap-4 mx-4">
         <div className="flex items-center justify-between w-full">
           <h2 className="font-semibold">{groupName} beitreten</h2>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground">
+          <Button onClick={onClose} variant="ghost" size="icon">
             <X size={18} />
-          </button>
+          </Button>
         </div>
         <div className="bg-white p-4 rounded-xl">
           <img
@@ -129,40 +130,39 @@ export function GroupDetail(): React.JSX.Element {
             <span className="font-mono font-bold text-2xl tracking-widest flex-1 select-all">
               {group.inviteCode}
             </span>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleCopy}
-              className={cn(
-                'p-2 rounded-lg transition-colors',
-                copied
-                  ? 'text-green-500'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent',
-              )}
+              className={cn('transition-colors', copied && 'text-confirm')}
               title={copied ? 'Kopiert!' : 'Kopieren'}
             >
               <Copy size={18} />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => {
                 setQrOpen(true);
               }}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               title="QR-Code anzeigen"
             >
               <QrCode size={18} />
-            </button>
+            </Button>
             {isOwner ? (
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   refreshCode(group.id);
                 }}
-                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 title="Neuen Code generieren"
               >
                 <RefreshCw size={18} />
-              </button>
+              </Button>
             ) : null}
           </div>
-          {copied ? <p className="text-xs text-green-500">Code kopiert!</p> : null}
+          {copied ? <p className="text-xs text-confirm">Code kopiert!</p> : null}
         </div>
 
         {/* Members */}
@@ -195,16 +195,17 @@ export function GroupDetail(): React.JSX.Element {
                   {m.role === 'owner' && <span className="text-xs text-primary">Eigentümer</span>}
                 </div>
                 {isOwner && m.id !== user?.id ? (
-                  <button
+                  <Button
+                    size="icon"
                     onClick={() => {
                       remove({ groupId: group.id, userId: m.id });
                     }}
-                    disabled={removing}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
-                    title="Entfernen"
+                    variant="ghost_destructive"
+                    className="h-8 w-8 rounded-lg"
+                    title="Ablehnen"
                   >
-                    <UserX size={15} />
-                  </button>
+                    {removing ? <LoaderCircle size={16} /> : <UserX size={16} />}
+                  </Button>
                 ) : null}
               </div>
             ))}
@@ -213,7 +214,8 @@ export function GroupDetail(): React.JSX.Element {
 
         {/* Danger zone */}
         <div className="space-y-2 pb-4">
-          <button
+          <Button
+            variant="ghost_destructive"
             onClick={() => {
               void (async () => {
                 if (
@@ -231,14 +233,15 @@ export function GroupDetail(): React.JSX.Element {
               })();
             }}
             disabled={leaving}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-1 disabled:opacity-50"
+            className="w-full justify-start h-9"
           >
             <LogOut size={15} />
             Gruppe verlassen
-          </button>
+          </Button>
 
           {isOwner ? (
-            <button
+            <Button
+              variant="ghost_destructive"
               onClick={() => {
                 void (async () => {
                   if (
@@ -256,11 +259,11 @@ export function GroupDetail(): React.JSX.Element {
                 })();
               }}
               disabled={deleting}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-1 disabled:opacity-50"
+              className="w-full justify-start h-9"
             >
               <Trash2 size={15} />
               Gruppe löschen
-            </button>
+            </Button>
           ) : null}
         </div>
       </div>

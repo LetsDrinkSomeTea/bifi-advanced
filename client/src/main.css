@@ -4,59 +4,303 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+
+    /* Neutralized Color Scheme (removed green tint) */
+    --text-50: #fafafa;
+    --text-100: #f5f5f5;
+    --text-200: #e5e5e5;
+    --text-300: #d4d4d4;
+    --text-400: #a3a3a3;
+    --text-500: #737373;
+    --text-600: #525252;
+    --text-700: #404040;
+    --text-800: #262626;
+    --text-900: #171717;
+    --text-950: #0a0a0a;
+
+    --background-50: #fafafa;
+    --background-100: #f5f5f5;
+    --background-200: #e5e5e5;
+    --background-300: #d4d4d4;
+    --background-400: #a3a3a3;
+    --background-500: #737373;
+    --background-600: #525252;
+    --background-700: #404040;
+    --background-800: #262626;
+    --background-900: #171717;
+    --background-950: #0a0a0a;
+
+    /* Light Mode Primary (keeping it slightly green/teal as brand, but more vibrant) */
+    --primary-50: #f0fdf4;
+    --primary-100: #dcfce7;
+    --primary-200: #bbf7d0;
+    --primary-300: #86efac;
+    --primary-400: #4ade80;
+    --primary-500: #22c55e;
+    --primary-600: #16a34a;
+    --primary-700: #15803d;
+    --primary-800: #166534;
+    --primary-900: #14532d;
+    --primary-950: #052e16;
+
+    --secondary-50: #f8fafc;
+    --secondary-100: #f1f5f9;
+    --secondary-200: #e2e8f0;
+    --secondary-300: #cbd5e1;
+    --secondary-400: #94a3b8;
+    --secondary-500: #64748b;
+    --secondary-600: #475569;
+    --secondary-700: #334155;
+    --secondary-800: #1e293b;
+    --secondary-900: #0f172a;
+    --secondary-950: #020617;
+
+    /* Accent (Purple/Indigo) */
+    --accent-50: #eef2ff;
+    --accent-100: #e0e7ff;
+    --accent-200: #c7d2fe;
+    --accent-300: #a5b4fc;
+    --accent-400: #818cf8;
+    --accent-500: #6366f1;
+    --accent-600: #4f46e5;
+    --accent-700: #4338ca;
+    --accent-800: #3730a3;
+    --accent-900: #312e81;
+    --accent-950: #1e1b4b;
+
+    --destructive-50: #fef2f2;
+    --destructive-100: #fee2e2;
+    --destructive-200: #fecaca;
+    --destructive-300: #fca5a5;
+    --destructive-400: #f87171;
+    --destructive-500: #ef4444;
+    --destructive-600: #dc2626;
+    --destructive-700: #b91c1c;
+    --destructive-800: #991b1b;
+    --destructive-900: #7f1d1d;
+    --destructive-950: #450a0a;
+
+    --confirm-50: #f0fdf4;
+    --confirm-100: #dcfce7;
+    --confirm-200: #bbf7d0;
+    --confirm-300: #86efac;
+    --confirm-400: #4ade80;
+    --confirm-500: #22c55e;
+    --confirm-600: #16a34a;
+    --confirm-700: #15803d;
+    --confirm-800: #166534;
+    --confirm-900: #14532d;
+    --confirm-950: #052e16;
+
+    --medal-gold: #fbbf24;
+    --medal-silver: #9ca3af;
+    --medal-bronze: #b45309;
+
+    /* Semantic Tokens */
+    --background: #ffffff;
+    --foreground: var(--text-950);
+
+    --card: #ffffff;
+    --card-foreground: var(--text-950);
+
+    --popover: #ffffff;
+    --popover-foreground: var(--text-950);
+
+    --primary: var(--primary-600);
+    --primary-foreground: #ffffff;
+
+    --secondary: var(--secondary-600);
+    --secondary-foreground: #ffffff;
+
+    --accent: var(--accent-600);
+    --accent-foreground: #ffffff;
+
+    --destructive: var(--destructive-500);
+    --destructive-foreground: #ffffff;
+
+    --confirm: var(--confirm-500);
+    --confirm-foreground: #ffffff;
+
+    --muted: #f3f4f6;
+    --muted-foreground: #6b7280;
+
+    --border: #e5e7eb;
+    --input: #e5e7eb;
+    --ring: var(--primary-500);
+
+    /* === NEW TOKENS === */
+    --primary-soft: var(--primary-100);
+    --primary-soft-hover: var(--primary-200);
+    --primary-strong: var(--primary-800);
+    --primary-hover: var(--primary-700);
+
+    --secondary-soft: var(--secondary-100);
+    --secondary-soft-hover: var(--secondary-200);
+    --secondary-strong: var(--secondary-800);
+    --secondary-hover: var(--secondary-700);
+
+    --accent-soft: var(--accent-100);
+    --accent-soft-hover: var(--accent-200);
+    --accent-strong: var(--accent-800);
+    --accent-hover: var(--accent-700);
+
+    --destructive-soft: var(--destructive-100);
+    --destructive-soft-hover: var(--destructive-200);
+    --destructive-strong: var(--destructive-700);
+    --destructive-hover: var(--destructive-600);
+
+    --confirm-soft: var(--confirm-100);
+    --confirm-soft-hover: var(--confirm-200);
+    --confirm-strong: var(--confirm-700);
+    --confirm-hover: var(--confirm-600);
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 217.2 32.6% 17.5%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* Neutralized Dark Mode Scheme */
+      --text-50: #0a0a0a;
+      --text-100: #171717;
+      --text-200: #262626;
+      --text-300: #404040;
+      --text-400: #525252;
+      --text-500: #737373;
+      --text-600: #a3a3a3;
+      --text-700: #d4d4d4;
+      --text-800: #e5e5e5;
+      --text-900: #f5f5f5;
+      --text-950: #fafafa;
+
+      --background-50: #090909;
+      --background-100: #121212;
+      --background-200: #1c1c1c;
+      --background-300: #262626;
+      --background-400: #3d3d3d;
+      --background-500: #525252;
+      --background-600: #737373;
+      --background-700: #a3a3a3;
+      --background-800: #d4d4d4;
+      --background-900: #e5e5e5;
+      --background-950: #f5f5f5;
+
+      --primary-50: #052e16;
+      --primary-100: #14532d;
+      --primary-200: #166534;
+      --primary-300: #15803d;
+      --primary-400: #16a34a;
+      --primary-500: #22c55e;
+      --primary-600: #4ade80;
+      --primary-700: #86efac;
+      --primary-800: #bbf7d0;
+      --primary-900: #dcfce7;
+      --primary-950: #f0fdf4;
+
+      --secondary-50: #020617;
+      --secondary-100: #0f172a;
+      --secondary-200: #1e293b;
+      --secondary-300: #334155;
+      --secondary-400: #475569;
+      --secondary-500: #64748b;
+      --secondary-600: #94a3b8;
+      --secondary-700: #cbd5e1;
+      --secondary-800: #e2e8f0;
+      --secondary-900: #f1f5f9;
+      --secondary-950: #f8fafc;
+
+      /* More vibrant Accent for Dark Mode (Saturated Fuchsia/Purple) */
+      --accent-50: #2e1065;
+      --accent-100: #4c1d95;
+      --accent-200: #5b21b6;
+      --accent-300: #6d28d9;
+      --accent-400: #7c3aed;
+      --accent-500: #8b5cf6;
+      --accent-600: #a78bfa;
+      --accent-700: #c4b5fd;
+      --accent-800: #ddd6fe;
+      --accent-900: #ede9fe;
+      --accent-950: #f5f3ff;
+
+      --background: #0a0a0a;
+      --foreground: var(--text-950);
+
+      --card: #141414;
+      --card-foreground: var(--text-950);
+
+      --popover: #141414;
+      --popover-foreground: var(--text-950);
+
+      --primary: var(--primary-500);
+      --primary-foreground: #000000;
+
+      --secondary: var(--secondary-500);
+      --secondary-foreground: #ffffff;
+
+      --accent: var(--accent-500);
+      --accent-foreground: #ffffff;
+
+      --destructive: var(--destructive-500);
+      --destructive-foreground: #ffffff;
+
+      --confirm: var(--confirm-500);
+      --confirm-foreground: #ffffff;
+
+      --muted: #1f1f1f;
+      --muted-foreground: #a3a3a3;
+
+      --border: #262626;
+      --input: #262626;
+      --ring: var(--primary-500);
+
+      --primary-soft: rgba(34, 197, 94, 0.2);
+      --primary-soft-hover: rgba(34, 197, 94, 0.3);
+      --primary-strong: #4ade80;
+      --primary-hover: #4ade80; /* Lighter than primary-500 (#22c55e) */
+
+      --secondary-soft: rgba(100, 116, 139, 0.2);
+      --secondary-soft-hover: rgba(100, 116, 139, 0.3);
+      --secondary-strong: #94a3b8;
+      --secondary-hover: #94a3b8; /* Lighter than secondary-500 (#64748b) */
+
+      --accent-soft: rgba(139, 92, 246, 0.25);
+      --accent-soft-hover: rgba(139, 92, 246, 0.35);
+      --accent-strong: #a78bfa; /* Vibrant Violet */
+      --accent-hover: #c4b5fd;
+
+      --destructive-soft: rgba(239, 68, 68, 0.2);
+      --destructive-soft-hover: rgba(239, 68, 68, 0.3);
+      --destructive-strong: #f87171;
+      --destructive-hover: #f87171; /* Lighter than destructive-500 (#ef4444) */
+
+      --confirm-soft: rgba(34, 197, 94, 0.2);
+      --confirm-soft-hover: rgba(34, 197, 94, 0.3);
+      --confirm-strong: #4ade80;
+      --confirm-hover: #4ade80;
+    }
+  }
+}
+
+@layer utilities {
+  .text-medal-gold {
+    color: var(--medal-gold);
+  }
+
+  .text-medal-silver {
+    color: var(--medal-silver);
+  }
+
+  .text-medal-bronze {
+    color: var(--medal-bronze);
   }
 }
 
 * {
-  border-color: hsl(var(--border));
+  border-color: var(--border);
   box-sizing: border-box;
 }
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: var(--background);
+  color: var(--foreground);
   font-family:
     system-ui,
     -apple-system,
@@ -76,13 +320,13 @@ select {
 
 @keyframes achievement-glow {
   0% {
-    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0);
+    box-shadow: 0 0 0 0 rgba(161, 187, 68, 0);
   }
   20% {
-    box-shadow: 0 0 0 5px rgba(234, 179, 8, 0.55);
+    box-shadow: 0 0 0 5px rgba(161, 187, 68, 0.55);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0);
+    box-shadow: 0 0 0 0 rgba(161, 187, 68, 0);
   }
 }
 
@@ -93,7 +337,7 @@ select {
 /* Thin horizontal scrollbar */
 .scrollbar-thin-x {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--border)) transparent;
+  scrollbar-color: var(--border) transparent;
 }
 .scrollbar-thin-x::-webkit-scrollbar {
   height: 3px;
@@ -102,6 +346,6 @@ select {
   background: transparent;
 }
 .scrollbar-thin-x::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--border));
+  background-color: var(--border);
   border-radius: 9999px;
 }

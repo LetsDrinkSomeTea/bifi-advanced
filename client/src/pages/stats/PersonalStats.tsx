@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { TrendingUp, Wallet, Beer, Dices, Clock, Bell, Target, Tag } from 'lucide-react';
 import { useUserStats } from '../../hooks/useStats';
-import { formatCents, cn } from '../../lib/utils';
+import { formatCents } from '../../lib/utils';
 import { SectionHeader, StatTile } from '../../components/ui/Stats';
+import { Button } from '../../components/ui/Button';
 import {
   BarChart as ReBarChart,
   Bar,
@@ -18,11 +19,11 @@ import {
 
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 const CATEGORY_COLORS: Record<string, string> = {
-  alcoholic: '#f59e0b',
-  soft_drink: '#3b82f6',
-  food: '#ef4444',
-  snack: '#10b981',
-  other: '#6b7280',
+  alcoholic: 'var(--accent-600)',
+  soft_drink: 'var(--primary-500)',
+  food: 'var(--destructive-500)',
+  snack: 'var(--confirm-500)',
+  other: 'var(--text-600)',
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -56,20 +57,17 @@ export function PersonalStatsContent({
     <div className="space-y-6">
       <div className="flex gap-2 mb-6">
         {(Object.keys(PERIOD_LABELS) as ('week' | 'month' | 'alltime')[]).map((p) => (
-          <button
+          <Button
             key={p}
             onClick={() => {
               setPeriod(p);
             }}
-            className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
-              period === p
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'border-border text-muted-foreground hover:text-foreground',
-            )}
+            variant={period === p ? 'default' : 'secondary'}
+            size="sm"
+            className="rounded-full flex-shrink-0"
           >
             {PERIOD_LABELS[p]}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -122,7 +120,7 @@ export function PersonalStatsContent({
                     <StatTile
                       label="Gespart gesamt"
                       value={formatCents(userStats.finances.totalSaved)}
-                      valueClassName="text-green-500"
+                      valueClassName="text-confirm"
                     />
                   </div>
                 </section>
@@ -146,7 +144,7 @@ export function PersonalStatsContent({
                           data={userStats.consumption.categories.map((c) => ({
                             name: CATEGORY_LABELS[c.category] ?? c.category,
                             value: c.count,
-                            color: CATEGORY_COLORS[c.category] ?? '#888888',
+                            color: CATEGORY_COLORS[c.category] ?? 'var(--text-500)',
                           }))}
                           cx="50%"
                           cy="50%"
@@ -158,17 +156,17 @@ export function PersonalStatsContent({
                           {userStats.consumption.categories.map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
-                              fill={CATEGORY_COLORS[entry.category] ?? '#888888'}
+                              fill={CATEGORY_COLORS[entry.category] ?? 'var(--text-500)'}
                             />
                           ))}
                         </Pie>
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: '#18181b',
-                            border: '1px solid #27272a',
+                            backgroundColor: 'var(--background-100)',
+                            border: '1px solid var(--border)',
                             borderRadius: '8px',
                           }}
-                          itemStyle={{ color: '#fff' }}
+                          itemStyle={{ color: 'var(--foreground)' }}
                         />
                       </RePieChart>
                     </ResponsiveContainer>
@@ -201,24 +199,28 @@ export function PersonalStatsContent({
                         count: userStats.consumption?.weekdayCounts[i + 1] ?? 0,
                       }))}
                     >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="var(--border)"
+                      />
                       <XAxis
                         dataKey="name"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 10, fill: '#71717a' }}
+                        tick={{ fontSize: 10, fill: 'var(--text-600)' }}
                       />
                       <YAxis hide />
                       <Tooltip
-                        cursor={{ fill: '#27272a' }}
+                        cursor={{ fill: 'var(--background-200)' }}
                         contentStyle={{
-                          backgroundColor: '#18181b',
-                          border: '1px solid #27272a',
+                          backgroundColor: 'var(--background-100)',
+                          border: '1px solid var(--border)',
                           borderRadius: '8px',
                         }}
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: 'var(--foreground)' }}
                       />
-                      <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="count" fill="var(--primary-500)" radius={[4, 4, 0, 0]} />
                     </ReBarChart>
                   </ResponsiveContainer>
                 </div>
@@ -231,25 +233,29 @@ export function PersonalStatsContent({
                 <div className="h-40">
                   <ResponsiveContainer width="100%" height="100%">
                     <ReBarChart data={hourData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="var(--border)"
+                      />
                       <XAxis
                         dataKey="hour"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 8, fill: '#71717a' }}
+                        tick={{ fontSize: 8, fill: 'var(--text-600)' }}
                         interval={3}
                       />
                       <YAxis hide />
                       <Tooltip
-                        cursor={{ fill: '#27272a' }}
+                        cursor={{ fill: 'var(--background-200)' }}
                         contentStyle={{
-                          backgroundColor: '#18181b',
-                          border: '1px solid #27272a',
+                          backgroundColor: 'var(--background-100)',
+                          border: '1px solid var(--border)',
                           borderRadius: '8px',
                         }}
-                        itemStyle={{ color: '#fff' }}
+                        itemStyle={{ color: 'var(--foreground)' }}
                       />
-                      <Bar dataKey="count" fill="#8b5cf6" radius={[2, 2, 0, 0]} />
+                      <Bar dataKey="count" fill="var(--secondary-500)" radius={[2, 2, 0, 0]} />
                     </ReBarChart>
                   </ResponsiveContainer>
                 </div>
@@ -335,7 +341,7 @@ export function PersonalStatsContent({
                     <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-0.5">
                       Glückspilz
                     </p>
-                    <p className="text-lg font-bold text-green-500">{userStats.jackpot.wins}</p>
+                    <p className="text-lg font-bold text-confirm">{userStats.jackpot.wins}</p>
                   </div>
                   <div className="text-[10px] text-muted-foreground text-right">
                     <span className="block font-medium">0x gezahlt</span>
@@ -346,7 +352,7 @@ export function PersonalStatsContent({
                     <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-0.5">
                       Pechvogel
                     </p>
-                    <p className="text-lg font-bold text-red-500">{userStats.jackpot.losses}</p>
+                    <p className="text-lg font-bold text-destructive">{userStats.jackpot.losses}</p>
                   </div>
                   <div className="text-[10px] text-muted-foreground text-right">
                     <span className="block font-medium">2x gezahlt</span>
@@ -357,7 +363,7 @@ export function PersonalStatsContent({
                   value={formatCents(userStats.jackpot.balance)}
                   className="col-span-2"
                   valueClassName={
-                    userStats.jackpot.balance >= 0 ? 'text-green-500' : 'text-red-500'
+                    userStats.jackpot.balance >= 0 ? 'text-confirm' : 'text-destructive'
                   }
                 />
               </div>

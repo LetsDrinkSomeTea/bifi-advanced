@@ -9,6 +9,7 @@ import { cn, formatCents } from '../lib/utils';
 import { JackpotModal } from './JackpotModal';
 import { Button } from './ui/Button';
 import { NumericCounter } from './ui/NumericCounter';
+import { Badge } from './ui/Badge';
 
 interface Props {
   buyable: BuyableWithVariants | null;
@@ -133,13 +134,15 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div className="w-10 h-1 bg-border rounded-full mx-auto absolute left-0 right-0 top-3" />
           <h2 className="text-lg font-semibold">{buyable.name}</h2>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleClose}
             title="Schließen"
-            className="p-1 text-muted-foreground hover:text-foreground"
+            className="shrink-0"
           >
             <X size={20} />
-          </button>
+          </Button>
         </div>
 
         <div className="px-5 pb-8 space-y-5">
@@ -161,7 +164,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
                   >
                     {v.name}
                     {v.activeDiscount ? (
-                      <div className="absolute top-0 right-0 w-2 h-2 bg-orange-500 rounded-bl-full" />
+                      <div className="absolute top-0 right-0 w-2 h-2 bg-accent-strong rounded-bl-full" />
                     ) : null}
                   </Button>
                 ))}
@@ -180,7 +183,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
                   <div className="flex items-center gap-2">
                     <span className="text-2xl font-black">{formatCents(discountedUnitPrice)}</span>
                     {isDiscounted ? (
-                      <span className="text-sm text-muted-foreground line-through decoration-orange-500/40">
+                      <span className="text-sm text-muted-foreground line-through decoration-accent-soft">
                         {formatCents(originalUnitPrice)}
                       </span>
                     ) : null}
@@ -188,13 +191,13 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
                 </div>
                 {selectedVariant.activeDiscount ? (
                   <div className="flex flex-col items-end gap-1">
-                    <span className="px-2 py-1 rounded-lg bg-orange-500 text-white text-[10px] font-black uppercase tracking-tighter shadow-sm shadow-orange-500/20">
+                    <Badge variant="accent">
                       {selectedVariant.activeDiscount.type === 'percent'
                         ? `-${selectedVariant.activeDiscount.value}% Rabatt`
                         : 'Sonderpreis'}
-                    </span>
+                    </Badge>
                     {selectedVariant.activeDiscount.quantityRemaining !== null && (
-                      <span className="text-[10px] font-semibold text-blue-500">
+                      <span className="text-[10px] font-semibold text-primary-strong">
                         noch {selectedVariant.activeDiscount.quantityRemaining}x verfügbar
                       </span>
                     )}
@@ -206,19 +209,17 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
               {voucherCount > 0 && (
                 <div className="pt-3 border-t border-border/50 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-lg">
+                    <div className="w-8 h-8 rounded-lg bg-accent-soft flex items-center justify-center text-lg">
                       🎁
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                        Gutscheine verfügbar
-                      </p>
+                      <p className="text-xs font-bold text-accent-strong">Gutscheine verfügbar</p>
                       <p className="text-[10px] text-muted-foreground">
                         {voucherCount} Stück in deinem Inventar
                       </p>
                     </div>
                   </div>
-                  <span className="text-sm font-black text-amber-600 dark:text-amber-400">
+                  <span className="text-sm font-black text-accent-strong">
                     {vouchersApplied}x genutzt
                   </span>
                 </div>
@@ -275,7 +276,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
               className={cn(
                 'p-3 rounded-xl text-sm font-bold text-center animate-in fade-in slide-in-from-bottom-2',
                 feedback.includes('✓') || feedback.includes('🎁')
-                  ? 'bg-green-500/10 text-green-600'
+                  ? 'bg-confirm/10 text-confirm'
                   : 'bg-destructive/10 text-destructive',
               )}
             >
@@ -296,7 +297,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
             >
               <Button
                 onClick={handleJackpot}
-                variant="yellow_dashed"
+                variant="accent_dashed"
                 className="w-full h-16 active:scale-[0.98]"
               >
                 <div className="flex items-center gap-1.5 text-sm">
