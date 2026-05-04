@@ -5,6 +5,7 @@ import { useLeaderboard } from '../../hooks/useLeaderboard';
 import { useAuth } from '../../hooks/useAuth';
 import { formatCents, cn } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
+import { SectionHeader } from '../../components/ui/SectionHeader';
 
 type LeaderboardType =
   | 'total_spent'
@@ -27,16 +28,16 @@ function formatValue(type: LeaderboardType, value: number): React.ReactNode {
   let color = '';
   if (type === 'achievements') {
     Icon = Trophy;
-    color = 'text-yellow-500';
+    color = 'text-accent-strong';
   } else if (type === 'prost_sent') {
     Icon = Beer;
-    color = 'text-amber-500';
+    color = 'text-accent-strong';
   } else if (type === 'jackpot_spins') {
     Icon = Dices;
-    color = 'text-indigo-500';
+    color = 'text-secondary-strong';
   } else {
     Icon = ShoppingCart;
-    color = 'text-blue-500'
+    color = 'text-primary-strong';
   }
 
   return (
@@ -48,9 +49,9 @@ function formatValue(type: LeaderboardType, value: number): React.ReactNode {
 }
 
 function RankMedal({ rank }: { rank: number }): React.JSX.Element {
-  if (rank === 1) return <Medal size={16} className="text-yellow-500" />;
-  if (rank === 2) return <Medal size={16} className="text-slate-400" />;
-  if (rank === 3) return <Medal size={16} className="text-amber-700" />;
+  if (rank === 1) return <Medal size={16} className="text-medal-gold" />;
+  if (rank === 2) return <Medal size={16} className="text-medal-silver" />;
+  if (rank === 3) return <Medal size={16} className="text-medal-bronze" />;
   return (
     <span className="w-6 text-center text-sm font-semibold text-muted-foreground">{rank}</span>
   );
@@ -72,9 +73,7 @@ function LeaderboardSection({
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-        {title}
-      </h3>
+      <SectionHeader className="mb-2">{title}</SectionHeader>
       {isLoading ? (
         <div className="space-y-1.5">
           {[1, 2, 3].map((i) => (
@@ -93,8 +92,8 @@ function LeaderboardSection({
               <Link key={entry.userId} href={isSelf ? '/profile' : `/profile/${entry.userId}`}>
                 <div
                   className={cn(
-                    'flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-accent/50 transition-colors',
-                    isSelf ? 'bg-primary/5' : 'bg-card',
+                    'flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-accent-soft transition-colors',
+                    isSelf ? 'bg-primary-soft' : 'bg-card',
                   )}
                 >
                   <div className="w-6 flex items-center justify-center flex-shrink-0">
@@ -146,12 +145,9 @@ export function SocialLeaderboardContent(): React.JSX.Element {
             onClick={() => {
               setPeriod(p);
             }}
-            className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
-              period === p
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'border-border text-muted-foreground hover:text-foreground',
-            )}
+            variant={period === p ? 'default' : 'secondary'}
+            size="sm"
+            className="rounded-full flex-shrink-0"
           >
             {PERIOD_LABELS[p]}
           </Button>

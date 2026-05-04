@@ -1,58 +1,18 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  darkMode: 'class',
+  darkMode: 'media',
   content: ['./client/src/**/*.{ts,tsx}', './client/index.html'],
   theme: {
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        theme_text: {
-          50: 'var(--text-50)',
-          100: 'var(--text-100)',
-          200: 'var(--text-200)',
-          300: 'var(--text-300)',
-          400: 'var(--text-400)',
-          500: 'var(--text-500)',
-          600: 'var(--text-600)',
-          700: 'var(--text-700)',
-          800: 'var(--text-800)',
-          900: 'var(--text-900)',
-          950: 'var(--text-950)',
-        },
-        theme_bg: {
+        border: 'var(--border)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
+
+        background: {
+          DEFAULT: 'var(--background)',
+          foreground: 'var(--foreground)',
           50: 'var(--background-50)',
           100: 'var(--background-100)',
           200: 'var(--background-200)',
@@ -65,7 +25,31 @@ const config: Config = {
           900: 'var(--background-900)',
           950: 'var(--background-950)',
         },
-        theme_primary: {
+
+        text: {
+          DEFAULT: 'var(--foreground)',
+          50: 'var(--text-50)',
+          100: 'var(--text-100)',
+          200: 'var(--text-200)',
+          300: 'var(--text-300)',
+          400: 'var(--text-400)',
+          500: 'var(--text-500)',
+          600: 'var(--text-600)',
+          700: 'var(--text-700)',
+          800: 'var(--text-800)',
+          900: 'var(--text-900)',
+          950: 'var(--text-950)',
+        },
+
+        foreground: 'var(--foreground)',
+
+        primary: {
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)',
+          soft: 'var(--primary-soft)',
+          'soft-hover': 'var(--primary-soft-hover)',
+          strong: 'var(--primary-strong)',
+          hover: 'var(--primary-hover)',
           50: 'var(--primary-50)',
           100: 'var(--primary-100)',
           200: 'var(--primary-200)',
@@ -78,7 +62,14 @@ const config: Config = {
           900: 'var(--primary-900)',
           950: 'var(--primary-950)',
         },
-        theme_secondary: {
+
+        secondary: {
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
+          soft: 'var(--secondary-soft)',
+          'soft-hover': 'var(--secondary-soft-hover)',
+          strong: 'var(--secondary-strong)',
+          hover: 'var(--secondary-hover)',
           50: 'var(--secondary-50)',
           100: 'var(--secondary-100)',
           200: 'var(--secondary-200)',
@@ -91,7 +82,14 @@ const config: Config = {
           900: 'var(--secondary-900)',
           950: 'var(--secondary-950)',
         },
-        theme_accent: {
+
+        accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
+          soft: 'var(--accent-soft)',
+          'soft-hover': 'var(--accent-soft-hover)',
+          strong: 'var(--accent-strong)',
+          hover: 'var(--accent-hover)',
           50: 'var(--accent-50)',
           100: 'var(--accent-100)',
           200: 'var(--accent-200)',
@@ -104,7 +102,61 @@ const config: Config = {
           900: 'var(--accent-900)',
           950: 'var(--accent-950)',
         },
+
+        destructive: {
+          DEFAULT: 'var(--destructive)',
+          foreground: 'var(--destructive-foreground)',
+          soft: 'var(--destructive-soft)',
+          'soft-hover': 'var(--destructive-soft-hover)',
+          strong: 'var(--destructive-strong)',
+          hover: 'var(--destructive-hover)',
+          50: 'var(--destructive-50)',
+          100: 'var(--destructive-100)',
+          200: 'var(--destructive-200)',
+          300: 'var(--destructive-300)',
+          400: 'var(--destructive-400)',
+          500: 'var(--destructive-500)',
+          600: 'var(--destructive-600)',
+          700: 'var(--destructive-700)',
+          800: 'var(--destructive-800)',
+          900: 'var(--destructive-900)',
+        },
+
+        confirm: {
+          DEFAULT: 'var(--confirm)',
+          foreground: 'var(--confirm-foreground)',
+          soft: 'var(--confirm-soft)',
+          'soft-hover': 'var(--confirm-soft-hover)',
+          strong: 'var(--confirm-strong)',
+          hover: 'var(--confirm-hover)',
+          50: 'var(--confirm-50)',
+          100: 'var(--confirm-100)',
+          200: 'var(--confirm-200)',
+          300: 'var(--confirm-300)',
+          400: 'var(--confirm-400)',
+          500: 'var(--confirm-500)',
+          600: 'var(--confirm-600)',
+          700: 'var(--confirm-700)',
+          800: 'var(--confirm-800)',
+          900: 'var(--confirm-900)',
+        },
+
+        muted: {
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)',
+        },
+
+        card: {
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)',
+        },
+
+        popover: {
+          DEFAULT: 'var(--popover)',
+          foreground: 'var(--popover-foreground)',
+        },
       },
+
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',

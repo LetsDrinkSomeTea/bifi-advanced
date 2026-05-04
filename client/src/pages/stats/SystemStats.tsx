@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { TrendingUp, Users, Wallet, Dices, Tag } from 'lucide-react';
 import { useSystemStats } from '../../hooks/useStats';
-import { formatCents, cn } from '../../lib/utils';
+import { formatCents } from '../../lib/utils';
 import { SectionHeader, StatTile } from '../../components/ui/Stats';
 import { Button } from '../../components/ui/Button';
 
@@ -24,12 +24,9 @@ export function SystemStatsContent(): React.JSX.Element {
             onClick={() => {
               setPeriod(p);
             }}
-            className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
-              period === p
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'border-border text-muted-foreground hover:text-foreground',
-            )}
+            variant={period === p ? 'default' : 'secondary'}
+            size="sm"
+            className="rounded-full flex-shrink-0"
           >
             {PERIOD_LABELS[p]}
           </Button>
@@ -99,7 +96,9 @@ export function SystemStatsContent(): React.JSX.Element {
                 label="Systemweite Bilanz"
                 value={formatCents(systemStats?.systemJackpotBalance ?? 0)}
                 valueClassName={
-                  (systemStats?.systemJackpotBalance ?? 0) >= 0 ? 'text-green-500' : 'text-red-500'
+                  (systemStats?.systemJackpotBalance ?? 0) >= 0
+                    ? 'text-confirm'
+                    : 'text-destructive'
                 }
               />
             </div>
@@ -116,7 +115,7 @@ export function SystemStatsContent(): React.JSX.Element {
                 <StatTile
                   label="Gespart systemweit"
                   value={formatCents(systemStats?.totalSystemSaved ?? 0)}
-                  valueClassName="text-green-500"
+                  valueClassName="text-confirm"
                 />
               </div>
             </section>

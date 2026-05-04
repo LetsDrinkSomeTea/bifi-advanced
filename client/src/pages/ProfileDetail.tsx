@@ -10,13 +10,14 @@ import { useNudgePresets, useSendNudge } from '../hooks/useNudge';
 import { useSendProst } from '../hooks/useProst';
 import { useBuyables } from '../hooks/useBuyables';
 import { useAuth } from '../hooks/useAuth';
-import { formatCents, cn } from '../lib/utils';
+import { formatCents } from '../lib/utils';
 import { ROLE_LABEL, ROLE_STYLE } from '../lib/constants';
 import { Avatar } from '../components/ui/Avatar';
 import { Input } from '../components/ui/Input';
 import type { FriendshipStatus } from '@shared/types';
 import { RankCard, StatCard } from './Profile';
 import { Button } from '../components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 
 function FriendButton({
   userId,
@@ -32,11 +33,12 @@ function FriendButton({
   if (status === 'friends') {
     return (
       <Button
+        variant="outline"
         onClick={() => {
           remove(userId);
         }}
         disabled={removing}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors disabled:opacity-50"
+        className="h-9 gap-1.5 px-3 text-muted-foreground hover:text-destructive hover:border-destructive hover:bg-destructive-soft transition-all"
       >
         <UserCheck size={15} />
         Freunde
@@ -47,11 +49,12 @@ function FriendButton({
   if (status === 'pending_sent') {
     return (
       <Button
+        variant="outline"
         onClick={() => {
           remove(userId);
         }}
         disabled={removing}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground transition-colors disabled:opacity-50"
+        className="h-9 gap-1.5 px-3 text-muted-foreground opacity-70 transition-all"
         title="Anfrage zurückziehen"
       >
         <Clock size={15} />
@@ -64,21 +67,23 @@ function FriendButton({
     return (
       <div className="flex gap-2">
         <Button
+          variant="primary-soft"
           onClick={() => {
             accept(userId);
           }}
           disabled={accepting}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+          className="h-9 gap-1.5 px-3 font-bold"
         >
           <UserCheck size={15} />
           Annehmen
         </Button>
         <Button
+          variant="destructive-soft"
           onClick={() => {
             remove(userId);
           }}
           disabled={removing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors disabled:opacity-50"
+          className="h-9 gap-1.5 px-3 font-bold"
         >
           <UserX size={15} />
           Ablehnen
@@ -93,7 +98,7 @@ function FriendButton({
         send(userId);
       }}
       disabled={sending}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+      className="h-9 gap-1.5 px-3 font-bold"
     >
       <UserPlus size={15} />
       Freund hinzufügen
@@ -219,7 +224,7 @@ function ProstSheet({
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="font-semibold">Prost an {displayName}</h2>
-            <Beer size={18} className="text-amber-500" />
+            <Beer size={18} className="text-accent-600" />
           </div>
           <Button
             onClick={() => {
@@ -312,7 +317,7 @@ export function ProfileDetail(): React.JSX.Element {
     <Layout>
       <div className="px-4 py-4 max-w-lg mx-auto space-y-6">
         <PageHeader
-          title=''
+          title=""
           onBack={() => {
             navigate('/social');
           }}
@@ -328,17 +333,13 @@ export function ProfileDetail(): React.JSX.Element {
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mt-1">
-              <span className='text-xl font-bold mr-2'>
-                {profile.displayName}
-              </span>
-              <span
-                className={cn(
-                  'text-xs px-1.5 py-0.5 rounded-full font-medium',
-                  ROLE_STYLE[profile.role],
-                )}
+              <span className="text-xl font-bold mr-2">{profile.displayName}</span>
+              <Badge
+                className="text-xs px-1.5 py-0.5 normal-case tracking-normal"
+                variant={ROLE_STYLE[profile.role]}
               >
                 {ROLE_LABEL[profile.role]}
-              </span>
+              </Badge>
             </div>
             {!isOwnProfile && (
               <div className="flex items-center gap-2 mt-3 flex-wrap">
@@ -346,19 +347,21 @@ export function ProfileDetail(): React.JSX.Element {
                   <FriendButton userId={profile.id} status={profile.friendshipStatus} />
                 ) : null}
                 <Button
+                  variant="outline"
                   onClick={() => {
                     setProstOpen(true);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  className="h-9 gap-1.5"
                 >
                   <Beer size={15} />
                   Prost
                 </Button>
                 <Button
+                  variant="outline"
                   onClick={() => {
                     setNudgeOpen(true);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-border text-muted-foreground hover:text-foreground transition-colors"
+                  className="h-9 gap-1.5"
                 >
                   <Bell size={15} />
                   Anstupsen
@@ -374,19 +377,22 @@ export function ProfileDetail(): React.JSX.Element {
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               Statistiken
             </h2>
-            <Link
-              href={`/stats/${profile.id}`}
-              className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline"
-            >
-              <BarChart2 size={12} />
-              Details
+            <Link href={`/stats/${profile.id}`}>
+              <Button variant="ghost" size="sm" className="h-7 gap-1 text-primary">
+                <BarChart2 size={12} />
+                Details
+              </Button>
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <StatCard label="Käufe" value={String(profile.stats.purchaseCount)} />
             <RankCard rank={profile.stats.leaderboardRank ?? null} />
             <StatCard label="Freunde" value={String(profile.stats.friendCount)} />
-            <StatCard label="Lieblingsprodukt" value={profile.stats.favoriteProduct?.name ?? '–'} small />
+            <StatCard
+              label="Lieblingsprodukt"
+              value={profile.stats.favoriteProduct?.name ?? '–'}
+              small
+            />
           </div>
         </div>
 

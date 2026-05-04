@@ -24,9 +24,7 @@ export function JoinGroup(): React.JSX.Element {
         navigate(`/groups/${group.id}`, { replace: true });
       } catch (err: unknown) {
         const error = err as ApiError;
-        const isAlreadyMember =
-          error.code === 'ALREADY_MEMBER' ||
-          error.status === 409
+        const isAlreadyMember = error.code === 'ALREADY_MEMBER' || error.status === 409;
 
         if (isAlreadyMember) {
           navigate('/social', { replace: true });
@@ -38,7 +36,6 @@ export function JoinGroup(): React.JSX.Element {
 
     void doJoin();
   }, [user, code, join, navigate]);
-
 
   return (
     <Layout>

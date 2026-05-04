@@ -13,9 +13,9 @@ export const DynamicIcon = ({ name, ...props }: DynamicIconProps): React.JSX.Ele
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join('');
 
-  const IconComponent = (LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>)[
-    pascalName
-  ];
+  const IconComponent = (
+    LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>
+  )[pascalName];
 
   if (!IconComponent) {
     console.warn(`Icon "${name}" (Pascal: "${pascalName}") not found in lucide-react`);

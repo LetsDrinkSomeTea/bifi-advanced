@@ -110,7 +110,7 @@ export function formatTimestamp(date: string | Date): string {
 }
 
 export function balanceColor(cents: number): string {
-  if (cents > 500) return 'text-green-500';
-  if (cents >= 0) return 'text-yellow-500';
-  return 'text-red-500';
+  if (cents > 500) return 'text-confirm-strong';
+  if (cents >= 0) return 'text-primary';
+  return 'text-destructive-strong';
 }

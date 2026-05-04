@@ -82,8 +82,12 @@ function NotificationDropdown({ onClose }: { onClose: () => void }): React.JSX.E
                   href ? 'cursor-pointer' : 'cursor-default hover:bg-transparent',
                 )}
               >
-                <div className="text-sm font-medium leading-snug whitespace-normal text-left">{n.title}</div>
-                <div className="text-xs text-muted-foreground mt-0.5 whitespace-normal text-left">{n.message}</div>
+                <div className="text-sm font-medium leading-snug whitespace-normal text-left">
+                  {n.title}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5 whitespace-normal text-left">
+                  {n.message}
+                </div>
                 <div className="text-xs text-muted-foreground/60 mt-1 whitespace-normal text-left">
                   {formatRelative(n.createdAt)}
                 </div>
@@ -118,7 +122,7 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }): React.JSX.Ele
   };
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-border bg-popover shadow-xl ring-1 ring-black/5 z-50 overflow-hidden">
+    <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-border bg-popover shadow-xl ring-1 ring-border/60 z-50 overflow-hidden">
       <div className="py-1.5">
         <Button
           variant="ghost"
@@ -189,7 +193,7 @@ export function TopBar(): React.JSX.Element {
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between px-4 h-14 border-b border-border bg-background/80 backdrop-blur-sm">
       <div className="flex items-center gap-1.5">
-        <Beer className="w-5 h-5 text-amber-500" />
+        <Beer className="w-5 h-5 text-primary" />
         <span className="font-bold text-base tracking-tight">BiFi</span>
       </div>
 

@@ -41,11 +41,11 @@ export function ToggleSwitch({
           'transition-colors',
           mode === 'visibility'
             ? active
-              ? 'text-green-500 hover:text-green-600 hover:bg-green-50'
-              : 'text-red-500 hover:text-red-600 hover:bg-red-50'
+              ? 'text-confirm-strong hover:bg-confirm-soft'
+              : 'text-destructive-strong hover:bg-destructive-soft'
             : active
-            ? 'text-orange-500 hover:text-orange-600 hover:bg-orange-50'
-            : 'text-green-500 hover:text-green-600 hover:bg-green-50',
+              ? 'text-accent-strong hover:bg-accent-soft'
+              : 'text-confirm-strong hover:bg-confirm-soft',
           className,
         )}
         title={label}
@@ -65,7 +65,9 @@ export function ToggleSwitch({
       disabled={disabled}
       className={cn(
         'flex items-center justify-between px-3 py-2.5 h-auto font-bold transition-all w-full',
-        active ? 'border-primary/20 bg-primary/5 text-primary hover:bg-primary/10' : 'text-muted-foreground',
+        active
+          ? 'border-primary-soft bg-primary-soft text-primary-strong hover:bg-primary-soft/80'
+          : 'text-muted-foreground',
         className,
       )}
     >

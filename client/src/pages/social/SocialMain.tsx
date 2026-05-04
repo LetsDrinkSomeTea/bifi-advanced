@@ -25,6 +25,7 @@ import {
 } from '../../hooks/useFriends';
 import { Button } from '../../components/ui/Button';
 import { Avatar } from '../../components/ui/Avatar';
+import { SectionHeader } from '../../components/ui/SectionHeader';
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
@@ -82,11 +83,7 @@ function CreateGroupModal({
             maxLength={200}
           />
         </div>
-        <Button
-          type="submit"
-          disabled={isPending || !name.trim()}
-          className="w-full"
-        >
+        <Button type="submit" disabled={isPending || !name.trim()} className="w-full">
           {isPending ? 'Erstellen…' : 'Erstellen'}
         </Button>
       </form>
@@ -132,12 +129,8 @@ function JoinGroupModal({
             className="font-mono uppercase tracking-widest"
           />
         </div>
-        {error !== null ? <p className="text-sm text-destructive">{error.message}</p> : null}
-        <Button
-          type="submit"
-          disabled={isPending || code.length < 6}
-          className="w-full"
-        >
+        {error !== null ? <p className="text-sm text-destructive-strong">{error.message}</p> : null}
+        <Button type="submit" disabled={isPending || code.length < 6} className="w-full">
           {isPending ? 'Beitreten…' : 'Beitreten'}
         </Button>
       </form>
@@ -158,29 +151,32 @@ function GroupsSection({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          Gruppen
-        </h2>
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={onJoinOpen}
-            variant="outline"
-            className="flex items-center gap-1"
-           size="icon">
-            <Hash size={15} />
-            Code
-          </Button>
-          <Button
-            onClick={onCreateOpen}
-            variant="outline"
-            className="flex items-center gap-1"
-          >
-            <Plus size={15} />
-            Neu
-          </Button>
-        </div>
-      </div>
+      <SectionHeader
+        rightElement={
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={onJoinOpen}
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1 px-2.5 rounded-lg"
+            >
+              <Hash size={14} />
+              Code
+            </Button>
+            <Button
+              onClick={onCreateOpen}
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1 px-2.5 rounded-lg"
+            >
+              <Plus size={14} />
+              Neu
+            </Button>
+          </div>
+        }
+      >
+        Gruppen
+      </SectionHeader>
 
       {isLoading ? (
         <div className="space-y-2">
@@ -204,7 +200,7 @@ function GroupsSection({
         <div className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
           {groups?.map((g) => (
             <Link key={g.id} href={`/groups/${g.id}`}>
-              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent transition-colors cursor-pointer">
+              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent-soft transition-colors cursor-pointer">
                 <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                   <Users2 size={16} className="text-muted-foreground" />
                 </div>
@@ -212,7 +208,7 @@ function GroupsSection({
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium truncate">{g.name}</span>
                     {g.myRole === 'owner' ? (
-                      <Crown size={11} className="text-amber-500 flex-shrink-0" />
+                      <Crown size={11} className="text-accent-strong flex-shrink-0" />
                     ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">{g.memberCount} Mitglieder</p>
@@ -237,9 +233,7 @@ function FriendsSection(): React.JSX.Element {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-        Freunde
-      </h2>
+      <SectionHeader>Freunde</SectionHeader>
 
       {requestCount > 0 && requests ? (
         <div className="space-y-2">
@@ -256,24 +250,28 @@ function FriendsSection(): React.JSX.Element {
                 >
                   {r.displayName}
                 </Link>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <Button
+                    size="icon"
+                    variant="primary-soft"
                     onClick={() => {
                       accept(r.id);
                     }}
-                    className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                    className="h-8 w-8 rounded-lg"
                     title="Annehmen"
                   >
-                    <UserCheck size={15} />
+                    <UserCheck size={16} />
                   </Button>
                   <Button
+                    size="icon"
+                    variant="destructive-soft"
                     onClick={() => {
                       remove(r.id);
                     }}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    className="h-8 w-8 rounded-lg"
                     title="Ablehnen"
                   >
-                    <UserX size={15} />
+                    <UserX size={16} />
                   </Button>
                 </div>
               </div>
@@ -296,7 +294,7 @@ function FriendsSection(): React.JSX.Element {
         <div className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
           {friends?.map((f) => (
             <Link key={f.id} href={`/profile/${f.id}`}>
-              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent transition-colors cursor-pointer">
+              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent-soft transition-colors cursor-pointer">
                 <Avatar displayName={f.displayName} avatarUrl={f.avatarUrl} />
                 <span className="flex-1 min-w-0 text-sm font-medium truncate">{f.displayName}</span>
                 <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
@@ -371,7 +369,7 @@ function SearchResults({
         if (item.kind === 'group') {
           return (
             <Link key={`g-${item.id}`} href={`/groups/${item.id}`}>
-              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent transition-colors cursor-pointer">
+              <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent-soft transition-colors cursor-pointer">
                 <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                   <Users2 size={16} className="text-muted-foreground" />
                 </div>
@@ -404,7 +402,7 @@ function SearchResults({
                 onClick={() => {
                   sendRequest(item.id);
                 }}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-primary-strong hover:bg-primary-soft transition-colors"
                 title="Freundschaft anfragen"
               >
                 <UserPlus size={15} />

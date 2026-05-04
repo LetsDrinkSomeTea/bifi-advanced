@@ -125,7 +125,7 @@ export function TransactionList({
               <span
                 className={cn(
                   'font-semibold text-sm tabular-nums',
-                  txn.totalAmount <= 0 ? 'text-red-500' : 'text-green-500',
+                  txn.totalAmount <= 0 ? 'text-destructive' : 'text-confirm',
                 )}
               >
                 {txn.totalAmount <= 0 ? '' : '+'}

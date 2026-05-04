@@ -16,7 +16,6 @@ import { AdminPage } from './pages/admin/AdminPage';
 import { GroupDetail } from './pages/GroupDetail';
 import { AllAchievements } from './pages/AllAchievements';
 
-
 import { GlobalDialog } from './components/GlobalDialog';
 import { DialogProvider } from './hooks/dialogContext';
 import { JoinGroup } from './pages/JoinGroup';
@@ -57,9 +56,7 @@ export function App(): React.JSX.Element {
             <Redirect to="/stats" />
           </Route>
           <Route path="/profile/:userId/stats">
-            {(params) => (
-              <Redirect to={`/stats/${params.userId}`} />
-            )}
+            {(params) => <Redirect to={`/stats/${params.userId}`} />}
           </Route>
           <Route path="/profile/:userId">
             {() => (
