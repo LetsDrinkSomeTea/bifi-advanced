@@ -7,6 +7,7 @@ export interface AuthConfig {
   localEnabled: boolean;
   autoRedirect: boolean;
   roleSync: 'always' | 'on_creation' | 'never';
+  balanceWarnThreshold: number;
 }
 
 export interface AuthState {

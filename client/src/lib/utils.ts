@@ -109,6 +109,21 @@ export function formatTimestamp(date: string | Date): string {
   return `${dateStr}, ${timeStr}`;
 }
 
+export function formatTimeLeft(endTime: string | null): string | null {
+  if (!endTime) return null;
+  const date = new Date(endTime);
+  const diff = date.getTime() - Date.now();
+  if (diff <= 0) return 'beendet';
+
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `noch ${days} ${days === 1 ? 'Tag' : 'Tage'}`;
+  if (hours > 0) return `noch ${hours} ${hours === 1 ? 'Stunde' : 'Stunden'}`;
+  return `noch ${minutes} ${minutes === 1 ? 'Minute' : 'Minuten'}`;
+}
+
 export function balanceColor(cents: number): string {
   if (cents > 500) return 'text-confirm-strong';
   if (cents >= 0) return 'text-primary';

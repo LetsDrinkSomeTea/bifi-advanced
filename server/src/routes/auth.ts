@@ -67,6 +67,7 @@ auth.get('/config', (c) => {
     localEnabled: process.env.LOCAL_AUTH_ENABLED !== 'false',
     autoRedirect: process.env.OIDC_AUTO_REDIRECT === 'true',
     roleSync: getRoleSyncMode(),
+    balanceWarnThreshold: parseInt(process.env.BALANCE_WARN_THRESHOLD ?? '-2000'),
   });
 });
 
