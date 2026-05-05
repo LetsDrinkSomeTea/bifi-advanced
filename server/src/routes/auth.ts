@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { randomBytes } from 'crypto';
+import { z } from 'zod';
 import { db } from '../db/index.ts';
 import { users } from '../db/schema.ts';
 import { eq } from 'drizzle-orm';
@@ -11,8 +12,10 @@ import {
   randomPKCECodeVerifier,
   calculatePKCECodeChallenge,
 } from '../services/oidc.ts';
-import { linkSessionToUser, regenerateSession } from '../middleware/session.ts';
+import { linkSessionToUser, regenerateSession, unlinkSessionFromUser } from '../middleware/session.ts';
 import { requireAuth } from '../middleware/auth.ts';
+import { SafeImageUrlSchema } from '../lib/url.ts';
+import { getClientIp } from '../lib/ip.ts';
 
 type RoleSyncMode = 'always' | 'on_creation' | 'never';
 
@@ -24,6 +27,39 @@ function getRoleSyncMode(): RoleSyncMode {
 }
 
 const auth = new Hono();
+
+const OIDCClaimsSchema = z
+  .object({
+    sub: z.string().min(1),
+    email: z.string().email(),
+    preferred_username: z.string().min(1).optional(),
+    name: z.string().min(1).optional(),
+    picture: z.unknown().optional(),
+  })
+  .passthrough();
+
+function normalizeOrigin(input: string | undefined): string | null {
+  if (!input) return null;
+  try {
+    const url = new URL(input);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return null;
+  }
+}
+
+function getAllowedRedirectOrigins(): Set<string> {
+  const configured = (process.env.OIDC_ALLOWED_REDIRECT_ORIGINS ?? '')
+    .split(',')
+    .map((value) => normalizeOrigin(value.trim()))
+    .filter((value): value is string => value !== null);
+
+  const appOrigin = normalizeOrigin(process.env.APP_URL);
+  if (appOrigin) configured.unshift(appOrigin);
+
+  return new Set(configured);
+}
 
 auth.get('/config', (c) => {
   return c.json({
@@ -49,20 +85,14 @@ auth.get('/login', async (c) => {
   session.oidcState = state;
   session.pkceVerifier = pkceVerifier;
 
-  // Derive the public-facing origin from the Referer header so the redirect URI
-  // matches what the browser actually sees (e.g. when Vite proxies on a LAN IP).
-  const referer = c.req.header('referer');
-  const publicOrigin = (() => {
-    if (referer) {
-      try {
-        const u = new URL(referer);
-        return `${u.protocol}//${u.host}`;
-      } catch {
-        /* invalid referer, ignore */
-      }
-    }
-    return process.env.APP_URL ?? 'http://localhost:3000';
-  })();
+  const allowedOrigins = getAllowedRedirectOrigins();
+  const defaultOrigin = normalizeOrigin(process.env.APP_URL);
+  if (defaultOrigin === null) {
+    return c.json({ error: 'APP_URL must be a valid absolute URL', code: 'APP_URL_INVALID' }, 500);
+  }
+  const refererOrigin = normalizeOrigin(c.req.header('referer'));
+  const publicOrigin =
+    refererOrigin !== null && allowedOrigins.has(refererOrigin) ? refererOrigin : defaultOrigin;
 
   const redirectUri = `${publicOrigin}/api/auth/callback`;
   session.oidcRedirectUri = redirectUri;
@@ -85,7 +115,6 @@ auth.get('/callback', async (c) => {
   }
 
   const session = c.get('session');
-  const sessionId = c.get('sessionId');
 
   if (!session.oidcState || !session.pkceVerifier) {
     return c.redirect('/login?error=invalid_state');
@@ -111,22 +140,31 @@ auth.get('/callback', async (c) => {
     return c.redirect('/login?error=auth_failed');
   }
 
-  const claims = tokens.claims();
-  if (!claims) {
+  const rawClaims = tokens.claims();
+  if (!rawClaims) {
     return c.redirect('/login?error=no_claims');
   }
+  const parsedClaims = OIDCClaimsSchema.safeParse(rawClaims);
+  if (!parsedClaims.success) {
+    return c.redirect('/login?error=no_claims');
+  }
+  const claims = parsedClaims.data;
 
   const sub = claims.sub;
-  const email = (claims.email as string | undefined) ?? '';
-  const displayName =
-    (claims.preferred_username as string | undefined) ??
-    (claims.name as string | undefined) ??
-    email;
-  const avatarUrl = (claims.picture as string | undefined) ?? null;
+  const email = claims.email;
+  const displayName = claims.preferred_username ?? claims.name ?? email;
+  const avatarUrl =
+    typeof claims.picture === 'string' && SafeImageUrlSchema.safeParse(claims.picture).success
+      ? claims.picture
+      : null;
   const groupsClaim = process.env.OIDC_GROUPS_CLAIM ?? 'groups';
-  const groups = (claims[groupsClaim] as string[] | undefined) ?? [];
-  const ip =
-    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip') ?? null;
+  const groupsRaw = claims[groupsClaim];
+  const groupsParsed = z.array(z.string()).safeParse(groupsRaw);
+  if (!groupsParsed.success && groupsRaw !== undefined) {
+    return c.redirect('/login?error=no_claims');
+  }
+  const groups = groupsParsed.success ? groupsParsed.data : [];
+  const ip = getClientIp(c);
 
   const adminGroup = process.env.OIDC_ADMIN_GROUP;
   const moderatorGroup = process.env.OIDC_MODERATOR_GROUP;
@@ -143,7 +181,7 @@ auth.get('/callback', async (c) => {
 
   if (existing) {
     if (!existing.isActive) {
-      return c.redirect('/login?error=deactivated');
+      return c.redirect('/login?error=auth_failed');
     }
 
     const [updated] = await db
@@ -184,21 +222,24 @@ auth.get('/callback', async (c) => {
     });
   }
 
-  delete session.oidcState;
-  delete session.pkceVerifier;
-  delete session.oidcRedirectUri;
-  session.userId = userId;
-
-  await linkSessionToUser(sessionId, userId);
+  const freshSession = await regenerateSession(c);
+  freshSession.userId = userId;
+  await linkSessionToUser(c.get('sessionId'), userId);
 
   return c.redirect('/');
 });
 
-auth.post('/logout', (c) => {
+auth.post('/logout', async (c) => {
   const session = c.get('session');
+  const userId = session.userId;
+  const sessionId = c.get('sessionId');
   delete session.userId;
   delete session.oidcState;
   delete session.pkceVerifier;
+  delete session.oidcRedirectUri;
+  if (userId) {
+    await unlinkSessionFromUser(sessionId, userId);
+  }
   return c.json({ success: true });
 });
 

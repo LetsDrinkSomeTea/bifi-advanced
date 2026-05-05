@@ -25,27 +25,15 @@ import {
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
-export const roleEnum = pgEnum('role', ROLES as unknown as [string, ...string[]]);
-export const transactionTypeEnum = pgEnum(
-  'transaction_type',
-  TRANSACTION_TYPES as unknown as [string, ...string[]],
-);
-export const nudgeTypeEnum = pgEnum('nudge_type', NUDGE_TYPES as unknown as [string, ...string[]]);
-export const notificationTypeEnum = pgEnum(
-  'notification_type',
-  NOTIFICATION_TYPES as unknown as [string, ...string[]],
-);
+export const roleEnum = pgEnum('role', ROLES);
+export const transactionTypeEnum = pgEnum('transaction_type', TRANSACTION_TYPES);
+export const nudgeTypeEnum = pgEnum('nudge_type', NUDGE_TYPES);
+export const notificationTypeEnum = pgEnum('notification_type', NOTIFICATION_TYPES);
 
-export const buyableCategoryEnum = pgEnum(
-  'buyable_category',
-  BUYABLE_CATEGORIES as unknown as [string, ...string[]],
-);
-export const friendshipStatusEnum = pgEnum(
-  'friendship_status',
-  FRIENDSHIP_STATUSES as unknown as [string, ...string[]],
-);
-export const groupRoleEnum = pgEnum('group_role', GROUP_ROLES as unknown as [string, ...string[]]);
-export const feedTypeEnum = pgEnum('feed_type', FEED_TYPES as unknown as [string, ...string[]]);
+export const buyableCategoryEnum = pgEnum('buyable_category', BUYABLE_CATEGORIES);
+export const friendshipStatusEnum = pgEnum('friendship_status', FRIENDSHIP_STATUSES);
+export const groupRoleEnum = pgEnum('group_role', GROUP_ROLES);
+export const feedTypeEnum = pgEnum('feed_type', FEED_TYPES);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

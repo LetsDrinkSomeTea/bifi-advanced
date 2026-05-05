@@ -5,11 +5,15 @@ import * as argon2 from 'argon2';
 import { db } from '../db/index.ts';
 import { users } from '../db/schema.ts';
 import { eq, or, sql } from 'drizzle-orm';
-import { linkSessionToUser } from '../middleware/session.ts';
+import { linkSessionToUser, regenerateSession } from '../middleware/session.ts';
 import { requireAuth, requireRole } from '../middleware/auth.ts';
+import { rateLimit } from '../middleware/rateLimit.ts';
 import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 
 const localAuth = new Hono();
+const DUMMY_PASSWORD_HASH =
+  '$argon2id$v=19$m=65536,t=3,p=4$v/P+IikR3fTgBkoXpxH3rw$HmKhv9N0aN0iZ5/hNQI+2BgcJ5LEPh5xXiEyvasNycY';
 
 const BootstrapSchema = z.object({
   email: z.string().email(),
@@ -20,33 +24,37 @@ const BootstrapSchema = z.object({
 
 // Creates first admin user; only works when NO users exist yet
 localAuth.post('/bootstrap', zValidator('json', BootstrapSchema), async (c) => {
-  const result = (await db.select({ count: sql`count(*)` }).from(users))[0];
-  const count = result?.count ?? 0;
+  const body = c.req.valid('json');
+  const created = await db.transaction(async (tx) => {
+    await tx.execute(sql`LOCK TABLE users IN EXCLUSIVE MODE`);
+    const [row] = await tx.select({ count: sql<number>`count(*)::int` }).from(users);
+    if ((row?.count ?? 0) > 0) {
+      return null;
+    }
+    const passwordHash = await argon2.hash(body.password);
+    const [inserted] = await tx
+      .insert(users)
+      .values({
+        email: body.email,
+        username: body.username ?? null,
+        displayName: body.displayName,
+        passwordHash,
+        role: 'admin',
+      })
+      .returning();
+    if (!inserted) {
+      throw new Error('Failed to create admin user');
+    }
+    return inserted;
+  });
 
-  if (Number(count) > 0) {
+  if (!created) {
     return c.json(
       { error: 'Bootstrap only allowed when no users exist', code: 'ALREADY_BOOTSTRAPPED' },
       403,
     );
   }
 
-  const body = c.req.valid('json');
-  const passwordHash = await argon2.hash(body.password);
-
-  const [created] = await db
-    .insert(users)
-    .values({
-      email: body.email,
-      username: body.username ?? null,
-      displayName: body.displayName,
-      passwordHash,
-      role: 'admin',
-    })
-    .returning();
-
-  if (!created) {
-    return c.json({ error: 'Failed to create admin user', code: 'BOOTSTRAP_FAILED' }, 500);
-  }
 
   await writeAuditLog({
     actorId: created.id,
@@ -67,6 +75,11 @@ const LoginSchema = z.object({
   password: z.string().min(1),
 });
 
+const loginRateLimit = rateLimit(10, 60, (c) => {
+  const ip = getClientIp(c) ?? 'untrusted-client';
+  return `rl:login:${ip}`;
+});
+
 const CreateLocalUserSchema = z.object({
   email: z.string().email(),
   username: z
@@ -80,31 +93,23 @@ const CreateLocalUserSchema = z.object({
   role: z.enum(['admin', 'moderator', 'member']).default('member'),
 });
 
-localAuth.post('/login', zValidator('json', LoginSchema), async (c) => {
+localAuth.post('/login', loginRateLimit, zValidator('json', LoginSchema), async (c) => {
   const { login, password } = c.req.valid('json');
-  const session = c.get('session');
-  const sessionId = c.get('sessionId');
 
   const [user] = await db
     .select()
     .from(users)
     .where(or(eq(users.email, login), eq(users.username, login)));
 
-  if (!user?.passwordHash) {
+  const passwordHashToVerify = user?.passwordHash ?? DUMMY_PASSWORD_HASH;
+  const valid = await argon2.verify(passwordHashToVerify, password);
+  if (!user?.passwordHash || !user.isActive || !valid) {
     return c.json({ error: 'Invalid credentials', code: 'INVALID_CREDENTIALS' }, 401);
   }
 
-  if (!user.isActive) {
-    return c.json({ error: 'Account deactivated', code: 'DEACTIVATED' }, 403);
-  }
-
-  const valid = await argon2.verify(user.passwordHash, password);
-  if (!valid) {
-    return c.json({ error: 'Invalid credentials', code: 'INVALID_CREDENTIALS' }, 401);
-  }
-
-  session.userId = user.id;
-  await linkSessionToUser(sessionId, user.id);
+  const freshSession = await regenerateSession(c);
+  freshSession.userId = user.id;
+  await linkSessionToUser(c.get('sessionId'), user.id);
 
   return c.json({
     success: true,
@@ -121,8 +126,7 @@ localAuth.post(
   async (c) => {
     const body = c.req.valid('json');
     const actor = c.get('user');
-    const ip =
-      c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip') ?? null;
+    const ip = getClientIp(c);
 
     const passwordHash = await argon2.hash(body.password);
 
@@ -174,8 +178,7 @@ localAuth.put(
     const { password } = c.req.valid('json');
     const { id } = c.req.param();
     const actor = c.get('user');
-    const ip =
-      c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip') ?? null;
+    const ip = getClientIp(c);
 
     const passwordHash = await argon2.hash(password);
 

@@ -4,6 +4,7 @@ import { db } from '../db/index.ts';
 import { users } from '../db/schema.ts';
 import { eq } from 'drizzle-orm';
 import { ROLE_LEVEL, type Role } from '../../../shared/src/types.ts';
+import { unlinkSessionFromUser } from './session.ts';
 
 declare module 'hono' {
   interface ContextVariableMap {
@@ -22,6 +23,9 @@ export const requireAuth: MiddlewareHandler = createMiddleware(async (c, next) =
 
   if (!user?.isActive) {
     const s = c.get('session');
+    if (session.userId) {
+      await unlinkSessionFromUser(c.get('sessionId'), session.userId);
+    }
     delete s.userId;
     return c.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, 401);
   }
@@ -33,7 +37,7 @@ export const requireAuth: MiddlewareHandler = createMiddleware(async (c, next) =
 export function requireRole(minRole: Role): MiddlewareHandler {
   return createMiddleware(async (c, next) => {
     const user = c.get('user');
-    const userRole = user.role as Role;
+    const userRole = user.role;
 
     if (ROLE_LEVEL[userRole] < ROLE_LEVEL[minRole]) {
       return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);

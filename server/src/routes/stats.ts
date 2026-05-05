@@ -217,7 +217,7 @@ router.get('/user/:id', requireAuth, async (c) => {
       .groupBy(buyables.category);
 
     const categories = categoriesResult.map((r) => ({
-      category: r.category as BuyableCategory | null,
+      category: r.category,
       count: r.count,
     }));
 

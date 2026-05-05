@@ -4,21 +4,16 @@ import { z } from 'zod';
 import { eq, desc } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import { promotions } from '../db/schema.ts';
-import { requireAuth } from '../middleware/auth.ts';
+import { requireAuth, requireRole } from '../middleware/auth.ts';
 import { writeAuditLog } from '../services/audit.ts';
 import { broadcastInvalidate } from '../services/notifications.ts';
 import { emitFeedEvent } from '../services/feed.ts';
+import { BUYABLE_CATEGORIES } from '../../../shared/src/schemas.ts';
 
 const router = new Hono();
 
 // Only moderators and admins can access these routes
-router.use('/*', requireAuth, async (c, next) => {
-  const user = c.get('user');
-  if (user.role === 'member') {
-    return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
-  }
-  await next();
-});
+router.use('/*', requireAuth, requireRole('moderator'));
 
 const PromotionSchema = z.object({
   name: z.string().min(1).max(100),
@@ -30,7 +25,7 @@ const PromotionSchema = z.object({
     .object({
       buyableId: z.string().uuid().optional(),
       variantId: z.string().uuid().optional(),
-      categoryIds: z.array(z.string()).optional(),
+      categoryIds: z.array(z.enum(BUYABLE_CATEGORIES)).optional(),
     })
     .nullable()
     .optional(),

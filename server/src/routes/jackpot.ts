@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { and, eq } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
+import { randomInt } from 'crypto';
 import { JackpotSpinSchema } from '../../../shared/src/schemas.ts';
 import { db } from '../db/index.ts';
 import { buyables, productVariants, transactions, transactionItems, users } from '../db/schema.ts';
@@ -19,7 +20,7 @@ const MULTIPLIERS: number[] = [
 ];
 
 function pickMultiplierPct(): number {
-  const multiplier = MULTIPLIERS[Math.floor(Math.random() * MULTIPLIERS.length)];
+  const multiplier = MULTIPLIERS[randomInt(0, MULTIPLIERS.length)];
   if (multiplier === undefined) {
     throw new Error('Multiplier table corrupted');
   }

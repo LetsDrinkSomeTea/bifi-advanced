@@ -21,27 +21,11 @@ import { db } from '../db/index.ts';
 import { activityFeed, groupMembers, userFriendships, users } from '../db/schema.ts';
 import { requireAuth } from '../middleware/auth.ts';
 import { type PaginatedResponse, type FeedEvent } from '../../../shared/src/types.ts';
+import { decodeCursor, encodeCursor } from '../lib/cursor.ts';
 
 const router = new Hono();
 
 const targetUsers = alias(users, 'target_users');
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function decodeCursor(cursor: string): { t: string; id: string } | null {
-  try {
-    return JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8')) as {
-      t: string;
-      id: string;
-    };
-  } catch {
-    return null;
-  }
-}
-
-function encodeCursor(createdAt: Date, id: string): string {
-  return Buffer.from(JSON.stringify({ t: createdAt.toISOString(), id })).toString('base64url');
-}
 
 const QuerySchema = z.object({
   cursor: z.string().optional(),
@@ -149,7 +133,7 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c): Promis
   const data: FeedEvent[] = page.map((r) => ({
     id: r.id,
     userId: r.userId,
-    type: r.type as FeedEvent['type'],
+    type: r.type,
     targetUserId: r.targetUserId,
     targetGroupId: r.targetGroupId,
     metadata: r.metadata as Record<string, unknown> | null,

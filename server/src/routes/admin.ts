@@ -24,8 +24,9 @@ import { invalidateUserSessions } from '../middleware/session.ts';
 import { writeAuditLog } from '../services/audit.ts';
 import { pushInvalidate, createNotification } from '../services/notifications.ts';
 import { checkAchievements } from '../services/achievements.ts';
+import { decodeCursor, encodeCursor } from '../lib/cursor.ts';
 import { ROLES } from '../../../shared/src/schemas.ts';
-import { ROLE_LEVEL, type Role } from '@shared/types.ts';
+import { ROLE_LEVEL } from '@shared/types.ts';
 
 const router = new Hono();
 
@@ -75,7 +76,7 @@ router.post('/users', requireRole('moderator'), zValidator('json', CreateUserSch
   const actor = c.get('user');
   const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
 
-  if (ROLE_LEVEL[body.role] > ROLE_LEVEL[actor.role as Role]) {
+  if (ROLE_LEVEL[body.role] > ROLE_LEVEL[actor.role]) {
     throw new HTTPException(403, { message: "Can't create a user with higher privileges" });
   }
 
@@ -152,7 +153,7 @@ router.patch('/users/:id', zValidator('json', UpdateUserSchema), async (c) => {
 
   const [before] = await db.select().from(users).where(eq(users.id, id));
   if (!before) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
-  if (ROLE_LEVEL[before.role as Role] > ROLE_LEVEL[actor.role as Role]) {
+  if (ROLE_LEVEL[before.role] > ROLE_LEVEL[actor.role]) {
     throw new HTTPException(403, { message: "Can't update a user with higher privileges" });
   }
 
@@ -263,21 +264,6 @@ router.get('/settlement', async (c) => {
 
 // ─── GET /api/admin/transactions ─────────────────────────────────────────────
 
-function encodeCursor(createdAt: Date, id: string): string {
-  return Buffer.from(JSON.stringify({ t: createdAt.toISOString(), id })).toString('base64url');
-}
-
-function decodeCursor(cursor: string): { t: string; id: string } | null {
-  try {
-    return JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8')) as {
-      t: string;
-      id: string;
-    };
-  } catch {
-    return null;
-  }
-}
-
 const TxnQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -382,7 +368,7 @@ router.post('/users/:id/remind', async (c) => {
   const [target] = await db.select().from(users).where(eq(users.id, id));
   if (!target) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
 
-  // Rate limit: 1 reminder per admin→recipient per 10 minutes
+  // Rate limit: 1 reminder per admin→recipient per minute
   const cdKey = `remind:cd:${actor.id}:${id}`;
   const exists = await redis.exists(cdKey);
   if (exists) {

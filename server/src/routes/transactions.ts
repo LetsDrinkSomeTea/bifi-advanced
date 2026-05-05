@@ -30,6 +30,7 @@ import {
   pushInvalidate,
 } from '../services/notifications.ts';
 import { checkAchievements } from '../services/achievements.ts';
+import { decodeCursor, encodeCursor } from '../lib/cursor.ts';
 
 const router = new Hono();
 
@@ -37,23 +38,6 @@ const router = new Hono();
 
 function formatCents(cents: number): string {
   return (cents / 100).toFixed(2).replace('.', ',') + ' €';
-}
-
-// ─── Cursor helpers ───────────────────────────────────────────────────────────
-
-function encodeCursor(createdAt: Date, id: string): string {
-  return Buffer.from(JSON.stringify({ t: createdAt.toISOString(), id })).toString('base64url');
-}
-
-function decodeCursor(cursor: string): { t: string; id: string } | null {
-  try {
-    return JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8')) as {
-      t: string;
-      id: string;
-    };
-  } catch {
-    return null;
-  }
 }
 
 // ─── GET /api/transactions ────────────────────────────────────────────────────

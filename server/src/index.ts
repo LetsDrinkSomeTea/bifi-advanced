@@ -4,6 +4,7 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
+import { HTTPException } from 'hono/http-exception';
 import { sessionMiddleware } from './middleware/session.ts';
 import { APP_TZ } from './services/achievements.ts';
 import { globalRateLimit } from './middleware/rateLimit.ts';
@@ -33,7 +34,21 @@ const app = new Hono();
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
 app.use('*', logger());
-app.use('*', secureHeaders());
+app.use(
+  '*',
+  secureHeaders({
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'https:', 'data:'],
+      connectSrc: ["'self'", 'https:', 'wss:', 'ws:'],
+    },
+  }),
+);
 app.use(
   '/api/*',
   cors({
@@ -74,11 +89,18 @@ app.get('/health', (c): Response => c.json({ status: 'ok', timestamp: new Date()
 
 // Translate thrown errors that carry a status/code (e.g. from resolveItems) into proper responses
 app.onError((err, c): Response => {
-  const e = err as Error & { status?: number; code?: string };
-  if (typeof e.status === 'number' && e.status >= 400 && e.status < 500) {
+  if (err instanceof HTTPException) {
+    return err.getResponse();
+  }
+
+  const errWithMeta = err as Error & { status?: number; code?: string };
+  const status = errWithMeta.status;
+  const code = errWithMeta.code;
+
+  if (status !== undefined && status >= 400 && status < 500) {
     return c.json(
-      { error: e.message, code: e.code },
-      e.status as 400 | 403 | 404 | 409 | 422 | 429,
+      { error: err instanceof Error ? err.message : 'Request failed', code },
+      status as 400 | 403 | 404 | 409 | 422 | 429,
     );
   }
   console.error(err);
