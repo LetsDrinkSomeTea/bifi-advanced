@@ -33,7 +33,7 @@ export const requireAuth: MiddlewareHandler = createMiddleware(async (c, next) =
 export function requireRole(minRole: Role): MiddlewareHandler {
   return createMiddleware(async (c, next) => {
     const user = c.get('user');
-    const userRole = user.role as Role;
+    const userRole = user.role;
 
     if (ROLE_LEVEL[userRole] < ROLE_LEVEL[minRole]) {
       return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);

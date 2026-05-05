@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { randomBytes } from 'crypto';
+import { z } from 'zod';
 import { db } from '../db/index.ts';
 import { users } from '../db/schema.ts';
 import { eq } from 'drizzle-orm';
@@ -13,6 +14,7 @@ import {
 } from '../services/oidc.ts';
 import { linkSessionToUser, regenerateSession } from '../middleware/session.ts';
 import { requireAuth } from '../middleware/auth.ts';
+import { SafeImageUrlSchema } from '../lib/url.ts';
 
 type RoleSyncMode = 'always' | 'on_creation' | 'never';
 
@@ -24,6 +26,16 @@ function getRoleSyncMode(): RoleSyncMode {
 }
 
 const auth = new Hono();
+
+const OIDCClaimsSchema = z
+  .object({
+    sub: z.string().min(1),
+    email: z.string().email().optional(),
+    preferred_username: z.string().min(1).optional(),
+    name: z.string().min(1).optional(),
+    picture: z.unknown().optional(),
+  })
+  .passthrough();
 
 auth.get('/config', (c) => {
   return c.json({
@@ -85,7 +97,6 @@ auth.get('/callback', async (c) => {
   }
 
   const session = c.get('session');
-  const sessionId = c.get('sessionId');
 
   if (!session.oidcState || !session.pkceVerifier) {
     return c.redirect('/login?error=invalid_state');
@@ -111,20 +122,30 @@ auth.get('/callback', async (c) => {
     return c.redirect('/login?error=auth_failed');
   }
 
-  const claims = tokens.claims();
-  if (!claims) {
+  const rawClaims = tokens.claims();
+  if (!rawClaims) {
     return c.redirect('/login?error=no_claims');
   }
+  const parsedClaims = OIDCClaimsSchema.safeParse(rawClaims);
+  if (!parsedClaims.success) {
+    return c.redirect('/login?error=no_claims');
+  }
+  const claims = parsedClaims.data;
 
   const sub = claims.sub;
-  const email = (claims.email as string | undefined) ?? '';
-  const displayName =
-    (claims.preferred_username as string | undefined) ??
-    (claims.name as string | undefined) ??
-    email;
-  const avatarUrl = (claims.picture as string | undefined) ?? null;
+  const email = claims.email ?? '';
+  const displayName = claims.preferred_username ?? claims.name ?? email;
+  const avatarUrl =
+    typeof claims.picture === 'string' && SafeImageUrlSchema.safeParse(claims.picture).success
+      ? claims.picture
+      : null;
   const groupsClaim = process.env.OIDC_GROUPS_CLAIM ?? 'groups';
-  const groups = (claims[groupsClaim] as string[] | undefined) ?? [];
+  const groupsRaw = claims[groupsClaim];
+  const groupsParsed = z.array(z.string()).safeParse(groupsRaw);
+  if (!groupsParsed.success && groupsRaw !== undefined) {
+    return c.redirect('/login?error=no_claims');
+  }
+  const groups = groupsParsed.success ? groupsParsed.data : [];
   const ip =
     c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip') ?? null;
 
@@ -184,12 +205,9 @@ auth.get('/callback', async (c) => {
     });
   }
 
-  delete session.oidcState;
-  delete session.pkceVerifier;
-  delete session.oidcRedirectUri;
-  session.userId = userId;
-
-  await linkSessionToUser(sessionId, userId);
+  const freshSession = await regenerateSession(c);
+  freshSession.userId = userId;
+  await linkSessionToUser(c.get('sessionId'), userId);
 
   return c.redirect('/');
 });
@@ -199,6 +217,7 @@ auth.post('/logout', (c) => {
   delete session.userId;
   delete session.oidcState;
   delete session.pkceVerifier;
+  delete session.oidcRedirectUri;
   return c.json({ success: true });
 });
 

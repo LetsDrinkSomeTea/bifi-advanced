@@ -5,8 +5,9 @@ import * as argon2 from 'argon2';
 import { db } from '../db/index.ts';
 import { users } from '../db/schema.ts';
 import { eq, or, sql } from 'drizzle-orm';
-import { linkSessionToUser } from '../middleware/session.ts';
+import { linkSessionToUser, regenerateSession } from '../middleware/session.ts';
 import { requireAuth, requireRole } from '../middleware/auth.ts';
+import { rateLimit } from '../middleware/rateLimit.ts';
 import { writeAuditLog } from '../services/audit.ts';
 
 const localAuth = new Hono();
@@ -67,6 +68,11 @@ const LoginSchema = z.object({
   password: z.string().min(1),
 });
 
+const loginRateLimit = rateLimit(10, 60, (c) => {
+  const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  return `rl:login:${ip}`;
+});
+
 const CreateLocalUserSchema = z.object({
   email: z.string().email(),
   username: z
@@ -80,10 +86,8 @@ const CreateLocalUserSchema = z.object({
   role: z.enum(['admin', 'moderator', 'member']).default('member'),
 });
 
-localAuth.post('/login', zValidator('json', LoginSchema), async (c) => {
+localAuth.post('/login', loginRateLimit, zValidator('json', LoginSchema), async (c) => {
   const { login, password } = c.req.valid('json');
-  const session = c.get('session');
-  const sessionId = c.get('sessionId');
 
   const [user] = await db
     .select()
@@ -95,7 +99,7 @@ localAuth.post('/login', zValidator('json', LoginSchema), async (c) => {
   }
 
   if (!user.isActive) {
-    return c.json({ error: 'Account deactivated', code: 'DEACTIVATED' }, 403);
+    return c.json({ error: 'Invalid credentials', code: 'INVALID_CREDENTIALS' }, 401);
   }
 
   const valid = await argon2.verify(user.passwordHash, password);
@@ -103,8 +107,9 @@ localAuth.post('/login', zValidator('json', LoginSchema), async (c) => {
     return c.json({ error: 'Invalid credentials', code: 'INVALID_CREDENTIALS' }, 401);
   }
 
-  session.userId = user.id;
-  await linkSessionToUser(sessionId, user.id);
+  const freshSession = await regenerateSession(c);
+  freshSession.userId = user.id;
+  await linkSessionToUser(c.get('sessionId'), user.id);
 
   return c.json({
     success: true,

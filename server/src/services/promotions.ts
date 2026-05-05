@@ -18,14 +18,10 @@ export interface ActiveDiscount {
   startTime?: Date | null;
 }
 
-export async function getActiveDiscount(
-  buyableId: string,
-  variantId: string | null,
-  category: string | null,
-): Promise<ActiveDiscount | null> {
-  const now = new Date();
+type PromotionRow = typeof promotions.$inferSelect;
 
-  const active = await db
+export async function listActivePromotions(now: Date = new Date()): Promise<PromotionRow[]> {
+  return db
     .select()
     .from(promotions)
     .where(
@@ -37,15 +33,20 @@ export async function getActiveDiscount(
         or(isNull(promotions.quantityLimit), lt(promotions.quantityUsed, promotions.quantityLimit)),
       ),
     );
+}
 
-  if (active.length === 0) return null;
-
+export function findBestDiscount(
+  activePromotions: PromotionRow[],
+  buyableId: string,
+  variantId: string | null,
+  category: string | null,
+): ActiveDiscount | null {
   // Sort by specificity: variant > buyable > category > global
   let bestDiscount: ActiveDiscount | null = null;
   let bestPriority = -1;
   let bestIsQuantity = false;
 
-  for (const promo of active) {
+  for (const promo of activePromotions) {
     const appliesTo = promo.appliesTo as AppliesToConfig | null;
     let priority = 0; // Global
 
@@ -123,6 +124,16 @@ export async function getActiveDiscount(
     return bestDiscount;
   }
   return bestDiscount;
+}
+
+export async function getActiveDiscount(
+  buyableId: string,
+  variantId: string | null,
+  category: string | null,
+): Promise<ActiveDiscount | null> {
+  const activePromotions = await listActivePromotions();
+  if (activePromotions.length === 0) return null;
+  return findBestDiscount(activePromotions, buyableId, variantId, category);
 }
 
 export function calculateDiscountedPrice(

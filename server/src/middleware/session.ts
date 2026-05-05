@@ -2,17 +2,26 @@ import { type MiddlewareHandler, type Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { getCookie, setCookie } from 'hono/cookie';
 import { randomUUID } from 'crypto';
+import { z } from 'zod';
 import { redis } from '../db/redis.ts';
 
 const COOKIE_NAME = 'bifi_session';
 const SESSION_TTL = 30 * 24 * 60 * 60; // 30 days in seconds
+
+const SessionSchema = z
+  .object({
+    userId: z.string().uuid().optional(),
+    oidcState: z.string().optional(),
+    pkceVerifier: z.string().optional(),
+    oidcRedirectUri: z.string().optional(),
+  })
+  .strict();
 
 export interface SessionData {
   userId?: string;
   oidcState?: string;
   pkceVerifier?: string;
   oidcRedirectUri?: string;
-  [key: string]: unknown;
 }
 
 declare module 'hono' {
@@ -27,7 +36,21 @@ export const sessionMiddleware: MiddlewareHandler = createMiddleware(async (c, n
   sessionId ??= randomUUID();
 
   const raw = await redis.get(`session:${sessionId}`);
-  const session: SessionData = raw !== null ? (JSON.parse(raw) as SessionData) : {};
+  let session: SessionData = {};
+  if (raw !== null) {
+    try {
+      const parsed = SessionSchema.safeParse(JSON.parse(raw));
+      if (parsed.success) {
+        session = parsed.data;
+      } else {
+        console.warn(`Invalid session payload for ${sessionId}, dropping session`);
+        await redis.del(`session:${sessionId}`);
+      }
+    } catch {
+      console.warn(`Broken session JSON for ${sessionId}, dropping session`);
+      await redis.del(`session:${sessionId}`);
+    }
+  }
 
   c.set('sessionId', sessionId);
   c.set('session', session);
@@ -43,7 +66,11 @@ export const sessionMiddleware: MiddlewareHandler = createMiddleware(async (c, n
     path: '/',
   });
 
-  const updatedSession = c.get('session');
+  const parsedUpdated = SessionSchema.safeParse(c.get('session'));
+  if (!parsedUpdated.success) {
+    throw new Error('Attempted to persist invalid session data');
+  }
+  const updatedSession = parsedUpdated.data;
   if (Object.keys(updatedSession).length > 0) {
     await redis.setEx(`session:${sessionId}`, SESSION_TTL, JSON.stringify(updatedSession));
   } else {

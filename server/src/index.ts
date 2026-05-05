@@ -33,7 +33,21 @@ const app = new Hono();
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
 app.use('*', logger());
-app.use('*', secureHeaders());
+app.use(
+  '*',
+  secureHeaders({
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'https:', 'data:'],
+      connectSrc: ["'self'", 'https:', 'wss:', 'ws:'],
+    },
+  }),
+);
 app.use(
   '/api/*',
   cors({

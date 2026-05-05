@@ -13,8 +13,13 @@ import {
 } from '../db/schema.ts';
 import { requireAuth } from '../middleware/auth.ts';
 import { ACHIEVEMENT_REGISTRY } from '../services/achievements/registry.ts';
+import { SafeImageUrlSchema } from '../lib/url.ts';
 
 const router = new Hono();
+const RankRowSchema = z.object({
+  category: z.string(),
+  rank: z.number().int(),
+});
 
 // ─── GET /api/users/search ────────────────────────────────────────────────────
 
@@ -179,11 +184,8 @@ router.get('/:id/profile', requireAuth, async (c) => {
     Promise.all(progressPromises),
   ]);
 
-  interface RankRow {
-    category: string;
-    rank: number;
-  }
-  const rankRows = allRankResults.rows as unknown as RankRow[];
+  const rankRowsParsed = z.array(RankRowSchema).safeParse(allRankResults.rows);
+  const rankRows = rankRowsParsed.success ? rankRowsParsed.data : [];
   let leaderboardRank: { rank: number; categories: string[] } | null = null;
   if (rankRows.length > 0) {
     const best = Math.min(...rankRows.map((r) => r.rank));
@@ -244,7 +246,7 @@ const UpdateProfileSchema = z.object({
     .regex(/^[a-z0-9_-]+$/i)
     .nullable()
     .optional(),
-  avatarUrl: z.string().url().nullable().optional(),
+  avatarUrl: SafeImageUrlSchema.nullable().optional(),
 });
 
 router.patch('/me', requireAuth, zValidator('json', UpdateProfileSchema), async (c) => {

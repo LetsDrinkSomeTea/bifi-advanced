@@ -6,8 +6,13 @@ import { db } from '../db/index.ts';
 import { buyables, productVariants } from '../db/schema.ts';
 import { requireAuth, requireRole } from '../middleware/auth.ts';
 import { writeAuditLog } from '../services/audit.ts';
-import { getActiveDiscount, calculateDiscountedPrice } from '../services/promotions.ts';
+import {
+  calculateDiscountedPrice,
+  findBestDiscount,
+  listActivePromotions,
+} from '../services/promotions.ts';
 import { BUYABLE_CATEGORIES } from '../../../shared/src/schemas.ts';
+import { SafeImageUrlSchema } from '../lib/url.ts';
 
 const router = new Hono();
 
@@ -29,27 +34,24 @@ router.get('/', requireAuth, async (c) => {
     .from(productVariants)
     .where(showAll ? undefined : eq(productVariants.isActive, true))
     .orderBy(productVariants.sortOrder, productVariants.name);
+  const activePromotions = await listActivePromotions();
 
-  const result = await Promise.all(
-    allBuyables.map(async (b) => {
-      const variants = allVariants.filter((v) => v.buyableId === b.id);
-      const variantsWithDiscounts = await Promise.all(
-        variants.map(async (v) => {
-          const discount = await getActiveDiscount(b.id, v.id, b.category);
-          return {
-            ...v,
-            activeDiscount: discount,
-            discountedPrice: calculateDiscountedPrice(v.price, discount),
-          };
-        }),
-      );
-
+  const result = allBuyables.map((b) => {
+    const variants = allVariants.filter((v) => v.buyableId === b.id);
+    const variantsWithDiscounts = variants.map((v) => {
+      const discount = findBestDiscount(activePromotions, b.id, v.id, b.category);
       return {
-        ...b,
-        variants: variantsWithDiscounts,
+        ...v,
+        activeDiscount: discount,
+        discountedPrice: calculateDiscountedPrice(v.price, discount),
       };
-    }),
-  );
+    });
+
+    return {
+      ...b,
+      variants: variantsWithDiscounts,
+    };
+  });
 
   return c.json(result);
 });
@@ -58,7 +60,7 @@ router.get('/', requireAuth, async (c) => {
 
 const CreateBuyableSchema = z.object({
   name: z.string().min(1).max(80),
-  imageUrl: z.string().url().optional(),
+  imageUrl: SafeImageUrlSchema.optional(),
   category: z.enum(BUYABLE_CATEGORIES).optional(),
   sortOrder: z.number().int().default(0),
   firstVariant: z.object({
@@ -126,7 +128,7 @@ router.post(
 
 const UpdateBuyableSchema = z.object({
   name: z.string().min(1).max(80).optional(),
-  imageUrl: z.string().url().nullable().optional(),
+  imageUrl: SafeImageUrlSchema.nullable().optional(),
   category: z.enum(BUYABLE_CATEGORIES).nullable().optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
