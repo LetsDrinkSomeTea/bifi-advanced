@@ -12,7 +12,7 @@ import {
   randomPKCECodeVerifier,
   calculatePKCECodeChallenge,
 } from '../services/oidc.ts';
-import { linkSessionToUser, regenerateSession, unlinkSessionFromUser } from '../middleware/session.ts';
+import { linkSessionToUser, regenerateSession, unlinkSessionFromUser, invalidateSession } from '../middleware/session.ts';
 import { requireAuth } from '../middleware/auth.ts';
 import { SafeImageUrlSchema } from '../lib/url.ts';
 import { getClientIp } from '../lib/ip.ts';
@@ -241,6 +241,7 @@ auth.post('/logout', async (c) => {
   if (userId) {
     await unlinkSessionFromUser(sessionId, userId);
   }
+  await invalidateSession(sessionId);
   return c.json({ success: true });
 });
 

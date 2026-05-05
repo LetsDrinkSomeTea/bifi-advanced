@@ -270,8 +270,7 @@ async function resolveItems(
 async function redeemVouchers(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   userId: string,
-  variantIds: string[],
-  prices: Map<string, number>,
+  itemPrices: { variantId: string; price: number }[],
   txnId: string,
 ): Promise<{
   credit: number;
@@ -284,14 +283,14 @@ async function redeemVouchers(
     refundAmount: number;
   }[] = [];
 
-  for (const vid of variantIds) {
+  for (const { variantId, price } of itemPrices) {
     const [v] = await tx
       .select()
       .from(prostVouchers)
       .where(
         and(
           eq(prostVouchers.toUserId, userId),
-          eq(prostVouchers.variantId, vid),
+          eq(prostVouchers.variantId, variantId),
           isNull(prostVouchers.redeemedAt),
           isNull(prostVouchers.creditedAt),
         ),
@@ -299,9 +298,8 @@ async function redeemVouchers(
       .limit(1);
 
     if (v) {
-      const currentPrice = prices.get(vid) ?? 0;
-      const credit = Math.min(v.amount, currentPrice);
-      const refundAmount = Math.max(0, v.amount - currentPrice);
+      const credit = Math.min(v.amount, price);
+      const refundAmount = Math.max(0, v.amount - price);
 
       totalCredit += credit;
       redeemedVouchers.push({
@@ -424,6 +422,7 @@ router.post(
               type: 'purchase',
               totalAmount: -sharePerOther,
               groupId: body.groupId ?? null,
+              parentTransactionId: primary.id,
               note: `Gruppenaufteilung`,
             })
             .returning();
@@ -564,22 +563,14 @@ router.post(
         .insert(transactionItems)
         .values(toInsert.map((i) => ({ transactionId: created.id, ...i })));
 
-      const variantIds: string[] = [];
-      const variantPrices = new Map<string, number>();
+      const itemPrices: { variantId: string; price: number }[] = [];
       for (const i of toInsert) {
-        variantPrices.set(i.variantId, i.unitPrice);
         for (let q = 0; q < i.quantity; q++) {
-          variantIds.push(i.variantId);
+          itemPrices.push({ variantId: i.variantId, price: i.unitPrice });
         }
       }
 
-      const { credit, vouchers } = await redeemVouchers(
-        tx,
-        user.id,
-        variantIds,
-        variantPrices,
-        created.id,
-      );
+      const { credit, vouchers } = await redeemVouchers(tx, user.id, itemPrices, created.id);
       const netCost = Math.max(0, cost - credit);
 
       await tx
@@ -751,15 +742,20 @@ router.delete('/:id', requireAuth, async (c) => {
     await cancelTxn(txn);
 
     // Cascade: cancel all split transactions created in the same group purchase
-    if (txn.groupId && txn.initiatedBy === txn.userId) {
+    // Using parentTransactionId (if we are the parent) or finding sibling splits if we are a split?
+    // Usually, the person who initiated the group purchase (the parent) is the only one who can cancel the WHOLE thing.
+    // If a split-member cancels, they only cancel their own share?
+    // The current logic cancels EVERYTHING if the initiator cancels. Let's stick to that but use parentTransactionId.
+    if (txn.type === 'purchase') {
       const splits = await tx
         .select()
         .from(transactions)
         .where(
           and(
-            eq(transactions.groupId, txn.groupId),
-            eq(transactions.initiatedBy, txn.userId),
-            eq(transactions.createdAt, txn.createdAt),
+            or(
+              eq(transactions.parentTransactionId, txn.id),
+              txn.parentTransactionId ? eq(transactions.id, txn.parentTransactionId) : undefined,
+            ),
             isNull(transactions.cancelledAt),
             sql`${transactions.id} != ${txn.id}`,
           ),

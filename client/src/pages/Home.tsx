@@ -10,7 +10,6 @@ import { useFeed } from '../hooks/useFeed';
 import { usePurchase, useTransactionHistory } from '../hooks/useTransactions';
 import { useVoucherMap } from '../hooks/useProst';
 import { useAuth, useAuthConfig } from '../hooks/useAuth';
-import { useBuyables } from '../hooks/useBuyables';
 import type { Favorite } from '@shared/types';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { BuyableVariantCard } from '../components/BuyableVariantCard';
@@ -29,7 +28,6 @@ function HomeFeedPreview(): React.JSX.Element {
 export function Home(): React.JSX.Element {
   const { user } = useAuth();
   const { data: authConfig } = useAuthConfig();
-  const { data: buyables, isLoading: buyablesLoading } = useBuyables();
   const { data: favorites, isLoading } = useFavorites();
   const { data: txnData, isLoading: txnLoading } = useTransactionHistory();
   const { mutate: purchase } = usePurchase();

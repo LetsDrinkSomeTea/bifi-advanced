@@ -1,4 +1,5 @@
 import { eq, desc } from 'drizzle-orm';
+import { subDays, format, parseISO } from 'date-fns';
 import { db } from '../../db/index.ts';
 import { users, transactions } from '../../db/schema.ts';
 import {
@@ -577,9 +578,11 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       for (const day of distinctDays) {
         if (day === current) {
           streak++;
-          const d = new Date(new Date(current).getTime() - 24 * 60 * 60 * 1000);
-          current = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        } else break;
+          current = format(subDays(parseISO(current), 1), 'yyyy-MM-dd');
+        } else if (day < current) {
+          // If we encounter a day before 'current', it means we missed a day in the streak
+          break;
+        }
       }
       return streak;
     },
