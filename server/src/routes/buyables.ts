@@ -6,6 +6,7 @@ import { db } from '../db/index.ts';
 import { buyables, productVariants } from '../db/schema.ts';
 import { requireAuth, requireRole } from '../middleware/auth.ts';
 import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 import {
   calculateDiscountedPrice,
   findBestDiscount,
@@ -75,7 +76,6 @@ router.post(
   async (c) => {
     const body = c.req.valid('json');
     const actor = c.get('user');
-    const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
 
     const { buyable: created, variant } = await db.transaction(async (tx) => {
       const [buyable] = await tx
@@ -114,7 +114,7 @@ router.post(
       resourceType: 'buyable',
       resourceId: created.id,
       changes: { after: { ...created, firstVariant: variant } },
-      ipAddress: ip,
+      ipAddress: getClientIp(c),
     });
 
     return c.json({ ...created, variants: [variant] }, 201);
@@ -155,7 +155,7 @@ router.put(
       resourceType: 'buyable',
       resourceId: id,
       changes: { before, after: updated },
-      ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+      ipAddress: getClientIp(c),
     });
 
     return c.json(updated);

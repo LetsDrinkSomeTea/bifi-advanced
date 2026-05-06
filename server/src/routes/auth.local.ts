@@ -80,19 +80,6 @@ const loginRateLimit = rateLimit(10, 60, (c) => {
   return `rl:login:${ip}`;
 });
 
-const CreateLocalUserSchema = z.object({
-  email: z.string().email(),
-  username: z
-    .string()
-    .min(2)
-    .max(32)
-    .regex(/^[a-z0-9_-]+$/i)
-    .optional(),
-  displayName: z.string().min(1).max(80),
-  password: z.string().min(8),
-  role: z.enum(['admin', 'moderator', 'member']).default('member'),
-});
-
 localAuth.post('/login', loginRateLimit, zValidator('json', LoginSchema), async (c) => {
   const { login, password } = c.req.valid('json');
 
@@ -116,57 +103,6 @@ localAuth.post('/login', loginRateLimit, zValidator('json', LoginSchema), async 
     user: { id: user.id, email: user.email, displayName: user.displayName, role: user.role },
   });
 });
-
-// Admin-only: create a local user (no SSO required)
-localAuth.post(
-  '/users',
-  requireAuth,
-  requireRole('admin'),
-  zValidator('json', CreateLocalUserSchema),
-  async (c) => {
-    const body = c.req.valid('json');
-    const actor = c.get('user');
-    const ip = getClientIp(c);
-
-    const passwordHash = await argon2.hash(body.password);
-
-    const [created] = await db
-      .insert(users)
-      .values({
-        email: body.email,
-        username: body.username ?? null,
-        displayName: body.displayName,
-        passwordHash,
-        role: body.role,
-      })
-      .returning();
-
-    if (!created) {
-      return c.json({ error: 'Failed to create user', code: 'CREATE_FAILED' }, 500);
-    }
-
-    await writeAuditLog({
-      actorId: actor.id,
-      action: 'user.created',
-      resourceType: 'user',
-      resourceId: created.id,
-      changes: { after: { id: created.id, email: body.email, role: body.role, via: 'local' } },
-      ipAddress: ip,
-    });
-
-    return c.json(
-      {
-        id: created.id,
-        email: created.email,
-        username: created.username,
-        displayName: created.displayName,
-        role: created.role,
-        createdAt: created.createdAt,
-      },
-      201,
-    );
-  },
-);
 
 // Admin-only: set/update password for any user
 localAuth.put(

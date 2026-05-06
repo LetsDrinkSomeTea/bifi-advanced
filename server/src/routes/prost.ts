@@ -15,6 +15,8 @@ import { emitFeedEvent } from '../services/feed.ts';
 import { requireAuth } from '../middleware/auth.ts';
 import { createNotification, pushInvalidate } from '../services/notifications.ts';
 import { checkAchievements } from '../services/achievements.ts';
+import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 
 const router = new Hono();
 
@@ -101,6 +103,15 @@ router.post('/', requireAuth, zValidator('json', ProstSchema), async (c) => {
     }
 
     return { txn, voucher };
+  });
+
+  await writeAuditLog({
+    actorId: sender.id,
+    action: 'prost.sent',
+    resourceType: 'transaction',
+    resourceId: txn.id,
+    changes: { after: { toUserId, variantId, amount } },
+    ipAddress: getClientIp(c),
   });
 
   emitFeedEvent({

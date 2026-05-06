@@ -78,6 +78,7 @@ BiFi ist eine digitale Getränke-Strichliste für Vereine, Gruppen und Wohngemei
 | `LOCAL_AUTH_ENABLED`| Lokalen Login (Nutzer/Passwort) erlauben | `true` |
 | `JACKPOT_ENABLED` | Aktiviert das Jackpot-Feature | `false` |
 | `BALANCE_WARN_THRESHOLD`| Schwellenwert für Warnbanner (in Cents) | `-2000` |
+| `MAX_DEPOSIT_AMOUNT` | Maximaler Einzahlungsbetrag pro Transaktion (in Cents) | `10000` (= 100 €) |
 | `UPLOAD_DIR` | Pfad zum Verzeichnis für hochgeladene Bilder | `/app/uploads` |
 
 ---

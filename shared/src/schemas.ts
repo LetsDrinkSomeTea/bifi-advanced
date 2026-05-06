@@ -82,7 +82,6 @@ export const MeResponseSchema = z.object({
 
 export const CreateBuyableSchema = z.object({
   name: z.string().min(1).max(80),
-  imageUrl: z.string().url().optional(),
   category: z.enum(BUYABLE_CATEGORIES).optional(),
   sortOrder: z.number().int().default(0),
   firstVariant: z.object({

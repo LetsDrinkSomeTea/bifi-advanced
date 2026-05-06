@@ -22,6 +22,7 @@ import {
 import { requireAuth, requireRole } from '../middleware/auth.ts';
 import { invalidateUserSessions } from '../middleware/session.ts';
 import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 import { pushInvalidate, createNotification } from '../services/notifications.ts';
 import { checkAchievements } from '../services/achievements.ts';
 import { decodeCursor, encodeCursor } from '../lib/cursor.ts';
@@ -74,7 +75,7 @@ const CreateUserSchema = z.object({
 router.post('/users', requireRole('moderator'), zValidator('json', CreateUserSchema), async (c) => {
   const body = c.req.valid('json');
   const actor = c.get('user');
-  const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
+  const ip = getClientIp(c);
 
   if (ROLE_LEVEL[body.role] > ROLE_LEVEL[actor.role]) {
     throw new HTTPException(403, { message: "Can't create a user with higher privileges" });
@@ -171,22 +172,36 @@ router.patch('/users/:id', zValidator('json', UpdateUserSchema), async (c) => {
     await invalidateUserSessions(id);
   }
 
+  const { passwordHash: _bpw, ...safeBefore } = before;
+  const { passwordHash: _apw, ...safeAfter } = updated;
   await writeAuditLog({
     actorId: actor.id,
     action: 'user.updated',
     resourceType: 'user',
     resourceId: id,
-    changes: { before, after: updated },
-    ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+    changes: { before: safeBefore, after: safeAfter },
+    ipAddress: getClientIp(c),
   });
 
-  return c.json(updated);
+  return c.json(safeAfter);
 });
 
 // ─── POST /api/admin/users/:id/deposit ───────────────────────────────────────
 
+function parseMaxDepositAmount(): number {
+  const raw = process.env.MAX_DEPOSIT_AMOUNT;
+  if (raw === undefined) return 10_000;
+  const v = parseInt(raw, 10);
+  if (!Number.isFinite(v) || v <= 0) {
+    throw new Error(`MAX_DEPOSIT_AMOUNT muss eine positive ganze Zahl (Cent) sein, erhalten: "${raw}"`);
+  }
+  return v;
+}
+
+const MAX_DEPOSIT_AMOUNT = parseMaxDepositAmount();
+
 const DepositSchema = z.object({
-  amount: z.number().int().min(1),
+  amount: z.number().int().min(1).max(MAX_DEPOSIT_AMOUNT),
   note: z.string().max(200).optional(),
 });
 
@@ -228,7 +243,7 @@ router.post('/users/:id/deposit', zValidator('json', DepositSchema), async (c) =
     resourceType: 'transaction',
     resourceId: txn.id,
     changes: { after: { userId: id, amount } },
-    ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+    ipAddress: getClientIp(c),
   });
 
   checkAchievements({
@@ -343,13 +358,14 @@ router.delete('/users/:id', requireRole('admin'), async (c) => {
     await tx.delete(users).where(eq(users.id, id));
   });
 
+  const { passwordHash: _tpw, ...safeTarget } = target;
   await writeAuditLog({
     actorId: actor.id,
     action: 'user.deleted',
     resourceType: 'user',
     resourceId: id,
-    changes: { before: target },
-    ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+    changes: { before: safeTarget },
+    ipAddress: getClientIp(c),
   });
 
   await invalidateUserSessions(id);

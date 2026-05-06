@@ -7,6 +7,7 @@ import { JackpotSpinSchema } from '../../../shared/src/schemas.ts';
 import { db } from '../db/index.ts';
 import { buyables, productVariants, transactions, transactionItems, users } from '../db/schema.ts';
 import { requireAuth } from '../middleware/auth.ts';
+import { purchaseRateLimit } from '../middleware/rateLimit.ts';
 import { emitFeedEvent } from '../services/feed.ts';
 import { checkAchievements } from '../services/achievements.ts';
 import { getActiveDiscount, calculateDiscountedPrice } from '../services/promotions.ts';
@@ -38,7 +39,7 @@ router.get('/eligibility', requireAuth, (c) => {
   return c.json({ eligible: true, reason: null });
 });
 
-router.post('/spin', requireAuth, zValidator('json', JackpotSpinSchema), async (c) => {
+router.post('/spin', requireAuth, purchaseRateLimit, zValidator('json', JackpotSpinSchema), async (c) => {
   const user = c.get('user');
 
   if (!jackpotEnabled()) {

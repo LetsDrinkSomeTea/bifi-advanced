@@ -24,6 +24,7 @@ import {
   consumeQuantityPromotion,
 } from '../services/promotions.ts';
 import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 import {
   broadcastInvalidate,
   createNotification,
@@ -720,10 +721,16 @@ router.delete('/:id', requireAuth, async (c) => {
 
   await db.transaction(async (tx) => {
     const cancelTxn = async (t: typeof txn): Promise<void> => {
-      await tx
+      const [cancelled] = await tx
         .update(transactions)
         .set({ cancelledAt, cancelledBy: user.id })
-        .where(eq(transactions.id, t.id));
+        .where(and(eq(transactions.id, t.id), isNull(transactions.cancelledAt)))
+        .returning({ id: transactions.id });
+
+      if (!cancelled) {
+        throw Object.assign(new Error('Already cancelled'), { status: 409, code: 'ALREADY_CANCELLED' });
+      }
+
       // totalAmount is negative for purchases, so subtracting it adds back the balance
       await tx
         .update(users)
@@ -775,7 +782,7 @@ router.delete('/:id', requireAuth, async (c) => {
       before: { cancelledAt: null },
       after: { cancelledAt: new Date(), cancelledBy: user.id },
     },
-    ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+    ipAddress: getClientIp(c),
   });
 
   return c.body(null, 204);

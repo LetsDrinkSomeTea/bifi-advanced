@@ -6,6 +6,7 @@ import { db } from '../db/index.ts';
 import { promotions } from '../db/schema.ts';
 import { requireAuth, requireRole } from '../middleware/auth.ts';
 import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 import { broadcastInvalidate } from '../services/notifications.ts';
 import { emitFeedEvent } from '../services/feed.ts';
 import { BUYABLE_CATEGORIES } from '../../../shared/src/schemas.ts';
@@ -77,7 +78,7 @@ router.post('/', zValidator('json', PromotionSchema), async (c) => {
     resourceType: 'promotion',
     resourceId: created.id,
     changes: { after: created },
-    ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+    ipAddress: getClientIp(c),
   });
 
   return c.json(created, 201);
@@ -147,7 +148,7 @@ router.patch('/:id', zValidator('json', PromotionSchema.partial()), async (c) =>
     resourceType: 'promotion',
     resourceId: id,
     changes: { before: existing, after: updated },
-    ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+    ipAddress: getClientIp(c),
   });
 
   return c.json(updated);
@@ -181,7 +182,7 @@ router.delete('/:id', async (c) => {
     resourceType: 'promotion',
     resourceId: id,
     changes: { before: existing },
-    ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
+    ipAddress: getClientIp(c),
   });
 
   return c.body(null, 204);

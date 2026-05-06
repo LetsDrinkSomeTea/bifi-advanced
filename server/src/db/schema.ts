@@ -98,7 +98,6 @@ export const groups = pgTable('groups', {
     .notNull()
     .references(() => users.id),
   inviteCode: text('invite_code').unique(),
-  maxMembers: integer('max_members').notNull().default(10),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: createdAt(),
 });

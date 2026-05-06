@@ -146,6 +146,12 @@ async function main(): Promise<void> {
   await mkdir(getUploadDir(), { recursive: true });
   await initRedis();
   await initOIDC();
+  if (process.env.NODE_ENV === 'production' && process.env.TRUST_PROXY !== 'true') {
+    console.warn(
+      '[WARN] TRUST_PROXY is not set to "true". IP-based rate limiting will share a single bucket ' +
+      'across all clients. Set TRUST_PROXY=true when running behind a reverse proxy.',
+    );
+  }
   console.log(`Starting BiFi with TZ: ${APP_TZ}`);
   const port = parseInt(process.env.PORT ?? '3000');
   serve({ fetch: app.fetch, port }, () => {
