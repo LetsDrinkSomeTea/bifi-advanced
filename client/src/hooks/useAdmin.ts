@@ -2,11 +2,21 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  useInfiniteQuery,
   type UseQueryResult,
   type UseMutationResult,
+  type UseInfiniteQueryResult,
+  type InfiniteData,
 } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { AdminUser, BuyableWithVariants, SettlementEntry, Role } from '@shared/types';
+import type {
+  AdminUser,
+  BuyableWithVariants,
+  SettlementEntry,
+  Role,
+  AuditLogEntry,
+  PaginatedResponse,
+} from '@shared/types';
 
 export function useAdminUsers(): UseQueryResult<AdminUser[]> {
   return useQuery<AdminUser[]>({
@@ -262,5 +272,30 @@ export function useUpdateVariant(): UseMutationResult<
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['buyables'] });
     },
+  });
+}
+
+export interface AuditLogFilters {
+  action?: string;
+  resourceType?: string;
+  actorId?: string;
+}
+
+export function useAuditLog(
+  filters: AuditLogFilters = {},
+): UseInfiniteQueryResult<InfiniteData<PaginatedResponse<AuditLogEntry>>> {
+  return useInfiniteQuery<PaginatedResponse<AuditLogEntry>>({
+    queryKey: ['admin', 'audit-log', filters],
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams();
+      if (typeof pageParam === 'string') params.set('cursor', pageParam);
+      if (filters.action) params.set('action', filters.action);
+      if (filters.resourceType) params.set('resourceType', filters.resourceType);
+      if (filters.actorId) params.set('actorId', filters.actorId);
+      const qs = params.toString();
+      return api.get<PaginatedResponse<AuditLogEntry>>(`/api/admin/audit-logs${qs ? `?${qs}` : ''}`);
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
   });
 }

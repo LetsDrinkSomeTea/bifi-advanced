@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, X } from 'lucide-react';
+import { Star, X, Gift } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { CATEGORY_LABELS } from '@shared/schemas';
 import { Badge } from './ui/Badge';
@@ -118,7 +118,11 @@ export function BuyableVariantCard({
                     size="sm"
                   />
                 )}
-                {!!(isAvailable && hasVoucher && !status) && <span className="text-sm">🎁</span>}
+                {!!(isAvailable && hasVoucher && !status) && (
+                  <span className="text-sm">
+                    <Gift size={14} className="text-accent-strong" />
+                  </span>
+                )}
               </div>
             </div>
           </div>

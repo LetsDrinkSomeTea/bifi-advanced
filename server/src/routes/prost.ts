@@ -110,6 +110,7 @@ router.post('/', requireAuth, zValidator('json', ProstSchema), async (c) => {
     action: 'prost.sent',
     resourceType: 'transaction',
     resourceId: txn.id,
+    resourceName: `${sender.displayName} ➔ ${recipient.displayName}`,
     changes: { after: { toUserId, variantId, amount } },
     ipAddress: getClientIp(c),
   });

@@ -1,6 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'wouter';
-import { UserPlus, UserCheck, UserX, Clock, Bell, X, Beer, BarChart2 } from 'lucide-react';
+import {
+  UserPlus,
+  UserCheck,
+  UserX,
+  Clock,
+  Bell,
+  X,
+  Beer,
+  BarChart2,
+  Hand,
+  Sparkles,
+} from 'lucide-react';
 import { Layout } from '../components/layout/Layout';
 import { PageHeader } from '../components/PageHeader';
 import { AchievementGrid } from '@/components/AchievementGrid';
@@ -10,7 +21,7 @@ import { useNudgePresets, useSendNudge } from '../hooks/useNudge';
 import { useSendProst } from '../hooks/useProst';
 import { useBuyables } from '../hooks/useBuyables';
 import { useAuth } from '../hooks/useAuth';
-import { formatCents } from '../lib/utils';
+import { cn } from '../lib/utils';
 import { ROLE_LABEL, ROLE_STYLE } from '../lib/constants';
 import { Avatar } from '../components/ui/Avatar';
 import { Input } from '../components/ui/Input';
@@ -18,6 +29,8 @@ import type { FriendshipStatus } from '@shared/types';
 import { RankCard, StatCard } from './Profile';
 import { Button } from '../components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { PriceDisplay } from '../components/ui/PriceDisplay';
+import { SectionHeader } from '../components/ui/SectionHeader';
 
 function FriendButton({
   userId,
@@ -116,82 +129,120 @@ function NudgeSheet({
   onClose: () => void;
 }): React.JSX.Element {
   const [freetext, setFreetext] = useState('');
+  const [show, setShow] = useState(false);
   const { data: presets } = useNudgePresets();
   const { mutate: send, isPending, error } = useSendNudge();
 
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setShow(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const handleClose = (): void => {
+    setShow(false);
+    setTimeout(onClose, 300);
+  };
+
   const handleSend = (preset?: string, message?: string): void => {
-    send({ recipientId: userId, preset, message }, { onSuccess: onClose });
+    send({ recipientId: userId, preset, message }, { onSuccess: handleClose });
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <>
       <div
-        className="absolute inset-0 bg-black/40"
-        onClick={() => {
-          onClose();
-        }}
+        className={cn(
+          'fixed inset-0 z-40 bg-black/50 transition-opacity duration-300',
+          show ? 'opacity-100' : 'opacity-0',
+        )}
+        onClick={handleClose}
       />
-      <div className="relative w-full max-w-md bg-background rounded-t-2xl sm:rounded-2xl p-5 shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold">{displayName} anstupsen</h2>
+      <div
+        className={cn(
+          'fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl shadow-2xl overflow-hidden transition-transform duration-300 ease-out flex flex-col max-h-[90vh] sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-md sm:rounded-3xl',
+          show ? 'translate-y-0 sm:scale-100' : 'translate-y-full sm:scale-95 sm:opacity-0',
+        )}
+      >
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary-soft flex items-center justify-center text-primary-strong">
+              <Hand size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold leading-none">{displayName}</h2>
+              <p className="text-xs text-muted-foreground mt-1">Anstupsen</p>
+            </div>
+          </div>
           <Button
-            onClick={() => {
-              onClose();
-            }}
-            className="p-1 text-muted-foreground hover:text-foreground"
+            variant="ghost"
+            size="icon"
+            onClick={handleClose}
+            className="rounded-full h-10 w-10"
           >
-            <X size={18} />
+            <X size={20} />
           </Button>
         </div>
 
-        {/* Presets */}
-        <div className="space-y-2 mb-4">
-          {presets?.map((p) => (
-            <Button
-              key={p.key}
-              onClick={() => {
-                handleSend(p.key);
-              }}
-              disabled={isPending}
-              className="w-full text-left px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-sm disabled:opacity-50"
-            >
-              {p.text}
-            </Button>
-          ))}
-        </div>
+        <div className="flex-1 overflow-y-auto scrollbar-thin px-6 pb-10 space-y-6">
+          {/* Presets */}
+          <div className="space-y-3">
+            <SectionHeader className="mb-2">Schnellnachrichten</SectionHeader>
+            <div className="grid grid-cols-1 gap-2">
+              {presets?.map((p) => (
+                <Button
+                  key={p.key}
+                  variant="outline"
+                  onClick={() => {
+                    handleSend(p.key);
+                  }}
+                  disabled={isPending}
+                  className="justify-start h-auto py-3.5 px-4 rounded-2xl border-border bg-card hover:bg-primary-soft hover:text-primary-strong transition-all font-medium text-sm group"
+                >
+                  <span className="flex-1 text-left">{p.text}</span>
+                  <Sparkles
+                    size={14}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-primary"
+                  />
+                </Button>
+              ))}
+            </div>
+          </div>
 
-        {/* Freetext */}
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            placeholder="Eigene Nachricht (privat)…"
-            value={freetext}
-            onChange={(e) => {
-              setFreetext(e.target.value);
-            }}
-            maxLength={200}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && freetext.trim() !== '') {
-                handleSend(undefined, freetext.trim());
-              }
-            }}
-          />
-          <Button
-            onClick={() => {
-              if (freetext.trim() !== '') {
-                handleSend(undefined, freetext.trim());
-              }
-            }}
-            disabled={isPending || freetext.trim() === ''}
-            className="px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40"
-          >
-            Senden
-          </Button>
+          {/* Freetext */}
+          <div className="space-y-3">
+            <SectionHeader className="mb-2">Eigene Nachricht</SectionHeader>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="Was willst du sagen? (privat)"
+                value={freetext}
+                onChange={(e) => {
+                  setFreetext(e.target.value);
+                }}
+                maxLength={200}
+                className="rounded-2xl h-12 bg-muted/50 border-none focus-visible:ring-primary"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && freetext.trim() !== '') {
+                    handleSend(undefined, freetext.trim());
+                  }
+                }}
+              />
+              <Button
+                onClick={() => {
+                  if (freetext.trim() !== '') {
+                    handleSend(undefined, freetext.trim());
+                  }
+                }}
+                disabled={isPending || freetext.trim() === ''}
+                className="h-12 px-6 rounded-2xl font-bold"
+              >
+                Senden
+              </Button>
+            </div>
+            {error !== null ? <p className="text-xs text-destructive mt-2">{error.message}</p> : null}
+          </div>
         </div>
-
-        {error !== null ? <p className="text-xs text-destructive mt-2">{error.message}</p> : null}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -204,8 +255,19 @@ function ProstSheet({
   displayName: string;
   onClose: () => void;
 }): React.JSX.Element {
+  const [show, setShow] = useState(false);
   const { data: buyables, isLoading } = useBuyables();
   const { mutate: send, isPending, error } = useSendProst();
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setShow(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const handleClose = (): void => {
+    setShow(false);
+    setTimeout(onClose, 300);
+  };
 
   const variants =
     buyables?.flatMap((b) =>
@@ -213,62 +275,90 @@ function ProstSheet({
     ) ?? [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <>
       <div
-        className="absolute inset-0 bg-black/40"
-        onClick={() => {
-          onClose();
-        }}
+        className={cn(
+          'fixed inset-0 z-40 bg-black/50 transition-opacity duration-300',
+          show ? 'opacity-100' : 'opacity-0',
+        )}
+        onClick={handleClose}
       />
-      <div className="relative w-full max-w-md bg-background rounded-t-2xl sm:rounded-2xl p-5 shadow-xl max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between mb-4 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <h2 className="font-semibold">Prost an {displayName}</h2>
-            <Beer size={18} className="text-accent-600" />
+      <div
+        className={cn(
+          'fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl shadow-2xl overflow-hidden transition-transform duration-300 ease-out flex flex-col max-h-[90vh] sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-md sm:rounded-3xl',
+          show ? 'translate-y-0 sm:scale-100' : 'translate-y-full sm:scale-95 sm:opacity-0',
+        )}
+      >
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-accent-soft flex items-center justify-center text-accent-strong">
+              <Beer size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold leading-none">Prost an {displayName}</h2>
+              <p className="text-xs text-muted-foreground mt-1">Gutschein spendieren</p>
+            </div>
           </div>
           <Button
-            onClick={() => {
-              onClose();
-            }}
-            className="p-1 text-muted-foreground hover:text-foreground"
+            variant="ghost"
+            size="icon"
+            onClick={handleClose}
+            className="rounded-full h-10 w-10"
           >
-            <X size={18} />
+            <X size={20} />
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground mb-3 flex-shrink-0">
-          Du zahlst jetzt — {displayName} bekommt den Gutschein für den nächsten Kauf.
-        </p>
-        {isLoading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 rounded-xl bg-muted animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <div className="overflow-y-auto space-y-2">
-            {variants.map((v) => (
+
+        <div className="px-6 py-2 bg-accent-soft/30 flex-shrink-0">
+          <p className="text-[11px] leading-snug text-accent-strong font-medium">
+            Du zahlst jetzt — {displayName} bekommt den Gutschein für den nächsten Kauf in diesem
+            Bistro.
+          </p>
+        </div>
+
+        <div className="flex-1 overflow-y-auto scrollbar-thin p-6 space-y-2">
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-16 rounded-2xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            variants.map((v) => (
               <Button
                 key={v.id}
+                variant="outline"
                 onClick={() => {
-                  send({ toUserId, variantId: v.id }, { onSuccess: onClose });
+                  send({ toUserId, variantId: v.id }, { onSuccess: handleClose });
                 }}
                 disabled={isPending}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-border bg-card hover:bg-accent transition-colors text-sm disabled:opacity-50"
+                className="w-full h-auto flex items-center justify-between px-4 py-4 rounded-2xl border-border bg-card hover:bg-accent-soft hover:text-accent-strong transition-all group"
               >
-                <span>
-                  <span className="font-medium">{v.buyableName}</span>
-                  <span className="text-muted-foreground ml-1.5">{v.name}</span>
-                </span>
-                <span className="font-semibold tabular-nums">{formatCents(v.price)}</span>
+                <div className="text-left">
+                  <span className="block font-bold text-sm group-hover:text-accent-strong">
+                    {v.buyableName}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                    {v.name}
+                  </span>
+                </div>
+                <PriceDisplay price={v.price} size="lg" className="group-hover:text-accent-strong" />
               </Button>
-            ))}
+            ))
+          )}
+        </div>
+
+        {error !== null && (
+          <div className="px-6 pb-4">
+            <div className="p-3 rounded-xl bg-destructive-soft text-destructive-strong text-xs font-bold text-center">
+              Fehler beim Senden. Bitte versuche es erneut.
+            </div>
           </div>
         )}
-        {error !== null ? (
-          <p className="text-xs text-destructive mt-2 flex-shrink-0">Fehler beim Senden</p>
-        ) : null}
+
+        <div className="px-6 pb-10 flex-shrink-0" />
       </div>
-    </div>
+    </>
   );
 }
 

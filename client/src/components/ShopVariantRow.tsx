@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star } from 'lucide-react';
+import { Star, Gift } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Badge } from './ui/Badge';
 import { PriceDisplay } from './ui/PriceDisplay';
@@ -45,8 +45,8 @@ export function ShopVariantRow({
           <div className="flex items-center gap-2">
             <span className="font-semibold text-sm truncate">{name}</span>
             {hasVoucher ? (
-              <Badge variant="accent-soft" className="h-5 px-1.5">
-                {voucherCount}x 🎁
+              <Badge variant="accent-soft" className="h-5 px-1.5 gap-1">
+                {voucherCount}x <Gift size={12} />
               </Badge>
             ) : null}
           </div>

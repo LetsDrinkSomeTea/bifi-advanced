@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import { buyables, productVariants } from '../db/schema.ts';
 import { requireAuth, requireRole } from '../middleware/auth.ts';
@@ -113,6 +113,7 @@ router.post(
       action: 'buyable.created',
       resourceType: 'buyable',
       resourceId: created.id,
+      resourceName: created.name,
       changes: { after: { ...created, firstVariant: variant } },
       ipAddress: getClientIp(c),
     });
@@ -149,11 +150,16 @@ router.put(
       .where(eq(buyables.id, id))
       .returning();
 
+    if (!updated) {
+      throw new Error('Failed to update buyable');
+    }
+
     await writeAuditLog({
       actorId: actor.id,
       action: 'buyable.updated',
       resourceType: 'buyable',
       resourceId: id,
+      resourceName: updated.name,
       changes: { before, after: updated },
       ipAddress: getClientIp(c),
     });
@@ -181,6 +187,7 @@ router.delete('/:id', requireAuth, requireRole('admin'), async (c) => {
     action: 'buyable.deleted',
     resourceType: 'buyable',
     resourceId: id,
+    resourceName: before.name,
     changes: { before },
     ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
   });
@@ -204,6 +211,7 @@ router.post(
   async (c) => {
     const { id } = c.req.param();
     const body = c.req.valid('json');
+    const actor = c.get('user');
 
     const [parent] = await db.select().from(buyables).where(eq(buyables.id, id));
     if (!parent?.isActive) return c.json({ error: 'Buyable not found', code: 'NOT_FOUND' }, 404);
@@ -217,6 +225,20 @@ router.post(
         sortOrder: body.sortOrder,
       })
       .returning();
+
+    if (!created) {
+      throw new Error('Failed to create variant');
+    }
+
+    await writeAuditLog({
+      actorId: actor.id,
+      action: 'variant.created',
+      resourceType: 'variant',
+      resourceId: created.id,
+      resourceName: created.name,
+      changes: { after: created },
+      ipAddress: getClientIp(c),
+    });
 
     return c.json(created, 201);
   },
@@ -239,14 +261,31 @@ router.put(
   async (c) => {
     const { variantId } = c.req.param();
     const body = c.req.valid('json');
+    const actor = c.get('user');
+
+    const [before] = await db
+      .select()
+      .from(productVariants)
+      .where(eq(productVariants.id, variantId));
+    if (!before) return c.json({ error: 'Variant not found', code: 'NOT_FOUND' }, 404);
 
     const [updated] = await db
       .update(productVariants)
       .set(body)
-      .where(and(eq(productVariants.id, variantId)))
+      .where(eq(productVariants.id, variantId))
       .returning();
 
     if (!updated) return c.json({ error: 'Variant not found', code: 'NOT_FOUND' }, 404);
+
+    await writeAuditLog({
+      actorId: actor.id,
+      action: 'variant.updated',
+      resourceType: 'variant',
+      resourceId: variantId,
+      resourceName: updated.name,
+      changes: { before, after: updated },
+      ipAddress: getClientIp(c),
+    });
 
     return c.json(updated);
   },

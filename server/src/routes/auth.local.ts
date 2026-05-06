@@ -61,6 +61,7 @@ localAuth.post('/bootstrap', zValidator('json', BootstrapSchema), async (c) => {
     action: 'user.created',
     resourceType: 'user',
     resourceId: created.id,
+    resourceName: created.displayName,
     changes: { after: { id: created.id, email: body.email, role: 'admin', via: 'bootstrap' } },
   });
 
@@ -133,6 +134,7 @@ localAuth.put(
       action: 'user.password_changed',
       resourceType: 'user',
       resourceId: id,
+      resourceName: updated.displayName,
       ipAddress: ip,
     });
 

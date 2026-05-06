@@ -163,6 +163,7 @@ export const auditLogs = pgTable('audit_logs', {
   action: text('action').notNull(),
   resourceType: text('resource_type').notNull(),
   resourceId: uuid('resource_id'),
+  resourceName: text('resource_name'),
   changes: jsonb('changes'),
   ipAddress: text('ip_address'),
   createdAt: createdAt(),

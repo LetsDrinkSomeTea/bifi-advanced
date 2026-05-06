@@ -218,6 +218,7 @@ auth.get('/callback', async (c) => {
       action: 'user.created',
       resourceType: 'user',
       resourceId: created.id,
+      resourceName: displayName,
       changes: { after: { id: created.id, email, role, via: 'oidc' } },
       ipAddress: ip,
     });

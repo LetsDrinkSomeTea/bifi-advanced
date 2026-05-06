@@ -2,12 +2,14 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { and, asc, desc, eq, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, lt, or, sql, ilike } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import * as argon2 from 'argon2';
 import { db } from '../db/index.ts';
 import { redis } from '../db/redis.ts';
 import {
   activityFeed,
+  auditLogs,
   donationContributions,
   groupMembers,
   notifications,
@@ -103,6 +105,7 @@ router.post('/users', requireRole('moderator'), zValidator('json', CreateUserSch
     action: 'user.created',
     resourceType: 'user',
     resourceId: user.id,
+    resourceName: user.displayName,
     changes: {
       after: {
         id: user.id,
@@ -179,6 +182,7 @@ router.patch('/users/:id', zValidator('json', UpdateUserSchema), async (c) => {
     action: 'user.updated',
     resourceType: 'user',
     resourceId: id,
+    resourceName: updated.displayName,
     changes: { before: safeBefore, after: safeAfter },
     ipAddress: getClientIp(c),
   });
@@ -242,6 +246,7 @@ router.post('/users/:id/deposit', zValidator('json', DepositSchema), async (c) =
     action: 'deposit',
     resourceType: 'transaction',
     resourceId: txn.id,
+    resourceName: target.displayName,
     changes: { after: { userId: id, amount } },
     ipAddress: getClientIp(c),
   });
@@ -364,6 +369,7 @@ router.delete('/users/:id', requireRole('admin'), async (c) => {
     action: 'user.deleted',
     resourceType: 'user',
     resourceId: id,
+    resourceName: target.displayName,
     changes: { before: safeTarget },
     ipAddress: getClientIp(c),
   });
@@ -410,6 +416,16 @@ router.post('/users/:id/remind', async (c) => {
 
   await redis.setEx(cdKey, 60, '1');
 
+  await writeAuditLog({
+    actorId: actor.id,
+    action: 'user.reminded',
+    resourceType: 'user',
+    resourceId: id,
+    resourceName: target.displayName,
+    changes: { after: { message: REMIND_TEXT } },
+    ipAddress: getClientIp(c),
+  });
+
   createNotification({
     userId: id,
     type: 'nudge',
@@ -420,5 +436,73 @@ router.post('/users/:id/remind', async (c) => {
 
   return c.json({ ok: true });
 });
+
+// ─── GET /api/admin/audit-logs ────────────────────────────────────────────────
+
+const AuditLogQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  action: z.string().optional(),
+  resourceType: z.string().optional(),
+  actorId: z.string().uuid().optional(),
+});
+
+router.get(
+  '/audit-logs',
+  requireRole('admin'),
+  zValidator('query', AuditLogQuerySchema),
+  async (c) => {
+    const { cursor, limit, action, resourceType, actorId } = c.req.valid('query');
+    const parsed = cursor ? decodeCursor(cursor) : null;
+
+    const actor = alias(users, 'actor');
+
+    const filters = [];
+    if (action) {
+      if (action.endsWith('.')) {
+        filters.push(ilike(auditLogs.action, `${action}%`));
+      } else {
+        filters.push(eq(auditLogs.action, action));
+      }
+    }
+    if (resourceType) filters.push(eq(auditLogs.resourceType, resourceType));
+    if (actorId) filters.push(eq(auditLogs.actorId, actorId));
+
+    if (parsed) {
+      filters.push(
+        or(
+          lt(auditLogs.createdAt, new Date(parsed.t)),
+          and(eq(auditLogs.createdAt, new Date(parsed.t)), lt(auditLogs.id, parsed.id)),
+        ),
+      );
+    }
+
+    const rows = await db
+      .select({
+        id: auditLogs.id,
+        action: auditLogs.action,
+        resourceType: auditLogs.resourceType,
+        resourceId: auditLogs.resourceId,
+        resourceName: auditLogs.resourceName,
+        changes: auditLogs.changes,
+        ipAddress: auditLogs.ipAddress,
+        createdAt: auditLogs.createdAt,
+        actorId: auditLogs.actorId,
+        actorDisplayName: actor.displayName,
+      })
+      .from(auditLogs)
+      .leftJoin(actor, eq(auditLogs.actorId, actor.id))
+      .where(filters.length > 0 ? and(...filters) : undefined)
+      .orderBy(desc(auditLogs.createdAt), desc(auditLogs.id))
+      .limit(limit + 1);
+
+    const hasMore = rows.length > limit;
+    const page = hasMore ? rows.slice(0, limit) : rows;
+    const lastItem = page[page.length - 1];
+    const nextCursor = hasMore && lastItem ? encodeCursor(lastItem.createdAt, lastItem.id) : null;
+
+    return c.json({ data: page, nextCursor });
+  },
+);
 
 export default router;

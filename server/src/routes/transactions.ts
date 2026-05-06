@@ -773,11 +773,17 @@ router.delete('/:id', requireAuth, async (c) => {
     }
   });
 
+  const [owner] = await db
+    .select({ displayName: users.displayName })
+    .from(users)
+    .where(eq(users.id, txn.userId));
+
   await writeAuditLog({
     actorId: user.id,
     action: 'transaction.cancelled',
     resourceType: 'transaction',
     resourceId: id,
+    resourceName: `Transaktion von ${owner?.displayName ?? 'Unbekannt'}`,
     changes: {
       before: { cancelledAt: null },
       after: { cancelledAt: new Date(), cancelledBy: user.id },

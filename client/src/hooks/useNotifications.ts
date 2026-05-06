@@ -102,6 +102,8 @@ export function useSSE(): SSEState {
           else if (key === 'buyables') {
             void qc.invalidateQueries({ queryKey: ['buyables'] });
             void qc.invalidateQueries({ queryKey: ['favorites'] });
+          } else if (key === 'audit-log') {
+            void qc.invalidateQueries({ queryKey: ['admin', 'audit-log'] });
           }
         }
       });

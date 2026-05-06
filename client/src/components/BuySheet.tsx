@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Users2, Dices } from 'lucide-react';
+import { X, Users2, Dices, Gift, Check } from 'lucide-react';
 import type { BuyableWithVariants } from '@shared/types';
 import { usePurchase } from '../hooks/useTransactions';
 import { useVoucherMap } from '../hooks/useProst';
@@ -97,7 +97,7 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
       { items: [{ buyableId: buyable.id, variantId, quantity }], groupId: groupId ?? undefined },
       {
         onSuccess: (data) => {
-          setFeedback(data.voucherRedeemed ? 'Gutschein eingelöst! 🎁' : 'Gekauft! ✓');
+          setFeedback(data.voucherRedeemed ? 'Gutschein eingelöst!' : 'Gekauft!');
           setTimeout(handleClose, 1000);
         },
         onError: (err) => {
@@ -209,8 +209,8 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
               {voucherCount > 0 && (
                 <div className="pt-3 border-t border-border/50 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-accent-soft flex items-center justify-center text-lg">
-                      🎁
+                    <div className="w-8 h-8 rounded-lg bg-accent-soft flex items-center justify-center text-accent-strong">
+                      <Gift size={18} />
                     </div>
                     <div>
                       <p className="text-xs font-bold text-accent-strong">Gutscheine verfügbar</p>
@@ -275,12 +275,17 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
             <div
               className={cn(
                 'p-3 rounded-xl text-sm font-bold text-center animate-in fade-in slide-in-from-bottom-2',
-                feedback.includes('✓') || feedback.includes('🎁')
+                feedback.includes('Gekauft') || feedback.includes('Gutschein')
                   ? 'bg-confirm/10 text-confirm'
                   : 'bg-destructive/10 text-destructive',
               )}
             >
-              {feedback}
+              <div className="flex items-center justify-center gap-2">
+                {feedback.includes('Gekauft') || feedback.includes('Gutschein') ? (
+                  <Check size={16} />
+                ) : null}
+                {feedback}
+              </div>
             </div>
           ) : null}
 
@@ -321,7 +326,10 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
               {isPending ? (
                 <span className="text-base">Wird gebucht…</span>
               ) : effectiveTotal === 0 ? (
-                <span className="text-base">🎁 Wurde dir ausgegeben</span>
+                <div className="flex flex-col items-center leading-none">
+                  <Gift size={18} className="mb-0.5" />
+                  <span className="text-sm">Gratis erhalten</span>
+                </div>
               ) : (
                 <>
                   <span className="text-base leading-none">Kaufen</span>

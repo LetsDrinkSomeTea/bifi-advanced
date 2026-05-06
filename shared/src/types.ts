@@ -196,4 +196,17 @@ export interface AchievementWithDef {
   unlockedAt: string;
 }
 
+export interface AuditLogEntry {
+  id: string;
+  action: string;
+  resourceType: string;
+  resourceId: string | null;
+  resourceName: string | null;
+  changes: Record<string, unknown> | null;
+  ipAddress: string | null;
+  createdAt: string;
+  actorId: string | null;
+  actorDisplayName: string | null;
+}
+
 export { AchievementKey, AchievementTier };

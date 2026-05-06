@@ -11,8 +11,8 @@ const TYPE_LABEL: Record<TransactionType, string> = {
   purchase: 'Kauf',
   deposit: 'Einzahlung',
   correction: 'Korrektur',
-  jackpot: 'Jackpot 🎰',
-  prost: 'Prost 🥂',
+  jackpot: 'Jackpot',
+  prost: 'Prost',
 };
 
 function txnLabel(txn: TransactionWithItems): string {

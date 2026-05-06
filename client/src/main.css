@@ -334,6 +334,22 @@ select {
   animation: achievement-glow 1.5s ease-out;
 }
 
+/* Thin scrollbar */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 9999px;
+}
+
 /* Thin horizontal scrollbar */
 .scrollbar-thin-x {
   scrollbar-width: thin;
