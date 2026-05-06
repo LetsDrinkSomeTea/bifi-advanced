@@ -31,6 +31,8 @@ services:
     build: .
     ports:
       - '3000:3000'
+    volumes:
+      - uploads_data:/app/uploads
     environment:
       DATABASE_URL: postgresql://bifi:bifi_password@db:5432/bifi
       REDIS_URL: redis://redis:6379
@@ -40,6 +42,7 @@ services:
       JACKPOT_ENABLED: 'false'
       ROLE_SYNC: 'always'
       BALANCE_WARN_THRESHOLD: '-2000'
+      UPLOAD_DIR: /app/uploads
       # OIDC — fill in for SSO login
       # OIDC_ISSUER: https://auth.example.com/application/o/bifi/
       # OIDC_CLIENT_ID: your-client-id
@@ -56,3 +59,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  uploads_data:

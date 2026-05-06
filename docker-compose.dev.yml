@@ -33,6 +33,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules # preserve container node_modules
+      - uploads_data_dev:/app/uploads
     environment:
       DATABASE_URL: postgresql://bifi:bifi_password@db:5432/bifi
       REDIS_URL: redis://redis:6379
@@ -42,6 +43,7 @@ services:
       JACKPOT_ENABLED: 'true'
       ROLE_SYNC: 'always'
       BALANCE_WARN_THRESHOLD: '-2000'
+      UPLOAD_DIR: /app/uploads
       # Uncomment and fill in for OIDC:
       OIDC_ISSUER: https://auth.faigle.dev/application/o/bifi/
       OIDC_CLIENT_ID: 0b947G6UmFJYTMgR55LMMw8eg1yxWV2txIaO52MQ
@@ -74,3 +76,4 @@ services:
 volumes:
   pgdata_dev:
   redisdata_dev:
+  uploads_data_dev:

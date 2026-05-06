@@ -30,6 +30,7 @@ router.get('/', requireAuth, async (c) => {
       id: groups.id,
       name: groups.name,
       description: groups.description,
+      imageUrl: groups.imageUrl,
       inviteCode: groups.inviteCode,
       createdBy: groups.createdBy,
       createdAt: groups.createdAt,
@@ -285,6 +286,39 @@ router.delete('/:id', requireAuth, async (c) => {
   });
   return c.body(null, 204);
 });
+
+// ─── PATCH /api/groups/:id ────────────────────────────────────────────────────
+
+const UpdateGroupSchema = z.object({
+  name: z.string().min(1).max(80).optional(),
+  description: z.string().max(300).nullable().optional(),
+});
+
+router.patch(
+  '/:id',
+  requireAuth,
+  zValidator('json', UpdateGroupSchema),
+  async (c) => {
+    const self = c.get('user');
+    const { id } = c.req.param();
+    const body = c.req.valid('json');
+
+    const [myMembership] = await db
+      .select()
+      .from(groupMembers)
+      .where(and(eq(groupMembers.groupId, id), eq(groupMembers.userId, self.id), isNull(groupMembers.leftAt)));
+    if (myMembership?.role !== 'owner') return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
+
+    const [updated] = await db
+      .update(groups)
+      .set(body)
+      .where(and(eq(groups.id, id), eq(groups.isActive, true)))
+      .returning();
+
+    if (!updated) return c.json({ error: 'Group not found', code: 'NOT_FOUND' }, 404);
+    return c.json(updated);
+  },
+);
 
 // ─── PATCH /api/groups/:id/invite-code ───────────────────────────────────────
 

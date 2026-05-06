@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Pencil, BarChart2, Beer } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { Pencil, BarChart2, Beer, Upload } from 'lucide-react';
 import { Link } from 'wouter';
 import { Layout } from '../components/layout/Layout';
 import { Modal } from '../components/Modal';
 import { AchievementGrid } from '@/components/AchievementGrid';
 import { ActivityItem, type ActivityUser, ProfileLink } from '../components/ActivityItem';
 import { useAuth } from '../hooks/useAuth';
-import { usePublicProfile, useUpdateProfile } from '../hooks/useProfile';
+import { usePublicProfile, useUpdateProfile, useUploadAvatar } from '../hooks/useProfile';
 import { type ProstVoucher, useProstVouchers } from '../hooks/useProst';
 import { formatCents, balanceColor, cn } from '../lib/utils';
 import { Avatar } from '../components/ui/Avatar';
@@ -27,45 +27,95 @@ function EditProfileModal({
   hasSso: boolean;
 }): React.JSX.Element {
   const { user } = useAuth();
-  const { mutate: update, isPending } = useUpdateProfile();
+  const { mutate: update, isPending: isUpdating } = useUpdateProfile();
+  const { mutate: uploadAvatar, isPending: isUploading } = useUploadAvatar();
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
   const [username, setUsername] = useState(user?.username ?? '');
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? '');
+  const [preview, setPreview] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [error, setError] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
 
+  const isPending = isUpdating || isUploading;
   const canEditName = !hasSso;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Datei zu groß (max 2 MB)');
+      return;
+    }
+    setPendingFile(file);
+    setPreview(URL.createObjectURL(file));
+    setError('');
+  };
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
-    const body: { displayName?: string; username?: string | null; avatarUrl?: string | null } = {
-      avatarUrl: avatarUrl.trim() || null,
+    setError('');
+
+    const doUpdate = (): void => {
+      if (!canEditName) { onClose(); return; }
+      const body: { displayName?: string; username?: string | null } = {
+        displayName: displayName.trim() || undefined,
+        username: username.trim() || null,
+      };
+      if (!body.displayName && body.username === null) { onClose(); return; }
+      update(body, { onSuccess: onClose, onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); } });
     };
-    if (canEditName) {
-      body.displayName = displayName.trim() || undefined;
-      body.username = username.trim() || null;
+
+    if (pendingFile) {
+      uploadAvatar(pendingFile, {
+        onSuccess: doUpdate,
+        onError: (err) => { setError(err instanceof Error ? err.message : 'Upload fehlgeschlagen'); },
+      });
+    } else {
+      if (canEditName) {
+        const body: { displayName?: string; username?: string | null } = {
+          displayName: displayName.trim() || undefined,
+          username: username.trim() || null,
+        };
+        update(body, { onSuccess: onClose, onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); } });
+      } else {
+        onClose();
+      }
     }
-    update(body, {
-      onSuccess: onClose,
-      onError: (err) => {
-        setError(err instanceof Error ? err.message : 'Fehler');
-      },
-    });
   };
+
+  const currentAvatar = preview ?? user?.avatarUrl ?? null;
 
   return (
     <Modal open={open} onClose={onClose} title="Profil bearbeiten">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Profilbild-URL</label>
-          <Input
-            type="url"
-            value={avatarUrl}
-            onChange={(e) => {
-              setAvatarUrl(e.target.value);
-              setError('');
-            }}
-            placeholder="https://…"
-          />
+          <label className="block text-sm font-medium mb-2">Profilbild</label>
+          <div className="flex items-center gap-3">
+            <div className="size-16 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+              {currentAvatar !== null ? (
+                <img src={currentAvatar} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xl font-bold">{user?.displayName[0]?.toUpperCase()}</span>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => { fileRef.current?.click(); }}
+            >
+              <Upload size={14} />
+              Bild wählen
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
         </div>
 
         {canEditName ? (

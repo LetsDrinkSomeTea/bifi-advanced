@@ -12,7 +12,6 @@ import {
   listActivePromotions,
 } from '../services/promotions.ts';
 import { BUYABLE_CATEGORIES } from '../../../shared/src/schemas.ts';
-import { SafeImageUrlSchema } from '../lib/url.ts';
 
 const router = new Hono();
 
@@ -60,7 +59,6 @@ router.get('/', requireAuth, async (c) => {
 
 const CreateBuyableSchema = z.object({
   name: z.string().min(1).max(80),
-  imageUrl: SafeImageUrlSchema.optional(),
   category: z.enum(BUYABLE_CATEGORIES).optional(),
   sortOrder: z.number().int().default(0),
   firstVariant: z.object({
@@ -84,7 +82,6 @@ router.post(
         .insert(buyables)
         .values({
           name: body.name,
-          imageUrl: body.imageUrl ?? null,
           category: body.category ?? null,
           sortOrder: body.sortOrder,
         })
@@ -128,7 +125,6 @@ router.post(
 
 const UpdateBuyableSchema = z.object({
   name: z.string().min(1).max(80).optional(),
-  imageUrl: SafeImageUrlSchema.nullable().optional(),
   category: z.enum(BUYABLE_CATEGORIES).nullable().optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().optional(),

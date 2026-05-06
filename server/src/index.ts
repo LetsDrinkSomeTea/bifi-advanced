@@ -6,6 +6,9 @@ import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
 import { HTTPException } from 'hono/http-exception';
 import { sessionMiddleware } from './middleware/session.ts';
+import { readFile } from 'node:fs/promises';
+import { join, extname } from 'node:path';
+import { mkdir } from 'node:fs/promises';
 import { APP_TZ } from './services/achievements.ts';
 import { globalRateLimit } from './middleware/rateLimit.ts';
 import { initRedis } from './db/redis.ts';
@@ -28,6 +31,7 @@ import leaderboardRoutes from './routes/leaderboard.ts';
 import achievementsRoutes from './routes/achievements.ts';
 import jackpotRoutes from './routes/jackpot.ts';
 import statsRoutes from './routes/stats.ts';
+import uploadRoutes, { getUploadDir } from './routes/upload.ts';
 
 const app = new Hono();
 
@@ -84,6 +88,27 @@ app.route('/api/leaderboard', leaderboardRoutes);
 app.route('/api/achievements', achievementsRoutes);
 app.route('/api/jackpot', jackpotRoutes);
 app.route('/api/stats', statsRoutes);
+app.route('/api/upload', uploadRoutes);
+
+// ─── Serve uploaded files ─────────────────────────────────────────────────────
+
+app.get('/api/uploads/:filename', async (c) => {
+  const filename = c.req.param('filename');
+  if (!filename || filename.includes('/') || filename.includes('..') || extname(filename) !== '.webp') {
+    return c.json({ error: 'Not found' }, 404);
+  }
+  try {
+    const data = await readFile(join(getUploadDir(), filename));
+    return new Response(data, {
+      headers: {
+        'Content-Type': 'image/webp',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
+    });
+  } catch {
+    return c.json({ error: 'Not found' }, 404);
+  }
+});
 
 app.get('/health', (c): Response => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
@@ -118,6 +143,7 @@ if (process.env.NODE_ENV === 'production') {
 // ─── Startup ──────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
+  await mkdir(getUploadDir(), { recursive: true });
   await initRedis();
   await initOIDC();
   console.log(`Starting BiFi with TZ: ${APP_TZ}`);

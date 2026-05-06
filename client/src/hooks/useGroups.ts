@@ -5,7 +5,7 @@ import {
   type UseQueryResult,
   type UseMutationResult,
 } from '@tanstack/react-query';
-import { api, type ApiError } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 
 export type GroupRole = 'owner' | 'member';
 
@@ -13,6 +13,7 @@ export interface GroupSummary {
   id: string;
   name: string;
   description: string | null;
+  imageUrl: string | null;
   inviteCode: string | null;
   createdBy: string;
   createdAt: string;
@@ -114,6 +115,31 @@ export function useRefreshInviteCode(): UseMutationResult<{ inviteCode: string }
     mutationFn: (groupId: string) =>
       api.patch<{ inviteCode: string }>(`/api/groups/${groupId}/invite-code`, {}),
     onSuccess: (_, groupId) => {
+      void qc.invalidateQueries({ queryKey: ['groups', groupId] });
+    },
+  });
+}
+
+export function useUploadGroupImage(
+  groupId: string,
+): UseMutationResult<{ imageUrl: string }, Error, File> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append('image', file);
+      const res = await fetch(`/api/upload/groups/${groupId}/image`, {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+      });
+      interface UploadResponse { imageUrl: string; error?: string; code?: string; }
+      const data = await res.json() as UploadResponse;
+      if (!res.ok) throw new ApiError(data.error ?? res.statusText, data.code, res.status);
+      return data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['groups'] });
       void qc.invalidateQueries({ queryKey: ['groups', groupId] });
     },
   });

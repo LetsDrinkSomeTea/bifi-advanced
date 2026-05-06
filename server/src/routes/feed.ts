@@ -18,7 +18,7 @@ import {
   sql,
 } from 'drizzle-orm';
 import { db } from '../db/index.ts';
-import { activityFeed, groupMembers, userFriendships, users } from '../db/schema.ts';
+import { activityFeed, groupMembers, groups, userFriendships, users } from '../db/schema.ts';
 import { requireAuth } from '../middleware/auth.ts';
 import { type PaginatedResponse, type FeedEvent } from '../../../shared/src/types.ts';
 import { decodeCursor, encodeCursor } from '../lib/cursor.ts';
@@ -26,6 +26,7 @@ import { decodeCursor, encodeCursor } from '../lib/cursor.ts';
 const router = new Hono();
 
 const targetUsers = alias(users, 'target_users');
+const targetGroups = alias(groups, 'target_groups');
 
 const QuerySchema = z.object({
   cursor: z.string().optional(),
@@ -116,10 +117,12 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c): Promis
       userAvatarUrl: users.avatarUrl,
       targetDisplayName: targetUsers.displayName,
       targetAvatarUrl: targetUsers.avatarUrl,
+      targetGroupImageUrl: targetGroups.imageUrl,
     })
     .from(activityFeed)
     .innerJoin(users, eq(activityFeed.userId, users.id))
     .leftJoin(targetUsers, eq(activityFeed.targetUserId, targetUsers.id))
+    .leftJoin(targetGroups, eq(activityFeed.targetGroupId, targetGroups.id))
     .where(and(visibilityFilter, cursorFilter))
     .orderBy(desc(activityFeed.createdAt), desc(activityFeed.id))
     .limit(limit + 1);
@@ -150,6 +153,7 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c): Promis
           avatarUrl: r.targetAvatarUrl,
         }
       : null,
+    targetGroupImageUrl: r.targetGroupImageUrl ?? null,
   }));
 
   const response: PaginatedResponse<FeedEvent> = {

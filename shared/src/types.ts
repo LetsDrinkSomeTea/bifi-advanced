@@ -57,7 +57,6 @@ export interface ActiveDiscount {
 export interface BuyableWithVariants {
   id: string;
   name: string;
-  imageUrl: string | null;
   category: BuyableCategory | null;
   isActive: boolean;
   sortOrder: number;
@@ -159,6 +158,7 @@ export interface FeedEntry {
   userId: string;
   targetUserId: string | null;
   targetGroupId: string | null;
+  targetGroupImageUrl: string | null;
   metadata: Record<string, unknown> | null;
   createdAt: string;
   user: { id: string; displayName: string; avatarUrl: string | null };

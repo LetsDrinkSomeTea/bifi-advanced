@@ -70,7 +70,6 @@ export const users = pgTable('users', {
 export const buyables = pgTable('buyables', {
   id: id(),
   name: text('name').notNull(),
-  imageUrl: text('image_url'),
   category: buyableCategoryEnum('category'),
   isActive: boolean('is_active').notNull().default(true),
   sortOrder: integer('sort_order').notNull().default(0),
@@ -94,6 +93,7 @@ export const groups = pgTable('groups', {
   id: id(),
   name: text('name').notNull(),
   description: text('description'),
+  imageUrl: text('image_url'),
   createdBy: uuid('created_by')
     .notNull()
     .references(() => users.id),

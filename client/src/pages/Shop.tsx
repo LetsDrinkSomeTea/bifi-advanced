@@ -152,29 +152,35 @@ export function Shop(): React.JSX.Element {
               <div className="space-y-3">
                 {products.map((item) => {
                   const activeVariants = item.variants.filter((v) => v.isActive);
-                  const firstCategoryChar = (
-                    item.category ? CATEGORY_LABELS[item.category] : null
-                  )?.[0];
+                  const singleVariant = activeVariants.length === 1 ? activeVariants[0] : null;
+
+                  if (singleVariant) {
+                    return (
+                      <Card key={item.id} className="rounded-2xl overflow-hidden">
+                        <CardContent className="p-0">
+                          <ShopVariantRow
+                            name={item.name}
+                            price={singleVariant.price}
+                            discountedPrice={singleVariant.discountedPrice}
+                            isAvailable={singleVariant.isActive}
+                            activeDiscount={singleVariant.activeDiscount}
+                            isFavorite={favoriteIds.has(singleVariant.id)}
+                            voucherCount={voucherMap.get(singleVariant.id) ?? 0}
+                            onOpenBuySheet={() => { openSheet(item, singleVariant.id); }}
+                            onToggleFavorite={() => { toggleFav({ variantId: singleVariant.id, isFav: favoriteIds.has(singleVariant.id) }); }}
+                          />
+                        </CardContent>
+                      </Card>
+                    );
+                  }
 
                   return (
                     <Card key={item.id} className="rounded-2xl overflow-hidden">
                       <CardHeader className="p-0">
-                        <div className="px-4 py-3 bg-muted/30 flex items-center gap-3">
-                          {item.imageUrl ? (
-                            <img
-                              src={item.imageUrl}
-                              alt={item.name}
-                              className="w-10 h-10 rounded-xl object-cover bg-muted flex-shrink-0 shadow-sm"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl shadow-sm">
-                              {firstCategoryChar ?? '📦'}
-                            </div>
-                          )}
+                        <div className="px-4 py-3 bg-muted/30">
                           <h3 className="font-bold text-base">{item.name}</h3>
                         </div>
                       </CardHeader>
-
                       <CardContent className="p-0">
                         <div className="divide-y divide-border/50">
                           {activeVariants.map((v) => (
@@ -187,12 +193,8 @@ export function Shop(): React.JSX.Element {
                               activeDiscount={v.activeDiscount}
                               isFavorite={favoriteIds.has(v.id)}
                               voucherCount={voucherMap.get(v.id) ?? 0}
-                              onOpenBuySheet={() => {
-                                openSheet(item, v.id);
-                              }}
-                              onToggleFavorite={() => {
-                                toggleFav({ variantId: v.id, isFav: favoriteIds.has(v.id) });
-                              }}
+                              onOpenBuySheet={() => { openSheet(item, v.id); }}
+                              onToggleFavorite={() => { toggleFav({ variantId: v.id, isFav: favoriteIds.has(v.id) }); }}
                             />
                           ))}
                         </div>

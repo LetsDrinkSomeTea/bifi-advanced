@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'wouter';
 import {
   Search,
-  Users2,
   UserCheck,
   UserX,
   UserPlus,
@@ -201,8 +200,12 @@ function GroupsSection({
           {groups?.map((g) => (
             <Link key={g.id} href={`/groups/${g.id}`}>
               <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent-soft transition-colors cursor-pointer">
-                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                  <Users2 size={16} className="text-muted-foreground" />
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {g.imageUrl ? (
+                    <img src={g.imageUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-bold">{g.name[0]?.toUpperCase()}</span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
@@ -310,7 +313,7 @@ function FriendsSection(): React.JSX.Element {
 // ─── Search results ───────────────────────────────────────────────────────────
 
 type SearchItem =
-  | { kind: 'group'; id: string; name: string; memberCount: number }
+  | { kind: 'group'; id: string; name: string; memberCount: number; imageUrl: string | null }
   | { kind: 'friend' | 'new_person'; id: string; displayName: string; avatarUrl: string | null };
 
 function SearchResults({
@@ -332,7 +335,7 @@ function SearchResults({
 
     const groupItems: SearchItem[] = (groups ?? [])
       .filter((g) => g.name.toLowerCase().includes(q))
-      .map((g) => ({ kind: 'group', id: g.id, name: g.name, memberCount: g.memberCount }));
+      .map((g) => ({ kind: 'group', id: g.id, name: g.name, memberCount: g.memberCount, imageUrl: g.imageUrl }));
 
     const friendItems: SearchItem[] = (friends ?? [])
       .filter((f) => f.displayName.toLowerCase().includes(q))
@@ -370,8 +373,12 @@ function SearchResults({
           return (
             <Link key={`g-${item.id}`} href={`/groups/${item.id}`}>
               <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent-soft transition-colors cursor-pointer">
-                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                  <Users2 size={16} className="text-muted-foreground" />
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {item.imageUrl ? (
+                    <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-sm font-bold">{item.name[0]?.toUpperCase()}</span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{item.name}</p>

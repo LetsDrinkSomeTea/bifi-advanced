@@ -153,7 +153,6 @@ export function useUpdateBuyable(): UseMutationResult<
   {
     id: string;
     name?: string;
-    imageUrl?: string | null;
     category?: string | null;
     isActive?: boolean;
     sortOrder?: number;
@@ -167,7 +166,6 @@ export function useUpdateBuyable(): UseMutationResult<
     }: {
       id: string;
       name?: string;
-      imageUrl?: string | null;
       category?: string | null;
       isActive?: boolean;
       sortOrder?: number;
@@ -184,7 +182,6 @@ export function useCreateBuyable(): UseMutationResult<
   Error,
   {
     name: string;
-    imageUrl?: string;
     category?: string;
     sortOrder?: number;
     firstVariant: { name: string; price: number };
@@ -194,7 +191,6 @@ export function useCreateBuyable(): UseMutationResult<
   return useMutation({
     mutationFn: (body: {
       name: string;
-      imageUrl?: string;
       category?: string;
       sortOrder?: number;
       firstVariant: { name: string; price: number };

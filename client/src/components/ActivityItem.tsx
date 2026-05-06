@@ -25,6 +25,7 @@ export function ProfileLink({
 
 interface ActivityItemProps {
   user: ActivityUser;
+  avatarNode?: ReactNode;
   icon?: ReactNode;
   hasConnector?: boolean;
   createdAt: string;
@@ -34,6 +35,7 @@ interface ActivityItemProps {
 
 export function ActivityItem({
   user,
+  avatarNode,
   icon,
   hasConnector = false,
   createdAt,
@@ -44,9 +46,11 @@ export function ActivityItem({
     <div className={cn('flex items-start gap-3', className)}>
       <div className="flex flex-col items-center flex-shrink-0">
         <div className="relative">
-          <Link href={`/profile/${user.id}`}>
-            <Avatar displayName={user.displayName} avatarUrl={user.avatarUrl} size="sm" />
-          </Link>
+          {avatarNode ?? (
+            <Link href={`/profile/${user.id}`}>
+              <Avatar displayName={user.displayName} avatarUrl={user.avatarUrl} size="sm" />
+            </Link>
+          )}
           {icon ? (
             <span className="absolute -bottom-1 -right-1 text-[11px] leading-none select-none bg-background rounded-full">
               {icon}

@@ -29,8 +29,7 @@ BiFi ist eine digitale Getränke-Strichliste für Vereine, Gruppen und Wohngemei
 
 ### Voraussetzungen
 
-- Node.js (>= 18)
-- Docker & Docker Compose (für DB & Redis)
+- Docker & Docker Compose
 
 ### Setup
 
@@ -40,33 +39,28 @@ BiFi ist eine digitale Getränke-Strichliste für Vereine, Gruppen und Wohngemei
     cd bifi
     ```
 
-2.  **Abhängigkeiten installieren:**
-    ```bash
-    npm install
-    ```
-
-3.  **Umgebungsvariablen konfigurieren:**
+2.  **Umgebungsvariablen konfigurieren:**
     Kopiere die `.env.example` nach `.env` und passe die Werte an.
     ```bash
     cp .env.example .env
     ```
 
-4.  **Infrastruktur starten:**
-    Startet PostgreSQL und Redis via Docker.
+3.  **Dev-Stack starten** (baut Container, führt Migrationen aus, startet HMR):
     ```bash
-    docker-compose -f docker-compose.dev.yml up -d db redis
+    make dev
     ```
+    Client: `http://localhost:5173` · Server: `http://localhost:3000`
 
-5.  **Datenbank-Migrationen ausführen:**
-    ```bash
-    npm run db:migrate
-    ```
+### Nützliche Make-Targets
 
-6.  **Entwicklungs-Server starten:**
-    ```bash
-    npm run dev
-    ```
-    Der Client ist unter `http://localhost:5173` und der Server unter `http://localhost:3000` erreichbar.
+| Befehl | Beschreibung |
+| :--- | :--- |
+| `make dev` | Vollständigen Dev-Stack starten (mit Build) |
+| `make db-setup` | Migration generieren + anwenden |
+| `make db-studio` | Drizzle Studio öffnen (Port 4983) |
+| `make shell` | Shell im laufenden App-Container |
+| `make logs` | Container-Logs verfolgen |
+| `make check` | Lint + Typecheck ausführen |
 
 ---
 
@@ -84,6 +78,7 @@ BiFi ist eine digitale Getränke-Strichliste für Vereine, Gruppen und Wohngemei
 | `LOCAL_AUTH_ENABLED`| Lokalen Login (Nutzer/Passwort) erlauben | `true` |
 | `JACKPOT_ENABLED` | Aktiviert das Jackpot-Feature | `false` |
 | `BALANCE_WARN_THRESHOLD`| Schwellenwert für Warnbanner (in Cents) | `-2000` |
+| `UPLOAD_DIR` | Pfad zum Verzeichnis für hochgeladene Bilder | `/app/uploads` |
 
 ---
 
