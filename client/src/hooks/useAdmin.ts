@@ -17,6 +17,7 @@ import type {
   AuditLogEntry,
   PaginatedResponse,
 } from '@shared/types';
+import { type AUDIT_SEVERITIES } from '@shared/schemas';
 
 export function useAdminUsers(): UseQueryResult<AdminUser[]> {
   return useQuery<AdminUser[]>({
@@ -279,6 +280,7 @@ export interface AuditLogFilters {
   action?: string;
   resourceType?: string;
   actorId?: string;
+  severity?: (typeof AUDIT_SEVERITIES)[number];
 }
 
 export function useAuditLog(
@@ -292,6 +294,7 @@ export function useAuditLog(
       if (filters.action) params.set('action', filters.action);
       if (filters.resourceType) params.set('resourceType', filters.resourceType);
       if (filters.actorId) params.set('actorId', filters.actorId);
+      if (filters.severity) params.set('severity', filters.severity);
       const qs = params.toString();
       return api.get<PaginatedResponse<AuditLogEntry>>(
         `/api/admin/audit-logs${qs ? `?${qs}` : ''}`,

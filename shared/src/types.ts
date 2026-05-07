@@ -9,6 +9,7 @@ import {
   type NUDGE_TYPES,
   type FRIENDSHIP_STATUSES,
   type GROUP_ROLES,
+  type AUDIT_SEVERITIES,
 } from './schemas.ts';
 import type { AchievementKey, AchievementTier, PublicAchievementDef } from './achievements.ts';
 
@@ -203,6 +204,7 @@ export interface AuditLogEntry {
   resourceId: string | null;
   resourceName: string | null;
   changes: Record<string, unknown> | null;
+  severity: (typeof AUDIT_SEVERITIES)[number];
   ipAddress: string | null;
   createdAt: string;
   actorId: string | null;

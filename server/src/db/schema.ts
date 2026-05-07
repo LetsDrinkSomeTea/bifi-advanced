@@ -22,6 +22,7 @@ import {
   FRIENDSHIP_STATUSES,
   GROUP_ROLES,
   FEED_TYPES,
+  AUDIT_SEVERITIES,
 } from '../../../shared/src/schemas.ts';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
@@ -35,6 +36,7 @@ export const buyableCategoryEnum = pgEnum('buyable_category', BUYABLE_CATEGORIES
 export const friendshipStatusEnum = pgEnum('friendship_status', FRIENDSHIP_STATUSES);
 export const groupRoleEnum = pgEnum('group_role', GROUP_ROLES);
 export const feedTypeEnum = pgEnum('feed_type', FEED_TYPES);
+export const auditSeverityEnum = pgEnum('audit_severity', AUDIT_SEVERITIES);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -169,6 +171,7 @@ export const auditLogs = pgTable('audit_logs', {
   resourceId: uuid('resource_id'),
   resourceName: text('resource_name'),
   changes: jsonb('changes'),
+  severity: auditSeverityEnum('severity').notNull().default('low'),
   ipAddress: text('ip_address'),
   createdAt: createdAt(),
 });

@@ -5,6 +5,8 @@ import { userFriendships, users } from '../db/schema.ts';
 import { requireAuth } from '../middleware/auth.ts';
 import { createNotification } from '../services/notifications.ts';
 import { emitFeedEvent } from '../services/feed.ts';
+import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 
 const router = new Hono();
 
@@ -189,6 +191,16 @@ router.delete('/:userId', requireAuth, async (c) => {
   } else {
     action = 'request_declined';
   }
+
+  await writeAuditLog({
+    actorId: user.id,
+    action: 'friend.removed',
+    resourceType: 'user',
+    resourceId: userId,
+    changes: { after: { action } },
+    severity: 'info',
+    ipAddress: getClientIp(c),
+  });
 
   return c.json({ action });
 });

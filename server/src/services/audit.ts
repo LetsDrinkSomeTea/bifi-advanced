@@ -1,6 +1,9 @@
 import { db } from '../db/index.ts';
 import { auditLogs } from '../db/schema.ts';
 import { broadcastInvalidate } from './notifications.ts';
+import { type AUDIT_SEVERITIES } from '../../../shared/src/schemas.ts';
+
+type AuditSeverity = (typeof AUDIT_SEVERITIES)[number];
 
 interface AuditEntry {
   actorId?: string | null;
@@ -9,6 +12,7 @@ interface AuditEntry {
   resourceId?: string | null;
   resourceName?: string | null;
   changes?: Record<string, unknown> | null;
+  severity?: AuditSeverity;
   ipAddress?: string | null;
 }
 
@@ -39,6 +43,7 @@ export async function writeAuditLog(entry: AuditEntry): Promise<void> {
     resourceId: entry.resourceId ?? null,
     resourceName: entry.resourceName ?? null,
     changes: entry.changes ?? null,
+    severity: entry.severity ?? 'low',
     ipAddress: entry.ipAddress ?? null,
   });
 

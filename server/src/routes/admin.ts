@@ -28,7 +28,7 @@ import { getClientIp } from '../lib/ip.ts';
 import { pushInvalidate, createNotification } from '../services/notifications.ts';
 import { checkAchievements } from '../services/achievements.ts';
 import { decodeCursor, encodeCursor } from '../lib/cursor.ts';
-import { ROLES } from '../../../shared/src/schemas.ts';
+import { ROLES, AUDIT_SEVERITIES } from '../../../shared/src/schemas.ts';
 import { ROLE_LEVEL } from '@shared/types.ts';
 
 const router = new Hono();
@@ -114,6 +114,7 @@ router.post('/users', requireRole('moderator'), zValidator('json', CreateUserSch
         via: 'admin',
       },
     },
+    severity: 'medium',
     ipAddress: ip,
   });
 
@@ -184,6 +185,7 @@ router.patch('/users/:id', zValidator('json', UpdateUserSchema), async (c) => {
     resourceId: id,
     resourceName: updated.displayName,
     changes: { before: safeBefore, after: safeAfter },
+    severity: body.role !== undefined ? 'high' : 'low',
     ipAddress: getClientIp(c),
   });
 
@@ -250,6 +252,7 @@ router.post('/users/:id/deposit', zValidator('json', DepositSchema), async (c) =
     resourceId: txn.id,
     resourceName: target.displayName,
     changes: { after: { userId: id, amount } },
+    severity: 'medium',
     ipAddress: getClientIp(c),
   });
 
@@ -373,6 +376,7 @@ router.delete('/users/:id', requireRole('admin'), async (c) => {
     resourceId: id,
     resourceName: target.displayName,
     changes: { before: safeTarget },
+    severity: 'high',
     ipAddress: getClientIp(c),
   });
 
@@ -425,6 +429,7 @@ router.post('/users/:id/remind', async (c) => {
     resourceId: id,
     resourceName: target.displayName,
     changes: { after: { message: REMIND_TEXT } },
+    severity: 'info',
     ipAddress: getClientIp(c),
   });
 
@@ -447,6 +452,7 @@ const AuditLogQuerySchema = z.object({
   action: z.string().optional(),
   resourceType: z.string().optional(),
   actorId: z.string().uuid().optional(),
+  severity: z.enum(AUDIT_SEVERITIES).optional(),
 });
 
 router.get(
@@ -454,7 +460,7 @@ router.get(
   requireRole('admin'),
   zValidator('query', AuditLogQuerySchema),
   async (c) => {
-    const { cursor, limit, action, resourceType, actorId } = c.req.valid('query');
+    const { cursor, limit, action, resourceType, actorId, severity } = c.req.valid('query');
     const parsed = cursor ? decodeCursor(cursor) : null;
 
     const actor = alias(users, 'actor');
@@ -469,6 +475,7 @@ router.get(
     }
     if (resourceType) filters.push(eq(auditLogs.resourceType, resourceType));
     if (actorId) filters.push(eq(auditLogs.actorId, actorId));
+    if (severity) filters.push(eq(auditLogs.severity, severity));
 
     if (parsed) {
       filters.push(
@@ -487,6 +494,7 @@ router.get(
         resourceId: auditLogs.resourceId,
         resourceName: auditLogs.resourceName,
         changes: auditLogs.changes,
+        severity: auditLogs.severity,
         ipAddress: auditLogs.ipAddress,
         createdAt: auditLogs.createdAt,
         actorId: auditLogs.actorId,

@@ -62,6 +62,7 @@ localAuth.post('/bootstrap', zValidator('json', BootstrapSchema), async (c) => {
     resourceId: created.id,
     resourceName: created.displayName,
     changes: { after: { id: created.id, email: body.email, role: 'admin', via: 'bootstrap' } },
+    severity: 'high',
   });
 
   return c.json(
@@ -91,12 +92,31 @@ localAuth.post('/login', loginRateLimit, zValidator('json', LoginSchema), async 
   const passwordHashToVerify = user?.passwordHash ?? DUMMY_PASSWORD_HASH;
   const valid = await argon2.verify(passwordHashToVerify, password);
   if (!user?.passwordHash || !user.isActive || !valid) {
+    await writeAuditLog({
+      actorId: user?.id ?? null,
+      action: 'auth.login_failed',
+      resourceType: 'user',
+      resourceId: user?.id ?? null,
+      resourceName: login,
+      severity: 'medium',
+      ipAddress: getClientIp(c),
+    });
     return c.json({ error: 'Invalid credentials', code: 'INVALID_CREDENTIALS' }, 401);
   }
 
   const freshSession = await regenerateSession(c);
   freshSession.userId = user.id;
   await linkSessionToUser(c.get('sessionId'), user.id);
+
+  await writeAuditLog({
+    actorId: user.id,
+    action: 'auth.login',
+    resourceType: 'user',
+    resourceId: user.id,
+    resourceName: user.displayName,
+    severity: 'low',
+    ipAddress: getClientIp(c),
+  });
 
   return c.json({
     success: true,
@@ -134,6 +154,7 @@ localAuth.put(
       resourceType: 'user',
       resourceId: id,
       resourceName: updated.displayName,
+      severity: 'medium',
       ipAddress: ip,
     });
 

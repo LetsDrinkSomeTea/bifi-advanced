@@ -112,6 +112,7 @@ router.post('/', requireAuth, zValidator('json', ProstSchema), async (c) => {
     resourceId: txn.id,
     resourceName: `${sender.displayName} ➔ ${recipient.displayName}`,
     changes: { after: { toUserId, variantId, amount } },
+    severity: 'low',
     ipAddress: getClientIp(c),
   });
 

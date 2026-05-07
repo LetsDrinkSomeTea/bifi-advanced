@@ -115,6 +115,7 @@ router.post(
       resourceId: created.id,
       resourceName: created.name,
       changes: { after: { ...created, firstVariant: variant } },
+      severity: 'low',
       ipAddress: getClientIp(c),
     });
 
@@ -161,6 +162,7 @@ router.put(
       resourceId: id,
       resourceName: updated.name,
       changes: { before, after: updated },
+      severity: 'low',
       ipAddress: getClientIp(c),
     });
 
@@ -189,6 +191,7 @@ router.delete('/:id', requireAuth, requireRole('admin'), async (c) => {
     resourceId: id,
     resourceName: before.name,
     changes: { before },
+    severity: 'medium',
     ipAddress: c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? null,
   });
 
@@ -237,6 +240,7 @@ router.post(
       resourceId: created.id,
       resourceName: created.name,
       changes: { after: created },
+      severity: 'low',
       ipAddress: getClientIp(c),
     });
 
@@ -284,6 +288,7 @@ router.put(
       resourceId: variantId,
       resourceName: updated.name,
       changes: { before, after: updated },
+      severity: 'low',
       ipAddress: getClientIp(c),
     });
 

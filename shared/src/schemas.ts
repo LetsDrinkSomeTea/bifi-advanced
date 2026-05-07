@@ -3,6 +3,7 @@ import { z } from 'zod';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 export const ROLES = ['admin', 'moderator', 'member'] as const;
+export const AUDIT_SEVERITIES = ['info', 'low', 'medium', 'high'] as const;
 export const TRANSACTION_TYPES = ['purchase', 'deposit', 'correction', 'jackpot', 'prost'] as const;
 export const NUDGE_TYPES = ['nudge', 'prost'] as const;
 export const NOTIFICATION_TYPES = [

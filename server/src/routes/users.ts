@@ -14,6 +14,8 @@ import {
 import { requireAuth } from '../middleware/auth.ts';
 import { ACHIEVEMENT_REGISTRY } from '../services/achievements/registry.ts';
 import { SafeImageUrlSchema } from '../lib/url.ts';
+import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 
 const router = new Hono();
 const RankRowSchema = z.object({
@@ -273,6 +275,19 @@ router.patch('/me', requireAuth, zValidator('json', UpdateProfileSchema), async 
     if (!updated) {
       return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
     }
+
+    const { passwordHash: _bpw, ...safeBefore } = self;
+    const { passwordHash: _apw, ...safeAfter } = updated;
+    await writeAuditLog({
+      actorId: self.id,
+      action: 'user.profile_updated',
+      resourceType: 'user',
+      resourceId: self.id,
+      resourceName: updated.displayName,
+      changes: { before: safeBefore, after: safeAfter },
+      severity: 'info',
+      ipAddress: getClientIp(c),
+    });
 
     return c.json({
       id: updated.id,

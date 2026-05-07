@@ -11,10 +11,20 @@ import {
 import { useAuditLog } from '../../hooks/useAdmin';
 import { useAuth } from '../../hooks/useAuth';
 import type { AuditLogEntry } from '@shared/types';
+import { AUDIT_SEVERITIES } from '@shared/schemas';
 import { cn, formatRelative } from '../../lib/utils';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+
+type AuditSeverity = (typeof AUDIT_SEVERITIES)[number];
+
+const SEVERITY_BADGE: Record<AuditSeverity, { variant: 'muted-soft' | 'confirm-soft' | 'accent-soft' | 'destructive-soft'; label: string }> = {
+  info:   { variant: 'muted-soft',       label: 'Info' },
+  low:    { variant: 'confirm-soft',     label: 'Low' },
+  medium: { variant: 'accent-soft',      label: 'Medium' },
+  high:   { variant: 'destructive-soft', label: 'High' },
+};
 
 // ─── Audit Log Card Component ─────────────────────────────────────────────────
 
@@ -147,6 +157,9 @@ function AuditLogCard({
             <Badge variant={getBadgeVariant(entry.action)} className="text-[10px] font-mono h-5">
               {entry.action}
             </Badge>
+            <Badge variant={SEVERITY_BADGE[entry.severity].variant} className="text-[10px] h-5">
+              {SEVERITY_BADGE[entry.severity].label}
+            </Badge>
             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
               <Clock size={10} />
               {formatRelative(entry.createdAt)}
@@ -212,11 +225,13 @@ export function AdminAuditLogContent(): React.JSX.Element {
   const { isAdmin } = useAuth();
   const [actionFilter, setActionFilter] = useState('');
   const [resourceTypeFilter, setResourceTypeFilter] = useState('');
+  const [severityFilter, setSeverityFilter] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useAuditLog({
     action: actionFilter || undefined,
     resourceType: resourceTypeFilter || undefined,
+    severity: (severityFilter as AuditSeverity) || undefined,
   });
 
   const toggleExpand = (id: string): void => {
@@ -239,7 +254,7 @@ export function AdminAuditLogContent(): React.JSX.Element {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">
               Kategorie
@@ -252,6 +267,7 @@ export function AdminAuditLogContent(): React.JSX.Element {
               className="h-9 text-xs"
             >
               <option value="">Alle Aktionen</option>
+              <option value="auth.">Auth</option>
               <option value="user.">Nutzer</option>
               <option value="deposit">Einzahlung</option>
               <option value="transaction.">Transaktion</option>
@@ -259,6 +275,10 @@ export function AdminAuditLogContent(): React.JSX.Element {
               <option value="variant.">Variante</option>
               <option value="promotion.">Rabatt</option>
               <option value="prost.">Prost</option>
+              <option value="jackpot.">Jackpot</option>
+              <option value="nudge.">Nudge</option>
+              <option value="friend.">Freunde</option>
+              <option value="group.">Gruppe</option>
             </Select>
           </div>
           <div className="space-y-1">
@@ -278,6 +298,26 @@ export function AdminAuditLogContent(): React.JSX.Element {
               <option value="buyable">Buyable</option>
               <option value="variant">Variant</option>
               <option value="promotion">Promotion</option>
+              <option value="group">Gruppe</option>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">
+              Schwere
+            </label>
+            <Select
+              value={severityFilter}
+              onChange={(e) => {
+                setSeverityFilter(e.target.value);
+              }}
+              className="h-9 text-xs"
+            >
+              <option value="">Alle</option>
+              {AUDIT_SEVERITIES.map((s) => (
+                <option key={s} value={s}>
+                  {SEVERITY_BADGE[s].label}
+                </option>
+              ))}
             </Select>
           </div>
         </div>

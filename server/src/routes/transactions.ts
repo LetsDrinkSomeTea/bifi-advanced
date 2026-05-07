@@ -565,6 +565,17 @@ router.post(
         }
       }
 
+      await writeAuditLog({
+        actorId: user.id,
+        action: 'transaction.created',
+        resourceType: 'transaction',
+        resourceId: primaryTxn.txn.id,
+        resourceName: user.displayName,
+        changes: { after: { totalAmount: primaryTxn.cost, groupId: body.groupId, memberCount: primaryTxn.txn.totalAmount } },
+        severity: 'low',
+        ipAddress: getClientIp(c),
+      });
+
       return c.json({ ...primaryTxn.txn, voucherRedeemed: false }, 201);
     }
 
@@ -721,6 +732,17 @@ router.post(
       })().catch(console.error);
     }
 
+    await writeAuditLog({
+      actorId: user.id,
+      action: 'transaction.created',
+      resourceType: 'transaction',
+      resourceId: txn.id,
+      resourceName: user.displayName,
+      changes: { after: { totalAmount: txn.totalAmount, voucherCredit: voucherCredit || undefined } },
+      severity: 'low',
+      ipAddress: getClientIp(c),
+    });
+
     return c.json({ ...txn, voucherRedeemed: voucherCredit > 0 }, 201);
   },
 );
@@ -841,6 +863,7 @@ router.delete('/:id', requireAuth, async (c) => {
       before: { cancelledAt: null },
       after: { cancelledAt: new Date(), cancelledBy: user.id },
     },
+    severity: 'medium',
     ipAddress: getClientIp(c),
   });
 

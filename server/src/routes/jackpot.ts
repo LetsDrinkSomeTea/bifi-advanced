@@ -11,6 +11,8 @@ import { purchaseRateLimit } from '../middleware/rateLimit.ts';
 import { emitFeedEvent } from '../services/feed.ts';
 import { checkAchievements } from '../services/achievements.ts';
 import { getActiveDiscount, calculateDiscountedPrice } from '../services/promotions.ts';
+import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 
 const router = new Hono();
 
@@ -133,6 +135,17 @@ router.post(
     checkAchievements({ type: 'jackpot', userId: user.id, multiplier: multiplierDecimal }).catch(
       console.error,
     );
+
+    await writeAuditLog({
+      actorId: user.id,
+      action: 'jackpot.spin',
+      resourceType: 'transaction',
+      resourceId: txn.id,
+      resourceName: user.displayName,
+      changes: { after: { multiplierPct, pricePaid, buyableId: buyable.id, variantId: variant.id } },
+      severity: 'low',
+      ipAddress: getClientIp(c),
+    });
 
     return c.json(
       {

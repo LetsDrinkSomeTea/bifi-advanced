@@ -9,6 +9,8 @@ import { db } from '../db/index.ts';
 import { groupMembers, groups, users } from '../db/schema.ts';
 import { requireAuth } from '../middleware/auth.ts';
 import { rateLimit } from '../middleware/rateLimit.ts';
+import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 
 const router = new Hono();
 
@@ -129,6 +131,16 @@ router.post('/groups/:id/image', requireAuth, uploadRateLimit, async (c) => {
 
   await deleteOldFile(group.imageUrl ?? null);
   await db.update(groups).set({ imageUrl }).where(eq(groups.id, id));
+
+  await writeAuditLog({
+    actorId: user.id,
+    action: 'group.image_updated',
+    resourceType: 'group',
+    resourceId: id,
+    resourceName: group.name,
+    severity: 'low',
+    ipAddress: getClientIp(c),
+  });
 
   return c.json({ imageUrl });
 });

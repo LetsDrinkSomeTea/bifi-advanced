@@ -206,6 +206,16 @@ auth.get('/callback', async (c) => {
       return c.redirect('/login?error=update_failed');
     }
     userId = updated.id;
+
+    await writeAuditLog({
+      actorId: userId,
+      action: 'auth.login',
+      resourceType: 'user',
+      resourceId: userId,
+      resourceName: displayName,
+      severity: 'low',
+      ipAddress: ip,
+    });
   } else {
     const initialRole = roleSyncMode !== 'never' ? role : 'member';
     const [created] = await db
@@ -225,6 +235,7 @@ auth.get('/callback', async (c) => {
       resourceId: created.id,
       resourceName: displayName,
       changes: { after: { id: created.id, email, role, via: 'oidc' } },
+      severity: 'medium',
       ipAddress: ip,
     });
   }
@@ -246,6 +257,14 @@ auth.post('/logout', async (c) => {
   delete session.oidcRedirectUri;
   if (userId) {
     await unlinkSessionFromUser(sessionId, userId);
+    await writeAuditLog({
+      actorId: userId,
+      action: 'auth.logout',
+      resourceType: 'user',
+      resourceId: userId,
+      severity: 'info',
+      ipAddress: getClientIp(c),
+    });
   }
   await invalidateSession(sessionId);
   return c.json({ success: true });

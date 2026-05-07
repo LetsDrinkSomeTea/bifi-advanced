@@ -11,6 +11,8 @@ import { requireAuth } from '../middleware/auth.ts';
 import { checkAchievements } from '../services/achievements.ts';
 import { rateLimit } from '../middleware/rateLimit.ts';
 import { CreateGroupSchema } from '../../../shared/src/schemas.ts';
+import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 
 const router = new Hono();
 
@@ -129,6 +131,17 @@ router.post('/', requireAuth, zValidator('json', CreateGroupSchema), async (c) =
 
   checkAchievements({ type: 'group_founded', userId: user.id }).catch(console.error);
 
+  await writeAuditLog({
+    actorId: user.id,
+    action: 'group.created',
+    resourceType: 'group',
+    resourceId: group.id,
+    resourceName: group.name,
+    changes: { after: { name, description: description ?? null } },
+    severity: 'low',
+    ipAddress: getClientIp(c),
+  });
+
   return c.json(group, 201);
 });
 
@@ -172,6 +185,16 @@ router.post(
       userId: user.id,
       targetGroupId: group.id,
       metadata: { groupName: group.name },
+    });
+
+    await writeAuditLog({
+      actorId: user.id,
+      action: 'group.member_joined',
+      resourceType: 'group',
+      resourceId: group.id,
+      resourceName: group.name,
+      severity: 'info',
+      ipAddress: getClientIp(c),
     });
 
     return c.json(group, 201);
@@ -219,6 +242,15 @@ router.post('/:id/leave', requireAuth, async (c) => {
         userId: user.id,
         metadata: { groupName: group?.name ?? id },
       });
+      await writeAuditLog({
+        actorId: user.id,
+        action: 'group.deleted',
+        resourceType: 'group',
+        resourceId: id,
+        resourceName: group?.name ?? id,
+        severity: 'medium',
+        ipAddress: getClientIp(c),
+      });
       return c.body(null, 204);
     }
     return c.json({ error: 'Transfer ownership before leaving', code: 'OWNER_MUST_TRANSFER' }, 400);
@@ -233,6 +265,15 @@ router.post('/:id/leave', requireAuth, async (c) => {
     userId: user.id,
     targetGroupId: id,
     metadata: { groupName: group?.name ?? id },
+  });
+  await writeAuditLog({
+    actorId: user.id,
+    action: 'group.member_left',
+    resourceType: 'group',
+    resourceId: id,
+    resourceName: group?.name ?? id,
+    severity: 'info',
+    ipAddress: getClientIp(c),
   });
   return c.body(null, 204);
 });
@@ -258,6 +299,11 @@ router.delete('/:id/members/:userId', requireAuth, async (c) => {
   if (userId === self.id)
     return c.json({ error: 'Cannot remove yourself', code: 'SELF_REMOVE' }, 400);
 
+  const [[kicked], [group]] = await Promise.all([
+    db.select({ displayName: users.displayName }).from(users).where(eq(users.id, userId)),
+    db.select({ name: groups.name }).from(groups).where(eq(groups.id, id)),
+  ]);
+
   await db
     .update(groupMembers)
     .set({ leftAt: new Date() })
@@ -268,6 +314,18 @@ router.delete('/:id/members/:userId', requireAuth, async (c) => {
         isNull(groupMembers.leftAt),
       ),
     );
+
+  await writeAuditLog({
+    actorId: self.id,
+    action: 'group.member_kicked',
+    resourceType: 'group',
+    resourceId: id,
+    resourceName: group?.name ?? id,
+    changes: { after: { kickedUserId: userId, kickedDisplayName: kicked?.displayName ?? userId } },
+    severity: 'medium',
+    ipAddress: getClientIp(c),
+  });
+
   return c.body(null, 204);
 });
 
@@ -302,6 +360,15 @@ router.delete('/:id', requireAuth, async (c) => {
     userId: self.id,
     metadata: { groupName: group?.name ?? id },
   });
+  await writeAuditLog({
+    actorId: self.id,
+    action: 'group.deleted',
+    resourceType: 'group',
+    resourceId: id,
+    resourceName: group?.name ?? id,
+    severity: 'medium',
+    ipAddress: getClientIp(c),
+  });
   return c.body(null, 204);
 });
 
@@ -329,6 +396,11 @@ router.patch('/:id', requireAuth, zValidator('json', UpdateGroupSchema), async (
     );
   if (myMembership?.role !== 'owner') return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
 
+  const [before] = await db
+    .select({ name: groups.name, description: groups.description })
+    .from(groups)
+    .where(and(eq(groups.id, id), eq(groups.isActive, true)));
+
   const [updated] = await db
     .update(groups)
     .set(body)
@@ -336,6 +408,18 @@ router.patch('/:id', requireAuth, zValidator('json', UpdateGroupSchema), async (
     .returning();
 
   if (!updated) return c.json({ error: 'Group not found', code: 'NOT_FOUND' }, 404);
+
+  await writeAuditLog({
+    actorId: self.id,
+    action: 'group.updated',
+    resourceType: 'group',
+    resourceId: id,
+    resourceName: updated.name,
+    changes: { before: before ?? null, after: { name: updated.name, description: updated.description } },
+    severity: 'low',
+    ipAddress: getClientIp(c),
+  });
+
   return c.json(updated);
 });
 
@@ -357,8 +441,24 @@ router.patch('/:id/invite-code', requireAuth, async (c) => {
     );
   if (myMembership?.role !== 'owner') return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
 
+  const [group] = await db
+    .select({ name: groups.name })
+    .from(groups)
+    .where(eq(groups.id, id));
+
   const newCode = generateInviteCode();
   await db.update(groups).set({ inviteCode: newCode }).where(eq(groups.id, id));
+
+  await writeAuditLog({
+    actorId: self.id,
+    action: 'group.invite_code_reset',
+    resourceType: 'group',
+    resourceId: id,
+    resourceName: group?.name ?? id,
+    severity: 'medium',
+    ipAddress: getClientIp(c),
+  });
+
   return c.json({ inviteCode: newCode });
 });
 

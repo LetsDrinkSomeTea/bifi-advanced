@@ -9,6 +9,8 @@ import { emitFeedEvent } from '../services/feed.ts';
 import { requireAuth } from '../middleware/auth.ts';
 import { nudgeRateLimit } from '../middleware/rateLimit.ts';
 import { createNotification } from '../services/notifications.ts';
+import { writeAuditLog } from '../services/audit.ts';
+import { getClientIp } from '../lib/ip.ts';
 
 const router = new Hono();
 
@@ -105,6 +107,16 @@ router.post(
         metadata: { message },
       });
     }
+
+    await writeAuditLog({
+      actorId: sender.id,
+      action: 'nudge.sent',
+      resourceType: 'user',
+      resourceId: recipientId,
+      resourceName: `${sender.displayName} ➔ ${recipient.displayName}`,
+      severity: 'info',
+      ipAddress: getClientIp(c),
+    });
 
     return c.json({ ok: true, message, isPublic }, 201);
   },

@@ -79,6 +79,7 @@ router.post('/', zValidator('json', PromotionSchema), async (c) => {
     resourceId: created.id,
     resourceName: created.name,
     changes: { after: created },
+    severity: 'low',
     ipAddress: getClientIp(c),
   });
 
@@ -150,6 +151,7 @@ router.patch('/:id', zValidator('json', PromotionSchema.partial()), async (c) =>
     resourceId: id,
     resourceName: updated.name,
     changes: { before: existing, after: updated },
+    severity: 'low',
     ipAddress: getClientIp(c),
   });
 
@@ -185,6 +187,7 @@ router.delete('/:id', async (c) => {
     resourceId: id,
     resourceName: existing.name,
     changes: { before: existing },
+    severity: 'medium',
     ipAddress: getClientIp(c),
   });
 
