@@ -13,7 +13,6 @@ import {
   isNull,
   lt,
   lte,
-  ne,
   or,
   sql,
 } from 'drizzle-orm';
@@ -83,17 +82,11 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c): Promis
       ),
   );
 
-  // goal_reached is a global club event — always visible
   // Events with a targetGroupId use membership-based visibility
   // All other events use self/friends filter
   const visibilityFilter = or(
-    eq(activityFeed.type, 'goal_reached'),
     and(isNotNull(activityFeed.targetGroupId), wasGroupMember),
-    and(
-      isNull(activityFeed.targetGroupId),
-      ne(activityFeed.type, 'goal_reached'),
-      selfOrFriendFilter,
-    ),
+    and(isNull(activityFeed.targetGroupId), selfOrFriendFilter),
   );
 
   const cursorFilter =

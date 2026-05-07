@@ -30,7 +30,6 @@ const TYPE_ICON: Record<FeedType, { name: string; color: string }> = {
   group_left: { name: 'user-minus', color: 'text-destructive-strong' },
   group_deleted: { name: 'trash-2', color: 'text-muted-foreground' },
   friendship_started: { name: 'users', color: 'text-secondary-strong' },
-  goal_reached: { name: 'target', color: 'text-confirm-strong' },
   jackpot_win: { name: 'dices', color: 'text-secondary-strong' },
   promotion_started: { name: 'flame', color: 'text-accent-strong' },
   promotion_ended: { name: 'timer', color: 'text-muted-foreground' },
@@ -259,14 +258,6 @@ function feedText(
         <>
           <Actor user={user} currentUserId={currentUserId} /> und{' '}
           {targetName(targetUser, undefined)} sind jetzt befreundet
-        </>
-      );
-    }
-    case 'goal_reached': {
-      const title = metadata?.goalTitle as string | undefined;
-      return (
-        <>
-          Spendenziel <span className="font-medium">{title ?? 'Ziel'}</span> wurde erreicht!
         </>
       );
     }

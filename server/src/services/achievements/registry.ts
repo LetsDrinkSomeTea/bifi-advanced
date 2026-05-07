@@ -11,7 +11,6 @@ import {
 import {
   categoryItemCount,
   discountedItemCount,
-  donationCount,
   getLocalHour,
   getLocalMinute,
   getLocalSecond,
@@ -145,26 +144,6 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       { tier: 'bronze', description: '10× Prost erhalten', threshold: 10 },
       { tier: 'silver', description: '25× Prost erhalten', threshold: 25 },
       { tier: 'gold', description: '50× Prost erhalten', threshold: 50 },
-    ],
-  }),
-
-  // ── Spenden (tiered, hidden) ───────────────────────────────────────────────
-  ...defineTieredAchievement({
-    groupKey: 'donations',
-    name: 'Spendenritter',
-    icon: 'shield',
-    color: 'text-indigo-500',
-    events: ['contribution'],
-    hidden: true,
-    progress: (userId) => donationCount(userId),
-    tiers: [
-      { tier: 'bronze', description: '3× zum Ziel beigetragen', threshold: 3 },
-      {
-        tier: 'silver',
-        description: '10× zum Ziel beigetragen',
-        threshold: 10,
-      },
-      { tier: 'gold', description: '25× zum Ziel beigetragen', threshold: 25 },
     ],
   }),
 

@@ -231,32 +231,6 @@ export const promotions = pgTable('promotions', {
   createdAt: createdAt(),
 });
 
-export const donationGoals = pgTable('donation_goals', {
-  id: id(),
-  title: text('title').notNull(),
-  description: text('description'),
-  targetAmount: integer('target_amount').notNull(),
-  currentAmount: integer('current_amount').notNull().default(0),
-  reward: text('reward'),
-  startDate: timestamp('start_date'),
-  endDate: timestamp('end_date'),
-  isActive: boolean('is_active').notNull().default(true),
-  completedAt: timestamp('completed_at'),
-  createdAt: createdAt(),
-});
-
-export const donationContributions = pgTable('donation_contributions', {
-  id: id(),
-  goalId: uuid('goal_id')
-    .notNull()
-    .references(() => donationGoals.id),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id),
-  amount: integer('amount').notNull(),
-  createdAt: createdAt(),
-});
-
 export const activityFeed = pgTable('activity_feed', {
   id: id(),
   userId: uuid('user_id')

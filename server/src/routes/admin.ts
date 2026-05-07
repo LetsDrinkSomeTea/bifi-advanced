@@ -10,7 +10,6 @@ import { redis } from '../db/redis.ts';
 import {
   activityFeed,
   auditLogs,
-  donationContributions,
   groupMembers,
   notifications,
   nudges,
@@ -355,7 +354,6 @@ router.delete('/users/:id', requireRole('admin'), async (c) => {
     await tx
       .delete(activityFeed)
       .where(or(eq(activityFeed.userId, id), eq(activityFeed.targetUserId, id)));
-    await tx.delete(donationContributions).where(eq(donationContributions.userId, id));
     await tx
       .delete(userFriendships)
       .where(or(eq(userFriendships.requesterId, id), eq(userFriendships.addresseeId, id)));

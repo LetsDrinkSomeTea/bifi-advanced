@@ -571,7 +571,7 @@ router.post(
         resourceType: 'transaction',
         resourceId: primaryTxn.txn.id,
         resourceName: user.displayName,
-        changes: { after: { totalAmount: primaryTxn.cost, groupId: body.groupId, memberCount: primaryTxn.txn.totalAmount } },
+        changes: { after: { totalAmount: primaryTxn.cost, groupId: body.groupId, memberCount: n, buyerShare: primaryTxn.txn.totalAmount } },
         severity: 'low',
         ipAddress: getClientIp(c),
       });

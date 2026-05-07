@@ -2,7 +2,6 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import {
   buyables,
-  donationContributions,
   prostVouchers,
   transactionItems,
   transactions,
@@ -113,14 +112,6 @@ export const prostReceivedCount = (userId: string): Promise<number> =>
       .select({ n: sql<number>`count(*)::int` })
       .from(prostVouchers)
       .where(eq(prostVouchers.toUserId, userId)),
-  );
-
-export const donationCount = (userId: string): Promise<number> =>
-  countQ(
-    db
-      .select({ n: sql<number>`count(*)::int` })
-      .from(donationContributions)
-      .where(eq(donationContributions.userId, userId)),
   );
 
 export const unlockedAchievementCount = (userId: string): Promise<number> =>

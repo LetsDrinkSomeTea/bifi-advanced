@@ -22,8 +22,6 @@ function notificationHref(n: AppNotification): string | null {
       return '/history';
     case 'balance_warning':
       return '/profile';
-    case 'goal_reached':
-      return '/feed';
     default:
       return null;
   }

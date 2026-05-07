@@ -29,8 +29,6 @@ beforeEach(async () => {
     'nudges',
     'audit_logs',
     'promotions',
-    'donation_contributions',
-    'donation_goals',
     'users',
   ];
 

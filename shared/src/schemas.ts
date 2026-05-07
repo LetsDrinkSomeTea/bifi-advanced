@@ -11,7 +11,6 @@ export const NOTIFICATION_TYPES = [
   'prost',
   'achievement',
   'deposit',
-  'goal_reached',
   'balance_warning',
   'friend_request',
   'system',
@@ -30,7 +29,6 @@ export const FEED_TYPES = [
   'prost_sent',
   'prost_received',
   'friendship_started',
-  'goal_reached',
   'jackpot_win',
   'promotion_started',
   'promotion_ended',
@@ -150,21 +148,6 @@ export const CreatePromotionSchema = z.object({
       buyableIds: z.array(z.string().uuid()).optional(),
     })
     .optional(),
-});
-
-// ─── Donation Goals ───────────────────────────────────────────────────────────
-
-export const CreateGoalSchema = z.object({
-  title: z.string().min(1).max(120),
-  description: z.string().max(500).optional(),
-  targetAmount: z.number().int().min(1),
-  reward: z.string().max(200).optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-});
-
-export const ContributeSchema = z.object({
-  amount: z.number().int().min(1),
 });
 
 // ─── Nudges ───────────────────────────────────────────────────────────────────
