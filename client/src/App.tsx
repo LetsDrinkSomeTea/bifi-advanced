@@ -7,8 +7,6 @@ import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Shop } from './pages/Shop';
-import { History } from './pages/History';
-import { Feed } from './pages/Feed';
 import { Verlauf } from './pages/Verlauf';
 import { Profile } from './pages/Profile';
 import { ProfileDetail } from './pages/ProfileDetail';
@@ -17,6 +15,7 @@ import { StatsPage } from './pages/stats/StatsPage';
 import { AdminPage } from './pages/admin/AdminPage';
 import { GroupDetail } from './pages/GroupDetail';
 import { AllAchievements } from './pages/AllAchievements';
+import { DevTools } from './pages/DevTools';
 
 import { GlobalDialog } from './components/GlobalDialog';
 import { DialogProvider } from './hooks/dialogContext';
@@ -114,6 +113,13 @@ export function App(): React.JSX.Element {
                 <AllAchievements />
               </ProtectedRoute>
             )}
+          </Route>
+
+          {/* Dev Tools */}
+          <Route path="/dev">
+            <ProtectedRoute>
+              <DevTools />
+            </ProtectedRoute>
           </Route>
 
           {/* Admin */}

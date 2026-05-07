@@ -1,12 +1,7 @@
 import { useLocation } from 'wouter';
 import { Layout } from '../../components/layout/Layout';
 import { Tabs, TabContent, type TabItem } from '../../components/ui/Tabs';
-
-const VERLAUF_TABS: TabItem[] = [
-  { id: 'feed', label: 'Aktivität', href: '/verlauf' },
-  { id: 'transaktionen', label: 'Käufe', href: '/verlauf/transaktionen' },
-  { id: 'benachrichtigungen', label: 'Nachrichten', href: '/verlauf/benachrichtigungen' },
-];
+import { useSSE } from '../../hooks/useNotifications';
 
 interface Props {
   children: React.ReactNode;
@@ -15,6 +10,13 @@ interface Props {
 
 export function VerlaufLayout({ children, activeTab }: Props): React.JSX.Element {
   const [, navigate] = useLocation();
+  const { unreadCount } = useSSE();
+
+  const VERLAUF_TABS: TabItem[] = [
+    { id: 'feed', label: 'Aktivität', href: '/verlauf' },
+    { id: 'transaktionen', label: 'Käufe', href: '/verlauf/transaktionen' },
+    { id: 'benachrichtigungen', label: 'Nachrichten', href: '/verlauf/benachrichtigungen', badge: unreadCount > 0 ? unreadCount : undefined },
+  ];
 
   const handleTabChange = (id: string): void => {
     const tab = VERLAUF_TABS.find((t) => t.id === id);

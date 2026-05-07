@@ -1,3 +1,4 @@
+import { Link } from 'wouter';
 import type { FeedEntry } from '../hooks/useFeed';
 import { useAuth } from '../hooks/useAuth';
 import type { AchievementDef } from '@shared/achievements';
@@ -61,6 +62,23 @@ function targetName(
   return <ProfileLink user={target} />;
 }
 
+function GroupLink({ groupId, name }: { groupId: string | null; name: string }): React.JSX.Element {
+  if (!groupId) return <span className="font-medium">{name}</span>;
+  return (
+    <Link href={`/groups/${groupId}`} className="font-medium hover:underline">
+      {name}
+    </Link>
+  );
+}
+
+function AchievementLink({ userId, name }: { userId: string; name: string }): React.JSX.Element {
+  return (
+    <Link href={`/achievements/${userId}`} className="font-medium hover:underline">
+      „{name}"
+    </Link>
+  );
+}
+
 // ─── Feed text ────────────────────────────────────────────────────────────────
 
 function feedText(
@@ -82,13 +100,13 @@ function feedText(
       if (groupName) {
         return isMe ? (
           <>
-            Du hast {itemStr} für die Gruppe <span className="font-medium">{groupName}</span>{' '}
-            gekauft
+            Du hast {itemStr} für die Gruppe{' '}
+            <GroupLink groupId={entry.targetGroupId} name={groupName} /> gekauft
           </>
         ) : (
           <>
             <Actor user={user} currentUserId={currentUserId} /> hat {itemStr} für die Gruppe{' '}
-            <span className="font-medium">{groupName}</span> gekauft
+            <GroupLink groupId={entry.targetGroupId} name={groupName} /> gekauft
           </>
         );
       }
@@ -106,12 +124,12 @@ function feedText(
       const name = def ? def.name : 'ein Achievement';
       return isMe ? (
         <>
-          Du hast <span className="font-medium">„{name}"</span> freigeschaltet
+          Du hast <AchievementLink userId={entry.userId} name={name} /> freigeschaltet
         </>
       ) : (
         <>
           <Actor user={user} currentUserId={currentUserId} /> hat{' '}
-          <span className="font-medium">„{name}"</span> freigeschaltet
+          <AchievementLink userId={entry.userId} name={name} /> freigeschaltet
         </>
       );
     }
@@ -119,13 +137,13 @@ function feedText(
       const groupName = metadata?.groupName as string | undefined;
       return isMe ? (
         <>
-          Du bist der Gruppe <span className="font-medium">{groupName ?? 'einer Gruppe'}</span>{' '}
-          beigetreten
+          Du bist der Gruppe{' '}
+          <GroupLink groupId={entry.targetGroupId} name={groupName ?? 'einer Gruppe'} /> beigetreten
         </>
       ) : (
         <>
           <Actor user={user} currentUserId={currentUserId} /> ist der Gruppe{' '}
-          <span className="font-medium">{groupName ?? 'einer Gruppe'}</span> beigetreten
+          <GroupLink groupId={entry.targetGroupId} name={groupName ?? 'einer Gruppe'} /> beigetreten
         </>
       );
     }
@@ -133,13 +151,13 @@ function feedText(
       const groupName = metadata?.groupName as string | undefined;
       return isMe ? (
         <>
-          Du hast die Gruppe <span className="font-medium">{groupName ?? 'eine Gruppe'}</span>{' '}
-          erstellt
+          Du hast die Gruppe{' '}
+          <GroupLink groupId={entry.targetGroupId} name={groupName ?? 'eine Gruppe'} /> erstellt
         </>
       ) : (
         <>
           <Actor user={user} currentUserId={currentUserId} /> hat die Gruppe{' '}
-          <span className="font-medium">{groupName ?? 'eine Gruppe'}</span> erstellt
+          <GroupLink groupId={entry.targetGroupId} name={groupName ?? 'eine Gruppe'} /> erstellt
         </>
       );
     }
@@ -147,13 +165,13 @@ function feedText(
       const groupName = metadata?.groupName as string | undefined;
       return isMe ? (
         <>
-          Du hast die Gruppe <span className="font-medium">{groupName ?? 'eine Gruppe'}</span>{' '}
-          verlassen
+          Du hast die Gruppe{' '}
+          <GroupLink groupId={entry.targetGroupId} name={groupName ?? 'eine Gruppe'} /> verlassen
         </>
       ) : (
         <>
           <Actor user={user} currentUserId={currentUserId} /> hat die Gruppe{' '}
-          <span className="font-medium">{groupName ?? 'eine Gruppe'}</span> verlassen
+          <GroupLink groupId={entry.targetGroupId} name={groupName ?? 'eine Gruppe'} /> verlassen
         </>
       );
     }

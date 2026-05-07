@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { TopBar } from './TopBar';
 import { BottomNav } from './BottomNav';
 import { PwaInstallBanner } from '../PwaInstallBanner';
+import { DevBanner } from '../DevBanner';
 import { useTabDirection } from '../../hooks/useTabDirection';
 
 const TAB_HREFS = ['/', '/shop', '/verlauf', '/social', '/profile'];
@@ -31,15 +32,18 @@ export function Layout({ children }: Props): React.JSX.Element {
     if (idx === -1) return;
 
     if (offset.x < 0 && idx < TAB_HREFS.length - 1) {
-      navigate(TAB_HREFS[idx + 1]!);
+      const next = TAB_HREFS[idx + 1];
+      if (next) navigate(next);
     } else if (offset.x > 0 && idx > 0) {
-      navigate(TAB_HREFS[idx - 1]!);
+      const prev = TAB_HREFS[idx - 1];
+      if (prev) navigate(prev);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <TopBar />
+      <DevBanner />
       <PwaInstallBanner />
       <main className="flex-1 pb-16 overflow-y-auto">
         <AnimatePresence mode="wait" initial={false}>

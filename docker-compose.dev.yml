@@ -41,6 +41,7 @@ services:
       APP_URL: http://localhost:3000
       SESSION_SECRET: dev-secret-not-for-production
       JACKPOT_ENABLED: 'true'
+      VITE_DEV_TOOLS: 'true'
       ROLE_SYNC: 'always'
       BALANCE_WARN_THRESHOLD: '-2000'
       UPLOAD_DIR: /app/uploads

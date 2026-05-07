@@ -7,6 +7,7 @@ export interface TabItem {
   id: string;
   label: string;
   href: string;
+  badge?: number;
 }
 
 interface TabsProps {
@@ -25,13 +26,18 @@ export function Tabs({ items, activeId, className }: TabsProps): React.JSX.Eleme
             key={item.id}
             href={item.href}
             className={cn(
-              'flex-1 py-1.5 rounded-lg text-sm font-medium transition-all text-center relative',
+              'flex-1 py-1.5 rounded-lg text-sm font-medium transition-all relative flex items-center justify-center gap-1',
               isActive
                 ? 'bg-background shadow-sm text-foreground'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
             {item.label}
+            {(item.badge ?? 0) > 0 && (
+              <span className="min-w-[14px] h-3.5 px-0.5 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center leading-none">
+                {(item.badge ?? 0) > 9 ? '9+' : item.badge}
+              </span>
+            )}
           </Link>
         );
       })}

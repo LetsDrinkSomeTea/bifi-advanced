@@ -231,7 +231,7 @@ export function AdminAuditLogContent(): React.JSX.Element {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useAuditLog({
     action: actionFilter || undefined,
     resourceType: resourceTypeFilter || undefined,
-    severity: (severityFilter as AuditSeverity) || undefined,
+    severity: severityFilter ? (severityFilter as AuditSeverity) : undefined,
   });
 
   const toggleExpand = (id: string): void => {

@@ -32,6 +32,7 @@ import achievementsRoutes from './routes/achievements.ts';
 import jackpotRoutes from './routes/jackpot.ts';
 import statsRoutes from './routes/stats.ts';
 import uploadRoutes, { getUploadDir } from './routes/upload.ts';
+import devRoutes from './routes/dev.ts';
 
 const app = new Hono();
 
@@ -89,6 +90,11 @@ app.route('/api/achievements', achievementsRoutes);
 app.route('/api/jackpot', jackpotRoutes);
 app.route('/api/stats', statsRoutes);
 app.route('/api/upload', uploadRoutes);
+
+if (process.env.VITE_DEV_TOOLS === 'true') {
+  app.route('/api/dev', devRoutes);
+  console.log('[DEV] Debug routes mounted at /api/dev');
+}
 
 // ─── Serve uploaded files ─────────────────────────────────────────────────────
 

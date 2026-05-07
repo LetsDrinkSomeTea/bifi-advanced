@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Star, ChevronRight } from 'lucide-react';
 import { Link } from 'wouter';
+import { toast } from 'sonner';
 import { Layout } from '../components/layout/Layout';
 import { TransactionList } from '../components/TransactionList';
 import { FeedTimeline } from '../components/FeedTimeline';
@@ -49,8 +50,9 @@ export function Home(): React.JSX.Element {
             setCardState(null);
           }, 900);
         },
-        onError: () => {
+        onError: (err) => {
           setCardState({ variantId: fav.variantId, status: 'error' });
+          toast.error(err instanceof Error ? err.message : 'Fehler beim Kauf');
           setTimeout(() => {
             setCardState(null);
           }, 1200);
@@ -123,7 +125,7 @@ export function Home(): React.JSX.Element {
         <section>
           <SectionHeader
             rightElement={
-              <Link href="/history">
+              <Link href="/verlauf/transaktionen">
                 <Button variant="ghost" size="sm" className="h-7 gap-0.5 text-primary">
                   Alle <ChevronRight size={13} />
                 </Button>
@@ -140,7 +142,7 @@ export function Home(): React.JSX.Element {
         <section>
           <SectionHeader
             rightElement={
-              <Link href="/social/activity">
+              <Link href="/verlauf">
                 <Button variant="ghost" size="sm" className="h-7 gap-0.5 text-primary">
                   Alle <ChevronRight size={13} />
                 </Button>

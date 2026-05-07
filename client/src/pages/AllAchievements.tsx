@@ -21,7 +21,11 @@ export function AllAchievements(): React.JSX.Element {
         <PageHeader
           title={isOwn ? 'Meine Achievements' : `${profile?.displayName ?? '...'}'s Achievements`}
           onBack={() => {
-            navigate(isOwn ? '/profile' : `/profile/${userId}`);
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              navigate(isOwn ? '/profile' : `/profile/${userId}`);
+            }
           }}
         />
 

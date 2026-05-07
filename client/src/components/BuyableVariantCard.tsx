@@ -156,7 +156,12 @@ export function BuyableVariantCard({
             e.stopPropagation();
             onRemoveFavorite();
           }}
-          className="absolute -top-1 -right-1 p-1 rounded-full bg-background border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto shadow-sm z-10"
+          className={cn(
+            'absolute -top-1 -right-1 p-1 rounded-full bg-background border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all shadow-sm z-10',
+            isAvailable
+              ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
+              : 'opacity-60 hover:opacity-100',
+          )}
           title="Aus Favoriten entfernen"
         >
           <X size={10} />

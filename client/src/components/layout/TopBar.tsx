@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, UserCircle, ShieldCheck, LogOut, Check, Beer } from 'lucide-react';
+import { Bell, Beer, UserCircle, ShieldCheck, LogOut, Check } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth, useLogout } from '../../hooks/useAuth';
 import {
@@ -9,23 +9,9 @@ import {
   useSSE,
   type AppNotification,
 } from '../../hooks/useNotifications';
+import { notificationHref, notificationMeta } from '../../lib/notifications';
 import { formatCents, formatRelative, balanceColor, cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
-
-function notificationHref(n: AppNotification): string | null {
-  switch (n.type) {
-    case 'achievement':
-      return '/achievements';
-    case 'friend_request':
-      return n.relatedId ? `/profile/${n.relatedId}` : '/social';
-    case 'deposit':
-      return '/verlauf/transaktionen';
-    case 'balance_warning':
-      return '/profile';
-    default:
-      return null;
-  }
-}
 
 function NotificationDropdown({ onClose }: { onClose: () => void }): React.JSX.Element {
   const { data: notifs } = useNotifications();
@@ -65,42 +51,47 @@ function NotificationDropdown({ onClose }: { onClose: () => void }): React.JSX.E
           Alle gelesen
         </Button>
       </div>
-      <div className="max-h-80 overflow-y-auto">
+      <div className="max-h-80 overflow-y-auto scrollbar-thin">
         {notifs.map((n) => {
           const href = notificationHref(n);
+          const meta = notificationMeta(n.type);
+          const Icon = meta.icon;
           return (
-            <div key={n.id} className="flex items-start border-b border-border last:border-0">
+            <div key={n.id} className="flex border-b border-border last:border-0">
+              {/* Left ~80%: content + navigation */}
               <Button
                 variant="ghost"
                 onClick={() => {
                   handleNavigate(n);
                 }}
                 className={cn(
-                  'flex-1 h-auto flex-col items-start px-4 py-3 min-w-0 rounded-none w-full font-normal',
+                  'flex-[4] h-auto items-start gap-3 px-3 py-3 min-w-0 rounded-none w-full font-normal',
                   href ? 'cursor-pointer' : 'cursor-default hover:bg-transparent',
                 )}
               >
-                <div className="text-sm font-medium leading-snug whitespace-normal text-left">
-                  {n.title}
+                <div className={cn('mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center', meta.bg)}>
+                  <Icon size={14} className={meta.color} />
                 </div>
-                <div className="text-xs text-muted-foreground mt-0.5 whitespace-normal text-left">
-                  {n.message}
-                </div>
-                <div className="text-xs text-muted-foreground/60 mt-1 whitespace-normal text-left">
-                  {formatRelative(n.createdAt)}
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-sm font-medium leading-snug whitespace-normal">
+                    {n.title}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5 whitespace-normal">
+                    {n.message}
+                  </div>
+                  <div className="text-xs text-muted-foreground/60 mt-1">
+                    {formatRelative(n.createdAt)}
+                  </div>
                 </div>
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  markRead(n.id);
-                }}
+              {/* Right ~20%: mark-as-read spanning full row height */}
+              <button
+                onClick={() => { markRead(n.id); }}
                 title="Als gelesen markieren"
-                className="flex-shrink-0 h-8 w-8 text-muted-foreground m-2"
+                className="flex-[1] flex items-center justify-center self-stretch border-l border-border/50 text-muted-foreground hover:text-confirm-strong hover:bg-primary/5 transition-colors"
               >
-                <Check size={14} />
-              </Button>
+                <Check size={18} />
+              </button>
             </div>
           );
         })}

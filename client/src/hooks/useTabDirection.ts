@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 
 const TAB_ORDER = ['/', '/shop', '/verlauf', '/social', '/profile'];
@@ -12,21 +12,21 @@ function tabIndex(path: string): number {
 export function useTabDirection(): number {
   const [location] = useLocation();
   const prevLocationRef = useRef(location);
-  const directionRef = useRef(0);
+  const [direction, setDirection] = useState(0);
 
   useEffect(() => {
     const prev = prevLocationRef.current;
     if (prev !== location) {
       const prevIdx = tabIndex(prev);
       const currIdx = tabIndex(location);
-      if (prevIdx !== -1 && currIdx !== -1 && prevIdx !== currIdx) {
-        directionRef.current = currIdx > prevIdx ? 1 : -1;
-      } else {
-        directionRef.current = 0;
-      }
+      setDirection(
+        prevIdx !== -1 && currIdx !== -1 && prevIdx !== currIdx
+          ? currIdx > prevIdx ? 1 : -1
+          : 0,
+      );
       prevLocationRef.current = location;
     }
-  });
+  }, [location]);
 
-  return directionRef.current;
+  return direction;
 }

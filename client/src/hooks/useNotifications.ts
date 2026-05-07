@@ -29,6 +29,14 @@ export function useNotifications(): UseQueryResult<AppNotification[]> {
   });
 }
 
+export function useAllNotifications(): UseQueryResult<AppNotification[]> {
+  return useQuery<AppNotification[]>({
+    queryKey: ['notifications', 'all'],
+    queryFn: () => api.get<AppNotification[]>('/api/notifications/all'),
+    staleTime: 30_000,
+  });
+}
+
 export function useMarkRead(): UseMutationResult<void, Error, string> {
   const qc = useQueryClient();
   return useMutation({
@@ -37,6 +45,11 @@ export function useMarkRead(): UseMutationResult<void, Error, string> {
       qc.setQueryData<AppNotification[]>(
         ['notifications'],
         (old) => old?.filter((n) => n.id !== id) ?? [],
+      );
+      const now = new Date().toISOString();
+      qc.setQueryData<AppNotification[]>(
+        ['notifications', 'all'],
+        (old) => old?.map((n) => (n.id === id ? { ...n, readAt: now } : n)) ?? [],
       );
     },
   });
@@ -48,6 +61,11 @@ export function useMarkAllRead(): UseMutationResult<void, Error, void> {
     mutationFn: () => api.post('/api/notifications/read-all', {}),
     onSuccess: () => {
       qc.setQueryData(['notifications'], []);
+      const now = new Date().toISOString();
+      qc.setQueryData<AppNotification[]>(
+        ['notifications', 'all'],
+        (old) => old?.map((n) => (n.readAt ? n : { ...n, readAt: now })) ?? [],
+      );
     },
   });
 }
@@ -80,6 +98,7 @@ export function useSSE(): SSEState {
       es.addEventListener('notification', (e) => {
         const notif = JSON.parse((e as MessageEvent<string>).data) as AppNotification;
         qc.setQueryData<AppNotification[]>(['notifications'], (old) => [notif, ...(old ?? [])]);
+        qc.setQueryData<AppNotification[]>(['notifications', 'all'], (old) => [notif, ...(old ?? [])]);
         setUnreadCount((c) => c + 1);
       });
 

@@ -44,6 +44,19 @@ router.post('/:id/read', requireAuth, async (c) => {
   return c.json({ success: true });
 });
 
+// ─── GET /api/notifications/all ──────────────────────────────────────────────
+
+router.get('/all', requireAuth, async (c) => {
+  const user = c.get('user');
+  const rows = await db
+    .select()
+    .from(notifications)
+    .where(eq(notifications.userId, user.id))
+    .orderBy(desc(notifications.createdAt))
+    .limit(50);
+  return c.json(rows);
+});
+
 // ─── GET /api/notifications/count ────────────────────────────────────────────
 
 router.get('/count', requireAuth, async (c) => {
