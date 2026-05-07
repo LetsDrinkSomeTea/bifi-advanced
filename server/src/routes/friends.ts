@@ -59,6 +59,25 @@ router.get('/requests', requireAuth, async (c) => {
   return c.json(rows);
 });
 
+// ─── GET /api/friends/requests/sent ──────────────────────────────────────────
+
+router.get('/requests/sent', requireAuth, async (c) => {
+  const user = c.get('user');
+
+  const rows = await db
+    .select({
+      id: users.id,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+      requestedAt: userFriendships.createdAt,
+    })
+    .from(userFriendships)
+    .innerJoin(users, eq(users.id, userFriendships.addresseeId))
+    .where(and(eq(userFriendships.requesterId, user.id), eq(userFriendships.status, 'pending')));
+
+  return c.json(rows);
+});
+
 // ─── POST /api/friends/:userId/request ───────────────────────────────────────
 
 router.post('/:userId/request', requireAuth, async (c) => {

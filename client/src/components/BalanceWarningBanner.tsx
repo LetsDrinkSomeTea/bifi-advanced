@@ -28,7 +28,7 @@ export function BalanceWarningBanner({
           </h3>
         </div>
         <p className="text-sm font-medium opacity-90 truncate">
-          Dein Guthaben ist unter {formatCents(threshold)}. Bitte lade dein Konto auf!
+          Dein Guthaben ist unter {formatCents(threshold)}.<br /> Bitte lade dein Konto auf!
         </p>
       </div>
     </div>

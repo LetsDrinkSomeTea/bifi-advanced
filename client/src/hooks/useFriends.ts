@@ -37,12 +37,20 @@ export function useFriendRequests(): UseQueryResult<FriendRequest[]> {
   });
 }
 
+export function useSentFriendRequests(): UseQueryResult<FriendRequest[]> {
+  return useQuery<FriendRequest[]>({
+    queryKey: ['friends', 'requests', 'sent'],
+    queryFn: () => api.get<FriendRequest[]>('/api/friends/requests/sent'),
+  });
+}
+
 async function invalidateAfter(
   userId: string,
   qc: ReturnType<typeof useQueryClient>,
 ): Promise<void> {
   await qc.invalidateQueries({ queryKey: ['profile', userId] });
   await qc.invalidateQueries({ queryKey: ['friends'] });
+  await qc.invalidateQueries({ queryKey: ['friends', 'requests', 'sent'] });
 }
 
 export function useSendFriendRequest(): UseMutationResult<void, Error, string> {

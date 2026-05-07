@@ -106,11 +106,11 @@ export function BuyableVariantCard({
                     N/V
                   </span>
                 ) : status === 'buying' ? (
-                  <span className="text-sm font-bold tabular-nums animate-pulse">…</span>
+                  <span className="text-xs font-bold tabular-nums animate-pulse">…</span>
                 ) : status === 'done' ? (
-                  <span className="text-sm font-bold tabular-nums text-confirm-strong">✓</span>
+                  <span className="text-xs font-bold tabular-nums text-confirm-strong">✓</span>
                 ) : status === 'error' ? (
-                  <span className="text-sm font-bold tabular-nums text-destructive-strong">✕</span>
+                  <span className="text-xs font-bold tabular-nums text-destructive-strong">✕</span>
                 ) : (
                   <PriceDisplay
                     price={price}

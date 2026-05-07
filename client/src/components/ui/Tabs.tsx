@@ -59,27 +59,24 @@ const tabVariants = {
 };
 
 export function TabContent({ children, activeId, items, onTabChange }: TabContentProps): React.JSX.Element {
-  // Direction computed synchronously during render — no useEffect timing lag
-  const prevIdRef = React.useRef(activeId);
-  const animDirRef = React.useRef(0);
-  if (prevIdRef.current !== activeId) {
-    const prevIdx = items.findIndex((i) => i.id === prevIdRef.current);
+  const [prevId, setPrevId] = React.useState(activeId);
+  const [animDir, setAnimDir] = React.useState(0);
+
+  if (prevId !== activeId) {
+    const prevIdx = items.findIndex((i) => i.id === prevId);
     const currIdx = items.findIndex((i) => i.id === activeId);
-    animDirRef.current = currIdx > prevIdx ? 1 : -1;
-    prevIdRef.current = activeId;
+    setAnimDir(currIdx > prevIdx ? 1 : -1);
+    setPrevId(activeId);
   }
-  const animDir = animDirRef.current;
+
   const currentIndex = items.findIndex((i) => i.id === activeId);
 
   const handlePanEnd = (_: unknown, info: PanInfo): void => {
     const { offset, velocity } = info;
     if (Math.abs(offset.x) <= Math.abs(offset.y) * 1.5) return;
     if (Math.abs(offset.x) < 50 && Math.abs(velocity.x) < 300) return;
-    if (offset.x < 0 && currentIndex < items.length - 1) {
-      onTabChange(items[currentIndex + 1]!.id);
-    } else if (offset.x > 0 && currentIndex > 0) {
-      onTabChange(items[currentIndex - 1]!.id);
-    }
+    const nextItem = offset.x < 0 ? items[currentIndex + 1] : items[currentIndex - 1];
+    if (nextItem) onTabChange(nextItem.id);
   };
 
   return (
