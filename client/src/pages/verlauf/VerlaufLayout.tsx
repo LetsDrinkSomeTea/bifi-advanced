@@ -1,7 +1,7 @@
 import { useLocation } from 'wouter';
 import { Layout } from '../../components/layout/Layout';
 import { Tabs, TabContent, type TabItem } from '../../components/ui/Tabs';
-import { useSSE } from '../../hooks/useNotifications';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface Props {
   children: React.ReactNode;
@@ -10,7 +10,8 @@ interface Props {
 
 export function VerlaufLayout({ children, activeTab }: Props): React.JSX.Element {
   const [, navigate] = useLocation();
-  const { unreadCount } = useSSE();
+  const { data: notifications } = useNotifications();
+  const unreadCount = notifications?.length ?? 0;
 
   const VERLAUF_TABS: TabItem[] = [
     { id: 'feed', label: 'Aktivität', href: '/verlauf' },

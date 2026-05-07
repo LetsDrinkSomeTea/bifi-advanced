@@ -51,6 +51,7 @@ export function useMarkRead(): UseMutationResult<void, Error, string> {
         ['notifications', 'all'],
         (old) => old?.map((n) => (n.id === id ? { ...n, readAt: now } : n)) ?? [],
       );
+      void qc.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 }
@@ -66,6 +67,7 @@ export function useMarkAllRead(): UseMutationResult<void, Error, void> {
         ['notifications', 'all'],
         (old) => old?.map((n) => (n.readAt ? n : { ...n, readAt: now })) ?? [],
       );
+      void qc.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 }

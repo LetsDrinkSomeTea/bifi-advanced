@@ -62,11 +62,9 @@ function NotifItem({ n, onMarkRead, onClick, dimmed }: NotifItemProps): React.JS
 
 function SectionHeader({
   title,
-  count,
   action,
 }: {
   title: string;
-  count: number;
   action?: React.ReactNode;
 }): React.JSX.Element {
   return (
@@ -75,11 +73,6 @@ function SectionHeader({
         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
           {title}
         </span>
-        {count > 0 && (
-          <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center leading-none">
-            {count}
-          </span>
-        )}
       </div>
       {action}
     </div>
@@ -126,7 +119,6 @@ export function VerlaufNotifications(): React.JSX.Element {
       <section>
         <SectionHeader
           title="Neu"
-          count={unread.length}
           action={
             unread.length > 0 ? (
               <Button
@@ -160,7 +152,7 @@ export function VerlaufNotifications(): React.JSX.Element {
       {/* Gelesene */}
       {read.length > 0 && (
         <section>
-          <SectionHeader title="Gelesen" count={0} />
+          <SectionHeader title="Gelesen" />
           <div className="rounded-2xl border border-border overflow-hidden">
             {read.map((n) => (
               <NotifItem

@@ -412,10 +412,12 @@ function SearchResults({
             </Link>
             {item.kind === 'new_person' ? (
               <Button
+                variant='primary-soft'
+                size='icon'
                 onClick={() => {
                   sendRequest(item.id);
                 }}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-primary-strong hover:bg-primary-soft transition-colors"
+                className="h-8 w-8 rounded-lg"
                 title="Freundschaft anfragen"
               >
                 <UserPlus size={15} />
@@ -457,30 +459,20 @@ export function SocialMainContent(): React.JSX.Element {
   return (
     <div className="space-y-5">
       {/* Search */}
-      <div className="relative">
+      <div className="relative top-2 ml-2 mr-2">
         <Search
           size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
         />
         <Input
-          type="text"
+          type="search"
+          placeholder="Nutzer, Freunde oder Gruppen suchen…"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
           }}
-          placeholder="Gruppen und Personen suchen…"
-          className="pl-9 pr-9 py-2.5 rounded-xl"
+          className="w-full pl-9 pr-4 py-2.5 rounded-xl h-auto"
         />
-        {query !== '' ? (
-          <Button
-            onClick={() => {
-              setQuery('');
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            <X size={14} />
-          </Button>
-        ) : null}
       </div>
 
       {isSearching ? (

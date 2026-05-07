@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { Home, ShoppingBag, Users, User, Clock } from 'lucide-react';
 import { useLocation, Link } from 'wouter';
 import { useFriendRequests } from '../../hooks/useFriends';
-import { useSSE } from '../../hooks/useNotifications';
+import { useNotifications, useSSE } from '../../hooks/useNotifications';
 import { cn } from '../../lib/utils';
 
 const NAV_ITEMS = [
@@ -12,11 +13,29 @@ const NAV_ITEMS = [
   { href: '/profile', label: 'Profil', icon: User },
 ];
 
+const TABBED_SECTIONS = ['/social', '/verlauf'];
+
+function rememberedHref(href: string): string {
+  if (!TABBED_SECTIONS.includes(href)) return href;
+  return sessionStorage.getItem(`lasttab:${href}`) ?? href;
+}
+
 export function BottomNav(): React.JSX.Element {
   const [location] = useLocation();
   const { data: requests } = useFriendRequests();
-  const { unreadCount } = useSSE();
+  useSSE(); // SSE-Verbindung aufrechterhalten
+  const { data: notifications } = useNotifications();
+  const unreadCount = notifications?.length ?? 0;
   const requestCount = requests?.length ?? 0;
+
+  useEffect(() => {
+    for (const section of TABBED_SECTIONS) {
+      if (location.startsWith(section)) {
+        sessionStorage.setItem(`lasttab:${section}`, location);
+        return;
+      }
+    }
+  }, [location]);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-10 flex items-center justify-around h-16 border-t border-border bg-background/95 backdrop-blur-sm safe-area-bottom">
@@ -31,7 +50,7 @@ export function BottomNav(): React.JSX.Element {
         return (
           <Link
             key={href}
-            href={href}
+            href={rememberedHref(href)}
             className={cn(
               'flex flex-col items-center gap-0.5 min-w-[44px] py-1 text-xs transition-colors',
               active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',

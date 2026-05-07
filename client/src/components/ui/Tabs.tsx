@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
+import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
 import { Link } from 'wouter';
 import { cn } from '../../lib/utils';
 
@@ -50,44 +50,51 @@ interface TabContentProps {
   activeId: string;
   items: TabItem[];
   onTabChange: (id: string) => void;
-  dir?: number; // 1 for right, -1 for left
 }
 
-export function TabContent({
-  children,
-  activeId,
-  items,
-  onTabChange,
-}: TabContentProps): React.JSX.Element {
-  const currentIndex = items.findIndex((item) => item.id === activeId);
+const tabVariants = {
+  initial: (dir: number) => ({ x: `${dir * 100}%` }),
+  animate: { x: '0%' },
+  exit: (dir: number) => ({ x: `${dir * -100}%` }),
+};
 
-  const handleDragEnd = (_: unknown, info: PanInfo): void => {
-    if (info.offset.x < -50 && currentIndex < items.length - 1) {
-      const nextTab = items[currentIndex + 1];
-      if (nextTab) onTabChange(nextTab.id);
-    } else if (info.offset.x > 50 && currentIndex > 0) {
-      const prevTab = items[currentIndex - 1];
-      if (prevTab) onTabChange(prevTab.id);
+export function TabContent({ children, activeId, items, onTabChange }: TabContentProps): React.JSX.Element {
+  // Direction computed synchronously during render — no useEffect timing lag
+  const prevIdRef = React.useRef(activeId);
+  const animDirRef = React.useRef(0);
+  if (prevIdRef.current !== activeId) {
+    const prevIdx = items.findIndex((i) => i.id === prevIdRef.current);
+    const currIdx = items.findIndex((i) => i.id === activeId);
+    animDirRef.current = currIdx > prevIdx ? 1 : -1;
+    prevIdRef.current = activeId;
+  }
+  const animDir = animDirRef.current;
+  const currentIndex = items.findIndex((i) => i.id === activeId);
+
+  const handlePanEnd = (_: unknown, info: PanInfo): void => {
+    const { offset, velocity } = info;
+    if (Math.abs(offset.x) <= Math.abs(offset.y) * 1.5) return;
+    if (Math.abs(offset.x) < 50 && Math.abs(velocity.x) < 300) return;
+    if (offset.x < 0 && currentIndex < items.length - 1) {
+      onTabChange(items[currentIndex + 1]!.id);
+    } else if (offset.x > 0 && currentIndex > 0) {
+      onTabChange(items[currentIndex - 1]!.id);
     }
   };
 
   return (
     <div className="relative overflow-hidden">
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="popLayout" initial={false} custom={animDir}>
         <motion.div
           key={activeId}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          drag="x"
-          dragDirectionLock
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.7}
-          dragMomentum={false}
-          onDragEnd={handleDragEnd}
-          whileDrag={{ cursor: 'grabbing' }}
-          className="w-full touch-pan-y active:cursor-grabbing"
+          custom={animDir}
+          variants={tabVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
+          onPanEnd={handlePanEnd}
+          className="w-full min-h-[60vh] touch-pan-y"
         >
           {children}
         </motion.div>
