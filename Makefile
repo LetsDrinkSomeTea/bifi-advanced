@@ -53,3 +53,14 @@ typecheck:
 
 check:
 	$(DC) exec app npm run check
+
+test:
+	$(DC) exec app npm run test
+
+DCT = docker compose -f docker-compose.test.yml -p bifi-test
+
+test-isolated:
+	$(DCT) up --build --exit-code-from tester; \
+	RET=$$?; \
+	$(DCT) down -v; \
+	exit $$RET

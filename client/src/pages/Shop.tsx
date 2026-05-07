@@ -166,8 +166,15 @@ export function Shop(): React.JSX.Element {
                             activeDiscount={singleVariant.activeDiscount}
                             isFavorite={favoriteIds.has(singleVariant.id)}
                             voucherCount={voucherMap.get(singleVariant.id) ?? 0}
-                            onOpenBuySheet={() => { openSheet(item, singleVariant.id); }}
-                            onToggleFavorite={() => { toggleFav({ variantId: singleVariant.id, isFav: favoriteIds.has(singleVariant.id) }); }}
+                            onOpenBuySheet={() => {
+                              openSheet(item, singleVariant.id);
+                            }}
+                            onToggleFavorite={() => {
+                              toggleFav({
+                                variantId: singleVariant.id,
+                                isFav: favoriteIds.has(singleVariant.id),
+                              });
+                            }}
                           />
                         </CardContent>
                       </Card>
@@ -193,8 +200,12 @@ export function Shop(): React.JSX.Element {
                               activeDiscount={v.activeDiscount}
                               isFavorite={favoriteIds.has(v.id)}
                               voucherCount={voucherMap.get(v.id) ?? 0}
-                              onOpenBuySheet={() => { openSheet(item, v.id); }}
-                              onToggleFavorite={() => { toggleFav({ variantId: v.id, isFav: favoriteIds.has(v.id) }); }}
+                              onOpenBuySheet={() => {
+                                openSheet(item, v.id);
+                              }}
+                              onToggleFavorite={() => {
+                                toggleFav({ variantId: v.id, isFav: favoriteIds.has(v.id) });
+                              }}
                             />
                           ))}
                         </div>

@@ -55,7 +55,6 @@ localAuth.post('/bootstrap', zValidator('json', BootstrapSchema), async (c) => {
     );
   }
 
-
   await writeAuditLog({
     actorId: created.id,
     action: 'user.created',

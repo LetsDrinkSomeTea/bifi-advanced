@@ -1,7 +1,18 @@
 import { useParams, useLocation } from 'wouter';
 import { Link } from 'wouter';
 import { useRef, useState } from 'react';
-import { ArrowLeft, Copy, RefreshCw, LogOut, Trash2, UserX, QrCode, X, LoaderCircle, Camera } from 'lucide-react';
+import {
+  ArrowLeft,
+  Copy,
+  RefreshCw,
+  LogOut,
+  Trash2,
+  UserX,
+  QrCode,
+  X,
+  LoaderCircle,
+  Camera,
+} from 'lucide-react';
 import { Layout } from '../components/layout/Layout';
 import {
   useGroupDetail,
@@ -116,10 +127,15 @@ export function GroupDetail(): React.JSX.Element {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { setImageError('Datei zu groß (max 2 MB)'); return; }
+    if (file.size > 2 * 1024 * 1024) {
+      setImageError('Datei zu groß (max 2 MB)');
+      return;
+    }
     setImageError('');
     uploadImage(file, {
-      onError: (err) => { setImageError(err instanceof Error ? err.message : 'Upload fehlgeschlagen'); },
+      onError: (err) => {
+        setImageError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
+      },
     });
     e.target.value = '';
   };
@@ -131,7 +147,9 @@ export function GroupDetail(): React.JSX.Element {
         <div>
           <button
             type="button"
-            onClick={() => { navigate('/social'); }}
+            onClick={() => {
+              navigate('/social');
+            }}
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3 -ml-1 transition-colors"
           >
             <ArrowLeft size={16} />
@@ -147,19 +165,27 @@ export function GroupDetail(): React.JSX.Element {
               {isOwner ? (
                 <button
                   type="button"
-                  onClick={() => { imageInputRef.current?.click(); }}
+                  onClick={() => {
+                    imageInputRef.current?.click();
+                  }}
                   disabled={uploadingImage}
                   className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity rounded-full"
                   title="Gruppenbild ändern"
                 >
-                  {uploadingImage ? <LoaderCircle size={18} className="animate-spin text-white" /> : <Camera size={18} className="text-white" />}
+                  {uploadingImage ? (
+                    <LoaderCircle size={18} className="animate-spin text-white" />
+                  ) : (
+                    <Camera size={18} className="text-white" />
+                  )}
                 </button>
               ) : null}
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold truncate">{group.name}</h1>
               {group.description ? (
-                <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{group.description}</p>
+                <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
+                  {group.description}
+                </p>
               ) : null}
             </div>
           </div>
@@ -172,7 +198,9 @@ export function GroupDetail(): React.JSX.Element {
                 className="hidden"
                 onChange={handleImageChange}
               />
-              {imageError !== '' ? <p className="text-sm text-destructive mt-2">{imageError}</p> : null}
+              {imageError !== '' ? (
+                <p className="text-sm text-destructive mt-2">{imageError}</p>
+              ) : null}
             </>
           ) : null}
         </div>

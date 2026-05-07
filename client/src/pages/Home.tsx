@@ -64,7 +64,10 @@ export function Home(): React.JSX.Element {
       <div className="px-4 py-5 max-w-lg mx-auto space-y-6">
         {/* Banners */}
         {!!(user && authConfig) && (
-          <BalanceWarningBanner balance={user.balance} threshold={authConfig.balanceWarnThreshold} />
+          <BalanceWarningBanner
+            balance={user.balance}
+            threshold={authConfig.balanceWarnThreshold}
+          />
         )}
 
         {/* Favorites */}

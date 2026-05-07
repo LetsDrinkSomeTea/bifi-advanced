@@ -83,7 +83,8 @@ function feedText(
       if (groupName) {
         return isMe ? (
           <>
-            Du hast {itemStr} für die Gruppe <span className="font-medium">{groupName}</span> gekauft
+            Du hast {itemStr} für die Gruppe <span className="font-medium">{groupName}</span>{' '}
+            gekauft
           </>
         ) : (
           <>
@@ -363,21 +364,19 @@ export function FeedItem({ entry, hasConnector = false }: Props): React.JSX.Elem
   const iconMeta = TYPE_ICON[entry.type];
 
   const isGroupEvent =
-    GROUP_TYPES.has(entry.type) ||
-    (entry.type === 'purchase' && entry.targetGroupId !== null);
+    GROUP_TYPES.has(entry.type) || (entry.type === 'purchase' && entry.targetGroupId !== null);
 
   const groupName = entry.metadata?.groupName as string | undefined;
 
-  const avatarNode =
-    isGroupEvent ? (
-      <div className="w-7 h-7 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-        {entry.targetGroupImageUrl ? (
-          <img src={entry.targetGroupImageUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-xs font-bold leading-none">{groupName?.[0]?.toUpperCase()}</span>
-        )}
-      </div>
-    ) : undefined;
+  const avatarNode = isGroupEvent ? (
+    <div className="w-7 h-7 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+      {entry.targetGroupImageUrl ? (
+        <img src={entry.targetGroupImageUrl} alt="" className="w-full h-full object-cover" />
+      ) : (
+        <span className="text-xs font-bold leading-none">{groupName?.[0]?.toUpperCase()}</span>
+      )}
+    </div>
+  ) : undefined;
 
   return (
     <ActivityItem

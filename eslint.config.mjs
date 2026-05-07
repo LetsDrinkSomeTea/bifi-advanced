@@ -12,7 +12,7 @@ export default tseslint.config(
       '**/dev-dist/**',
       'node_modules/**',
       'drizzle/**',
-      '*.config.{js,mjs,ts}',
+      '**/*.config.{js,mjs,ts}',
       'postcss.config.js',
       'tailwind.config.ts',
     ],
@@ -88,6 +88,16 @@ export default tseslint.config(
     files: ['server/**/*.ts'],
     languageOptions: {
       globals: globals.node,
+    },
+  },
+  {
+    files: ['server/src/tests/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 );

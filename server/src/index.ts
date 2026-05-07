@@ -94,7 +94,12 @@ app.route('/api/upload', uploadRoutes);
 
 app.get('/api/uploads/:filename', async (c) => {
   const filename = c.req.param('filename');
-  if (!filename || filename.includes('/') || filename.includes('..') || extname(filename) !== '.webp') {
+  if (
+    !filename ||
+    filename.includes('/') ||
+    filename.includes('..') ||
+    extname(filename) !== '.webp'
+  ) {
     return c.json({ error: 'Not found' }, 404);
   }
   try {
@@ -149,7 +154,7 @@ async function main(): Promise<void> {
   if (process.env.NODE_ENV === 'production' && process.env.TRUST_PROXY !== 'true') {
     console.warn(
       '[WARN] TRUST_PROXY is not set to "true". IP-based rate limiting will share a single bucket ' +
-      'across all clients. Set TRUST_PROXY=true when running behind a reverse proxy.',
+        'across all clients. Set TRUST_PROXY=true when running behind a reverse proxy.',
     );
   }
   console.log(`Starting BiFi with TZ: ${APP_TZ}`);
@@ -159,9 +164,11 @@ async function main(): Promise<void> {
   });
 }
 
-main().catch((err: unknown) => {
-  console.error('Startup failed:', err);
-  process.exit(1);
-});
+if (process.env.NODE_ENV !== 'test') {
+  main().catch((err: unknown) => {
+    console.error('Startup failed:', err);
+    process.exit(1);
+  });
+}
 
 export default app;

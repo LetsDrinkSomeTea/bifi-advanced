@@ -188,7 +188,13 @@ router.post('/:id/leave', requireAuth, async (c) => {
     db
       .select()
       .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, id), eq(groupMembers.userId, user.id), isNull(groupMembers.leftAt))),
+      .where(
+        and(
+          eq(groupMembers.groupId, id),
+          eq(groupMembers.userId, user.id),
+          isNull(groupMembers.leftAt),
+        ),
+      ),
     db.select({ id: groups.id, name: groups.name }).from(groups).where(eq(groups.id, id)),
   ]);
   if (!membership) return c.json({ error: 'Not a member', code: 'NOT_MEMBER' }, 404);
@@ -240,7 +246,13 @@ router.delete('/:id/members/:userId', requireAuth, async (c) => {
   const [myMembership] = await db
     .select()
     .from(groupMembers)
-    .where(and(eq(groupMembers.groupId, id), eq(groupMembers.userId, self.id), isNull(groupMembers.leftAt)));
+    .where(
+      and(
+        eq(groupMembers.groupId, id),
+        eq(groupMembers.userId, self.id),
+        isNull(groupMembers.leftAt),
+      ),
+    );
   if (myMembership?.role !== 'owner') return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
 
   if (userId === self.id)
@@ -249,7 +261,13 @@ router.delete('/:id/members/:userId', requireAuth, async (c) => {
   await db
     .update(groupMembers)
     .set({ leftAt: new Date() })
-    .where(and(eq(groupMembers.groupId, id), eq(groupMembers.userId, userId), isNull(groupMembers.leftAt)));
+    .where(
+      and(
+        eq(groupMembers.groupId, id),
+        eq(groupMembers.userId, userId),
+        isNull(groupMembers.leftAt),
+      ),
+    );
   return c.body(null, 204);
 });
 
@@ -294,31 +312,32 @@ const UpdateGroupSchema = z.object({
   description: z.string().max(300).nullable().optional(),
 });
 
-router.patch(
-  '/:id',
-  requireAuth,
-  zValidator('json', UpdateGroupSchema),
-  async (c) => {
-    const self = c.get('user');
-    const { id } = c.req.param();
-    const body = c.req.valid('json');
+router.patch('/:id', requireAuth, zValidator('json', UpdateGroupSchema), async (c) => {
+  const self = c.get('user');
+  const { id } = c.req.param();
+  const body = c.req.valid('json');
 
-    const [myMembership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, id), eq(groupMembers.userId, self.id), isNull(groupMembers.leftAt)));
-    if (myMembership?.role !== 'owner') return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
+  const [myMembership] = await db
+    .select()
+    .from(groupMembers)
+    .where(
+      and(
+        eq(groupMembers.groupId, id),
+        eq(groupMembers.userId, self.id),
+        isNull(groupMembers.leftAt),
+      ),
+    );
+  if (myMembership?.role !== 'owner') return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
 
-    const [updated] = await db
-      .update(groups)
-      .set(body)
-      .where(and(eq(groups.id, id), eq(groups.isActive, true)))
-      .returning();
+  const [updated] = await db
+    .update(groups)
+    .set(body)
+    .where(and(eq(groups.id, id), eq(groups.isActive, true)))
+    .returning();
 
-    if (!updated) return c.json({ error: 'Group not found', code: 'NOT_FOUND' }, 404);
-    return c.json(updated);
-  },
-);
+  if (!updated) return c.json({ error: 'Group not found', code: 'NOT_FOUND' }, 404);
+  return c.json(updated);
+});
 
 // ─── PATCH /api/groups/:id/invite-code ───────────────────────────────────────
 
@@ -329,7 +348,13 @@ router.patch('/:id/invite-code', requireAuth, async (c) => {
   const [myMembership] = await db
     .select()
     .from(groupMembers)
-    .where(and(eq(groupMembers.groupId, id), eq(groupMembers.userId, self.id), isNull(groupMembers.leftAt)));
+    .where(
+      and(
+        eq(groupMembers.groupId, id),
+        eq(groupMembers.userId, self.id),
+        isNull(groupMembers.leftAt),
+      ),
+    );
   if (myMembership?.role !== 'owner') return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
 
   const newCode = generateInviteCode();

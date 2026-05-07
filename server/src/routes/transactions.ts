@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { and, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
-import { PurchaseSchema } from '../../../shared/src/schemas.ts';
+import { TRANSACTION_TYPES, PurchaseSchema } from '../../../shared/src/schemas.ts';
 import { db } from '../db/index.ts';
 import {
   buyables,
@@ -46,11 +46,12 @@ function formatCents(cents: number): string {
 const HistoryQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  type: z.enum(TRANSACTION_TYPES).optional(),
 });
 
 router.get('/', requireAuth, zValidator('query', HistoryQuerySchema), async (c) => {
   const user = c.get('user');
-  const { cursor, limit } = c.req.valid('query');
+  const { cursor, limit, type } = c.req.valid('query');
 
   const parsed = cursor ? decodeCursor(cursor) : null;
   const cursorDate = parsed ? new Date(parsed.t) : null;
@@ -62,6 +63,7 @@ router.get('/', requireAuth, zValidator('query', HistoryQuerySchema), async (c) 
     .where(
       and(
         eq(transactions.userId, user.id),
+        type ? eq(transactions.type, type) : undefined,
         cursorDate && cursorId
           ? or(
               lt(transactions.createdAt, cursorDate),
@@ -347,6 +349,8 @@ router.post(
     const user = c.get('user');
     const body = c.req.valid('json');
 
+    const allowNegative = process.env.ALLOW_NEGATIVE_BALANCE !== 'false';
+
     // ── Group purchase: split equally among all members ───────────────────────
     if (body.groupId) {
       const [members, [group]] = await Promise.all([
@@ -376,6 +380,24 @@ router.post(
         // Distribute cost: each member pays ceil(cost/n), buyer absorbs rounding
         const sharePerOther = Math.ceil(cost / n);
         const buyerShare = cost - sharePerOther * (n - 1);
+
+        if (!allowNegative) {
+          // In a group purchase, we check the buyer's balance.
+          // Other members will be deducted later, but usually group buys are initiated by someone who covers it or it's a shared debt.
+          // For simplicity and to match solo behavior, we check the buyer here.
+          const [freshUser] = await tx
+            .select({ balance: users.balance })
+            .from(users)
+            .where(eq(users.id, user.id))
+            .for('update');
+          if ((freshUser?.balance ?? 0) < buyerShare) {
+            throw Object.assign(new Error('Unzureichendes Guthaben'), {
+              status: 402,
+              code: 'INSUFFICIENT_BALANCE',
+            });
+          }
+        }
+
         // Purchaser's transaction (has items)
         const [primary] = await tx
           .insert(transactions)
@@ -430,6 +452,20 @@ router.post(
 
           if (!splitTxn) {
             throw new Error('Failed to create split transaction');
+          }
+
+          if (!allowNegative) {
+            const [mUser] = await tx
+              .select({ balance: users.balance })
+              .from(users)
+              .where(eq(users.id, memberId))
+              .for('update');
+            if ((mUser?.balance ?? 0) < sharePerOther) {
+              throw Object.assign(new Error(`Unzureichendes Guthaben bei einem Gruppenmitglied`), {
+                status: 402,
+                code: 'INSUFFICIENT_BALANCE_MEMBER',
+              });
+            }
           }
 
           await tx
@@ -573,6 +609,20 @@ router.post(
 
       const { credit, vouchers } = await redeemVouchers(tx, user.id, itemPrices, created.id);
       const netCost = Math.max(0, cost - credit);
+
+      if (!allowNegative) {
+        const [freshUser] = await tx
+          .select({ balance: users.balance })
+          .from(users)
+          .where(eq(users.id, user.id))
+          .for('update');
+        if ((freshUser?.balance ?? 0) < netCost) {
+          throw Object.assign(new Error('Unzureichendes Guthaben'), {
+            status: 402,
+            code: 'INSUFFICIENT_BALANCE',
+          });
+        }
+      }
 
       await tx
         .update(users)
@@ -728,7 +778,10 @@ router.delete('/:id', requireAuth, async (c) => {
         .returning({ id: transactions.id });
 
       if (!cancelled) {
-        throw Object.assign(new Error('Already cancelled'), { status: 409, code: 'ALREADY_CANCELLED' });
+        throw Object.assign(new Error('Already cancelled'), {
+          status: 409,
+          code: 'ALREADY_CANCELLED',
+        });
       }
 
       // totalAmount is negative for purchases, so subtracting it adds back the balance

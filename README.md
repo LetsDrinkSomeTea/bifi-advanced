@@ -34,6 +34,7 @@ BiFi ist eine digitale Getränke-Strichliste für Vereine, Gruppen und Wohngemei
 ### Setup
 
 1.  **Repository klonen:**
+
     ```bash
     git clone https://github.com/your-repo/bifi.git
     cd bifi
@@ -41,6 +42,7 @@ BiFi ist eine digitale Getränke-Strichliste für Vereine, Gruppen und Wohngemei
 
 2.  **Umgebungsvariablen konfigurieren:**
     Kopiere die `.env.example` nach `.env` und passe die Werte an.
+
     ```bash
     cp .env.example .env
     ```
@@ -53,33 +55,34 @@ BiFi ist eine digitale Getränke-Strichliste für Vereine, Gruppen und Wohngemei
 
 ### Nützliche Make-Targets
 
-| Befehl | Beschreibung |
-| :--- | :--- |
-| `make dev` | Vollständigen Dev-Stack starten (mit Build) |
-| `make db-setup` | Migration generieren + anwenden |
-| `make db-studio` | Drizzle Studio öffnen (Port 4983) |
-| `make shell` | Shell im laufenden App-Container |
-| `make logs` | Container-Logs verfolgen |
-| `make check` | Lint + Typecheck ausführen |
+| Befehl           | Beschreibung                                |
+| :--------------- | :------------------------------------------ |
+| `make dev`       | Vollständigen Dev-Stack starten (mit Build) |
+| `make db-setup`  | Migration generieren + anwenden             |
+| `make db-studio` | Drizzle Studio öffnen (Port 4983)           |
+| `make shell`     | Shell im laufenden App-Container            |
+| `make logs`      | Container-Logs verfolgen                    |
+| `make check`     | Lint + Typecheck ausführen                  |
 
 ---
 
 ## ⚙️ Umgebungsvariablen (.env)
 
-| Variable | Beschreibung | Standard / Beispiel |
-| :--- | :--- | :--- |
-| `DATABASE_URL` | Verbindung zur PostgreSQL DB | `postgresql://bifi:bifi_password@localhost:5432/bifi` |
-| `REDIS_URL` | Verbindung zum Redis Cache | `redis://localhost:6379` |
-| `SESSION_SECRET` | Geheimnis für Session-Cookies (min. 32 Zeichen) | `change-me-to-a-random-string` |
-| `APP_URL` | Öffentliche URL der App | `http://localhost:3000` |
-| `OIDC_ISSUER` | OIDC Provider URL (z.B. Authentik) | `https://auth.example.com/...` |
-| `OIDC_CLIENT_ID` | OIDC Client ID | - |
-| `OIDC_AUTO_REDIRECT`| Automatischer Redirect zum OIDC Login | `false` |
-| `LOCAL_AUTH_ENABLED`| Lokalen Login (Nutzer/Passwort) erlauben | `true` |
-| `JACKPOT_ENABLED` | Aktiviert das Jackpot-Feature | `false` |
-| `BALANCE_WARN_THRESHOLD`| Schwellenwert für Warnbanner (in Cents) | `-2000` |
-| `MAX_DEPOSIT_AMOUNT` | Maximaler Einzahlungsbetrag pro Transaktion (in Cents) | `10000` (= 100 €) |
-| `UPLOAD_DIR` | Pfad zum Verzeichnis für hochgeladene Bilder | `/app/uploads` |
+| Variable                 | Beschreibung                                           | Standard / Beispiel                                   |
+| :----------------------- | :----------------------------------------------------- | :---------------------------------------------------- |
+| `DATABASE_URL`           | Verbindung zur PostgreSQL DB                           | `postgresql://bifi:bifi_password@localhost:5432/bifi` |
+| `REDIS_URL`              | Verbindung zum Redis Cache                             | `redis://localhost:6379`                              |
+| `SESSION_SECRET`         | Geheimnis für Session-Cookies (min. 32 Zeichen)        | `change-me-to-a-random-string`                        |
+| `APP_URL`                | Öffentliche URL der App                                | `http://localhost:3000`                               |
+| `OIDC_ISSUER`            | OIDC Provider URL (z.B. Authentik)                     | `https://auth.example.com/...`                        |
+| `OIDC_CLIENT_ID`         | OIDC Client ID                                         | -                                                     |
+| `OIDC_AUTO_REDIRECT`     | Automatischer Redirect zum OIDC Login                  | `false`                                               |
+| `LOCAL_AUTH_ENABLED`     | Lokalen Login (Nutzer/Passwort) erlauben               | `true`                                                |
+| `JACKPOT_ENABLED`        | Aktiviert das Jackpot-Feature                          | `false`                                               |
+| `BALANCE_WARN_THRESHOLD` | Schwellenwert für Warnbanner (in Cents)                | `-2000`                                               |
+| `MAX_DEPOSIT_AMOUNT`     | Maximaler Einzahlungsbetrag pro Transaktion (in Cents) | `10000` (= 100 €)                                     |
+| `ALLOW_NEGATIVE_BALANCE` | Ob Benutzer einen negativen Kontostand haben dürfen    | `true`                                                |
+| `UPLOAD_DIR`             | Pfad zum Verzeichnis für hochgeladene Bilder           | `/app/uploads`                                        |
 
 ---
 

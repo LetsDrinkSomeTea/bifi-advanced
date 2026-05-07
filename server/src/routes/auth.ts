@@ -12,7 +12,12 @@ import {
   randomPKCECodeVerifier,
   calculatePKCECodeChallenge,
 } from '../services/oidc.ts';
-import { linkSessionToUser, regenerateSession, unlinkSessionFromUser, invalidateSession } from '../middleware/session.ts';
+import {
+  linkSessionToUser,
+  regenerateSession,
+  unlinkSessionFromUser,
+  invalidateSession,
+} from '../middleware/session.ts';
 import { requireAuth } from '../middleware/auth.ts';
 import { SafeImageUrlSchema } from '../lib/url.ts';
 import { getClientIp } from '../lib/ip.ts';

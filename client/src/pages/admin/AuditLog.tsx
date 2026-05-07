@@ -24,7 +24,11 @@ interface ChangesData {
   [key: string]: unknown;
 }
 
-function ChangesView({ changes }: { changes: ChangesData | null | undefined }): React.JSX.Element | null {
+function ChangesView({
+  changes,
+}: {
+  changes: ChangesData | null | undefined;
+}): React.JSX.Element | null {
   if (!changes) return null;
 
   const { before, after } = changes;
@@ -48,7 +52,9 @@ function ChangesView({ changes }: { changes: ChangesData | null | undefined }): 
     });
 
     if (changedKeys.length === 0) {
-      return <p className="text-[10px] italic text-muted-foreground">Keine relevanten Änderungen.</p>;
+      return (
+        <p className="text-[10px] italic text-muted-foreground">Keine relevanten Änderungen.</p>
+      );
     }
 
     return (
@@ -75,9 +81,10 @@ function ChangesView({ changes }: { changes: ChangesData | null | undefined }): 
   }
 
   // Case: Create / Single state (only after or just the object)
-  const displayObj = (after ?? changes.after ?? (before ? null : changes));
+  const displayObj = after ?? changes.after ?? (before ? null : changes);
   if (!displayObj || typeof displayObj !== 'object') {
-    if (before) return <p className="text-[10px] text-destructive-strong font-bold">Ressource gelöscht.</p>;
+    if (before)
+      return <p className="text-[10px] text-destructive-strong font-bold">Ressource gelöscht.</p>;
     return null;
   }
 
@@ -88,9 +95,14 @@ function ChangesView({ changes }: { changes: ChangesData | null | undefined }): 
   return (
     <div className="space-y-1">
       {keys.map((key) => (
-        <div key={key} className="flex justify-between text-[11px] border-b border-border/30 pb-1 last:border-0">
+        <div
+          key={key}
+          className="flex justify-between text-[11px] border-b border-border/30 pb-1 last:border-0"
+        >
           <span className="font-bold text-muted-foreground">{key}</span>
-          <span className="font-mono text-foreground text-right">{formatValue(displayObj[key])}</span>
+          <span className="font-mono text-foreground text-right">
+            {formatValue(displayObj[key])}
+          </span>
         </div>
       ))}
     </div>
@@ -106,7 +118,9 @@ function AuditLogCard({
   isExpanded: boolean;
   onToggleExpand: (id: string) => void;
 }): React.JSX.Element {
-  const getBadgeVariant = (action: string): "primary-soft" | "confirm-soft" | "accent-soft" | "secondary-soft" | "muted-soft" => {
+  const getBadgeVariant = (
+    action: string,
+  ): 'primary-soft' | 'confirm-soft' | 'accent-soft' | 'secondary-soft' | 'muted-soft' => {
     if (action.startsWith('user.')) return 'primary-soft';
     if (action === 'deposit') return 'confirm-soft';
     if (action.startsWith('transaction.')) return 'accent-soft';
@@ -140,11 +154,9 @@ function AuditLogCard({
           </div>
 
           {entry.resourceName ? (
-            <p className="text-xs font-bold text-foreground mb-1">
-              {entry.resourceName}
-            </p>
+            <p className="text-xs font-bold text-foreground mb-1">{entry.resourceName}</p>
           ) : null}
-          
+
           <div className="flex items-center gap-2 text-xs">
             <span className="flex items-center gap-1 font-medium text-foreground">
               <UserIcon size={12} className="text-muted-foreground" />
@@ -175,10 +187,12 @@ function AuditLogCard({
               IP: {entry.ipAddress}
             </div>
           ) : null}
-          
+
           {entry.changes ? (
             <div className="space-y-1">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Details</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Details
+              </p>
               <div className="bg-muted/30 p-3 rounded-xl border border-border/50">
                 <ChangesView changes={entry.changes} />
               </div>
@@ -200,13 +214,7 @@ export function AdminAuditLogContent(): React.JSX.Element {
   const [resourceTypeFilter, setResourceTypeFilter] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const {
-    data,
-    isLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useAuditLog({
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useAuditLog({
     action: actionFilter || undefined,
     resourceType: resourceTypeFilter || undefined,
   });
@@ -233,7 +241,9 @@ export function AdminAuditLogContent(): React.JSX.Element {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Kategorie</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">
+              Kategorie
+            </label>
             <Select
               value={actionFilter}
               onChange={(e) => {
@@ -252,7 +262,9 @@ export function AdminAuditLogContent(): React.JSX.Element {
             </Select>
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Ressource</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">
+              Ressource
+            </label>
             <Select
               value={resourceTypeFilter}
               onChange={(e) => {
@@ -287,7 +299,7 @@ export function AdminAuditLogContent(): React.JSX.Element {
               onToggleExpand={toggleExpand}
             />
           ))}
-          
+
           {allEntries.length === 0 && (
             <div className="py-12 text-center text-muted-foreground">
               <p>Keine Einträge gefunden.</p>
@@ -297,7 +309,9 @@ export function AdminAuditLogContent(): React.JSX.Element {
           {hasNextPage ? (
             <div className="pt-2">
               <Button
-                onClick={() => { void fetchNextPage(); }}
+                onClick={() => {
+                  void fetchNextPage();
+                }}
                 disabled={isFetchingNextPage}
                 variant="outline"
                 className="w-full"

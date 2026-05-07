@@ -197,7 +197,9 @@ function parseMaxDepositAmount(): number {
   if (raw === undefined) return 10_000;
   const v = parseInt(raw, 10);
   if (!Number.isFinite(v) || v <= 0) {
-    throw new Error(`MAX_DEPOSIT_AMOUNT muss eine positive ganze Zahl (Cent) sein, erhalten: "${raw}"`);
+    throw new Error(
+      `MAX_DEPOSIT_AMOUNT muss eine positive ganze Zahl (Cent) sein, erhalten: "${raw}"`,
+    );
   }
   return v;
 }

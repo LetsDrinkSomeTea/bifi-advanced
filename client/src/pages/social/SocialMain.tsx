@@ -335,7 +335,13 @@ function SearchResults({
 
     const groupItems: SearchItem[] = (groups ?? [])
       .filter((g) => g.name.toLowerCase().includes(q))
-      .map((g) => ({ kind: 'group', id: g.id, name: g.name, memberCount: g.memberCount, imageUrl: g.imageUrl }));
+      .map((g) => ({
+        kind: 'group',
+        id: g.id,
+        name: g.name,
+        memberCount: g.memberCount,
+        imageUrl: g.imageUrl,
+      }));
 
     const friendItems: SearchItem[] = (friends ?? [])
       .filter((f) => f.displayName.toLowerCase().includes(q))

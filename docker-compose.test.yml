@@ -1,0 +1,37 @@
+services:
+  db-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: bifi_test
+      POSTGRES_USER: bifi
+      POSTGRES_PASSWORD: bifi_password
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U bifi -d bifi_test']
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  redis-test:
+    image: redis:7-alpine
+
+  tester:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      DATABASE_URL: postgresql://bifi:bifi_password@db-test:5432/bifi_test
+      REDIS_URL: redis://redis-test:6379
+      NODE_ENV: test
+      SESSION_SECRET: test-secret-32-chars-long-minimal-length
+      # Disable background tasks that might interfere
+      OIDC_AUTO_REDIRECT: 'false'
+      LOCAL_AUTH_ENABLED: 'true'
+    depends_on:
+      db-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_started
+    command: ['sh', '-c', 'npx drizzle-kit migrate && npm run test:server']

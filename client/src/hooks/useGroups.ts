@@ -133,8 +133,12 @@ export function useUploadGroupImage(
         body: form,
         credentials: 'include',
       });
-      interface UploadResponse { imageUrl: string; error?: string; code?: string; }
-      const data = await res.json() as UploadResponse;
+      interface UploadResponse {
+        imageUrl: string;
+        error?: string;
+        code?: string;
+      }
+      const data = (await res.json()) as UploadResponse;
       if (!res.ok) throw new ApiError(data.error ?? res.statusText, data.code, res.status);
       return data;
     },

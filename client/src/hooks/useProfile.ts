@@ -29,8 +29,12 @@ export function useUploadAvatar(): UseMutationResult<{ avatarUrl: string }, Erro
         body: form,
         credentials: 'include',
       });
-      interface UploadResponse { avatarUrl: string; error?: string; code?: string; }
-      const data = await res.json() as UploadResponse;
+      interface UploadResponse {
+        avatarUrl: string;
+        error?: string;
+        code?: string;
+      }
+      const data = (await res.json()) as UploadResponse;
       if (!res.ok) throw new ApiError(data.error ?? res.statusText, data.code, res.status);
       return data;
     },

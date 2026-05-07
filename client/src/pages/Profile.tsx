@@ -56,19 +56,32 @@ function EditProfileModal({
     setError('');
 
     const doUpdate = (): void => {
-      if (!canEditName) { onClose(); return; }
+      if (!canEditName) {
+        onClose();
+        return;
+      }
       const body: { displayName?: string; username?: string | null } = {
         displayName: displayName.trim() || undefined,
         username: username.trim() || null,
       };
-      if (!body.displayName && body.username === null) { onClose(); return; }
-      update(body, { onSuccess: onClose, onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); } });
+      if (!body.displayName && body.username === null) {
+        onClose();
+        return;
+      }
+      update(body, {
+        onSuccess: onClose,
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Fehler');
+        },
+      });
     };
 
     if (pendingFile) {
       uploadAvatar(pendingFile, {
         onSuccess: doUpdate,
-        onError: (err) => { setError(err instanceof Error ? err.message : 'Upload fehlgeschlagen'); },
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
+        },
       });
     } else {
       if (canEditName) {
@@ -76,7 +89,12 @@ function EditProfileModal({
           displayName: displayName.trim() || undefined,
           username: username.trim() || null,
         };
-        update(body, { onSuccess: onClose, onError: (err) => { setError(err instanceof Error ? err.message : 'Fehler'); } });
+        update(body, {
+          onSuccess: onClose,
+          onError: (err) => {
+            setError(err instanceof Error ? err.message : 'Fehler');
+          },
+        });
       } else {
         onClose();
       }
@@ -103,7 +121,9 @@ function EditProfileModal({
               variant="outline"
               size="sm"
               className="gap-2"
-              onClick={() => { fileRef.current?.click(); }}
+              onClick={() => {
+                fileRef.current?.click();
+              }}
             >
               <Upload size={14} />
               Bild wählen

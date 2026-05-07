@@ -76,7 +76,10 @@ router.post('/avatar', requireAuth, uploadRateLimit, async (c) => {
   const avatarUrl = `/api/uploads/${filename}`;
 
   const user = c.get('user');
-  const [current] = await db.select({ avatarUrl: users.avatarUrl }).from(users).where(eq(users.id, user.id));
+  const [current] = await db
+    .select({ avatarUrl: users.avatarUrl })
+    .from(users)
+    .where(eq(users.id, user.id));
   await deleteOldFile(current?.avatarUrl ?? null);
 
   await db.update(users).set({ avatarUrl, updatedAt: new Date() }).where(eq(users.id, user.id));

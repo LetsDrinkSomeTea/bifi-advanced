@@ -102,29 +102,33 @@ export const groups = pgTable('groups', {
   createdAt: createdAt(),
 });
 
-export const transactions = pgTable('transactions', {
-  id: id(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id),
-  initiatedBy: uuid('initiated_by')
-    .notNull()
-    .references(() => users.id),
-  type: transactionTypeEnum('type').notNull(),
-  totalAmount: integer('total_amount').notNull(),
-  groupId: uuid('group_id').references(() => groups.id),
-  parentTransactionId: uuid('parent_transaction_id'),
-  note: text('note'),
-  cancelledAt: timestamp('cancelled_at'),
-  cancelledBy: uuid('cancelled_by').references(() => users.id),
-  jackpotMultiplier: numeric('jackpot_multiplier', { precision: 4, scale: 2 }),
-  createdAt: createdAt(),
-}, (t) => [
-  foreignKey({
-    columns: [t.parentTransactionId],
-    foreignColumns: [t.id],
-  }),
-]);
+export const transactions = pgTable(
+  'transactions',
+  {
+    id: id(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+    initiatedBy: uuid('initiated_by')
+      .notNull()
+      .references(() => users.id),
+    type: transactionTypeEnum('type').notNull(),
+    totalAmount: integer('total_amount').notNull(),
+    groupId: uuid('group_id').references(() => groups.id),
+    parentTransactionId: uuid('parent_transaction_id'),
+    note: text('note'),
+    cancelledAt: timestamp('cancelled_at'),
+    cancelledBy: uuid('cancelled_by').references(() => users.id),
+    jackpotMultiplier: numeric('jackpot_multiplier', { precision: 4, scale: 2 }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.parentTransactionId],
+      foreignColumns: [t.id],
+    }),
+  ],
+);
 
 export const transactionItems = pgTable('transaction_items', {
   id: id(),

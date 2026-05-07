@@ -282,10 +282,7 @@ router.patch('/me', requireAuth, zValidator('json', UpdateProfileSchema), async 
     });
   } catch (err: unknown) {
     const code =
-      typeof err === 'object' &&
-      err !== null &&
-      'code' in err &&
-      typeof err.code === 'string'
+      typeof err === 'object' && err !== null && 'code' in err && typeof err.code === 'string'
         ? err.code
         : null;
     if (code === '23505') {

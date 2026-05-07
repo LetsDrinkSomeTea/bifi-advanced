@@ -293,7 +293,9 @@ export function useAuditLog(
       if (filters.resourceType) params.set('resourceType', filters.resourceType);
       if (filters.actorId) params.set('actorId', filters.actorId);
       const qs = params.toString();
-      return api.get<PaginatedResponse<AuditLogEntry>>(`/api/admin/audit-logs${qs ? `?${qs}` : ''}`);
+      return api.get<PaginatedResponse<AuditLogEntry>>(
+        `/api/admin/audit-logs${qs ? `?${qs}` : ''}`,
+      );
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.nextCursor ?? undefined,

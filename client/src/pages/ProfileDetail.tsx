@@ -238,7 +238,9 @@ function NudgeSheet({
                 Senden
               </Button>
             </div>
-            {error !== null ? <p className="text-xs text-destructive mt-2">{error.message}</p> : null}
+            {error !== null ? (
+              <p className="text-xs text-destructive mt-2">{error.message}</p>
+            ) : null}
           </div>
         </div>
       </div>
@@ -342,7 +344,11 @@ function ProstSheet({
                     {v.name}
                   </span>
                 </div>
-                <PriceDisplay price={v.price} size="lg" className="group-hover:text-accent-strong" />
+                <PriceDisplay
+                  price={v.price}
+                  size="lg"
+                  className="group-hover:text-accent-strong"
+                />
               </Button>
             ))
           )}
