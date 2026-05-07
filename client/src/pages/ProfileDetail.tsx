@@ -415,7 +415,11 @@ export function ProfileDetail(): React.JSX.Element {
         <PageHeader
           title=""
           onBack={() => {
-            navigate('/social');
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              navigate('/social');
+            }
           }}
         />
 

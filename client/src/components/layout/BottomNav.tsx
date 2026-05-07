@@ -1,11 +1,13 @@
-import { Home, ShoppingBag, Users, User } from 'lucide-react';
+import { Home, ShoppingBag, Users, User, Clock } from 'lucide-react';
 import { useLocation, Link } from 'wouter';
 import { useFriendRequests } from '../../hooks/useFriends';
+import { useSSE } from '../../hooks/useNotifications';
 import { cn } from '../../lib/utils';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/shop', label: 'Shop', icon: ShoppingBag },
+  { href: '/verlauf', label: 'Verlauf', icon: Clock },
   { href: '/social', label: 'Sozial', icon: Users },
   { href: '/profile', label: 'Profil', icon: User },
 ];
@@ -13,13 +15,19 @@ const NAV_ITEMS = [
 export function BottomNav(): React.JSX.Element {
   const [location] = useLocation();
   const { data: requests } = useFriendRequests();
+  const { unreadCount } = useSSE();
   const requestCount = requests?.length ?? 0;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-10 flex items-center justify-around h-16 border-t border-border bg-background/95 backdrop-blur-sm safe-area-bottom">
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
         const active = href === '/' ? location === '/' : location.startsWith(href);
-        const badge = href === '/social' && requestCount > 0 ? requestCount : 0;
+        const badge =
+          href === '/social' && requestCount > 0
+            ? requestCount
+            : href === '/verlauf' && unreadCount > 0
+              ? unreadCount
+              : 0;
         return (
           <Link
             key={href}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Switch, Route, Redirect } from 'wouter';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 import { queryClient } from './lib/queryClient';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { Home } from './pages/Home';
@@ -8,6 +9,7 @@ import { Login } from './pages/Login';
 import { Shop } from './pages/Shop';
 import { History } from './pages/History';
 import { Feed } from './pages/Feed';
+import { Verlauf } from './pages/Verlauf';
 import { Profile } from './pages/Profile';
 import { ProfileDetail } from './pages/ProfileDetail';
 import { SocialPage } from './pages/social/SocialPage';
@@ -33,9 +35,15 @@ export function App(): React.JSX.Element {
             </ProtectedRoute>
           </Route>
           <Route path="/history">
-            <ProtectedRoute>
-              <History />
-            </ProtectedRoute>
+            <Redirect to="/verlauf/transaktionen" />
+          </Route>
+
+          <Route path="/verlauf/:tab?">
+            {() => (
+              <ProtectedRoute>
+                <Verlauf />
+              </ProtectedRoute>
+            )}
           </Route>
 
           <Route path="/profile">
@@ -67,9 +75,7 @@ export function App(): React.JSX.Element {
           </Route>
 
           <Route path="/feed">
-            <ProtectedRoute>
-              <Feed />
-            </ProtectedRoute>
+            <Redirect to="/verlauf" />
           </Route>
           {/* Social Routes */}
           <Route path="/social/:tab?">
@@ -127,6 +133,7 @@ export function App(): React.JSX.Element {
           </Route>
         </Switch>
         <GlobalDialog />
+        <Toaster position="bottom-center" theme="system" richColors closeButton />
       </DialogProvider>
     </QueryClientProvider>
   );

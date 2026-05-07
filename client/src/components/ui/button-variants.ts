@@ -17,7 +17,7 @@ export const buttonVariants = cva(
         ghost: 'gap-1.5 hover:bg-primary-soft hover:text-primary-strong',
         link: 'gap-1.5 text-primary underline-offset-4 hover:underline',
         accent_dashed:
-          'rounded-2xl border-2 border-dashed border-accent-strong/40 text-accent-strong font-black flex flex-col hover:bg-accent-soft hover:border-accent-strong/60 hover:scale-[1.01] transition-all',
+          'rounded-2xl border-4 border-dashed border-accent-soft text-accent-strong font-black flex flex-col hover:bg-accent-soft hover:border-accent-strong/60 transition-all',
         'primary-soft': 'gap-1.5 bg-primary-soft text-primary-strong hover:bg-primary-soft-hover',
         'destructive-soft':
           'gap-1.5 bg-destructive-soft text-destructive-strong hover:bg-destructive-soft-hover',

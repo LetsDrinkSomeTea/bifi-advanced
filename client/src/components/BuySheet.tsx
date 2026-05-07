@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { X, Users2, Dices, Gift, Check } from 'lucide-react';
 import type { BuyableWithVariants } from '@shared/types';
 import { usePurchase } from '../hooks/useTransactions';
@@ -20,10 +21,10 @@ interface Props {
 export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.JSX.Element | null {
   const [variantId, setVariantId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [groupId, setGroupId] = useState<string | null>(null);
   const [jackpotOpen, setJackpotOpen] = useState(false);
   const [show, setShow] = useState(false);
+  const [buyDone, setBuyDone] = useState(false);
 
   const { mutate, isPending } = usePurchase();
   const { data: groups } = useGroups();
@@ -43,9 +44,9 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
       const firstVariantId = variants[0]?.id ?? null;
       setVariantId(isSingleVariant ? firstVariantId : (initialVariantId ?? null));
       setQuantity(1);
-      setFeedback(null);
       setGroupId(null);
       setJackpotOpen(false);
+      setBuyDone(false);
     }
   }
 
@@ -96,12 +97,12 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
     mutate(
       { items: [{ buyableId: buyable.id, variantId, quantity }], groupId: groupId ?? undefined },
       {
-        onSuccess: (data) => {
-          setFeedback(data.voucherRedeemed ? 'Gutschein eingelöst!' : 'Gekauft!');
-          setTimeout(handleClose, 1000);
+        onSuccess: (_data) => {
+          setBuyDone(true);
+          setTimeout(handleClose, 700);
         },
         onError: (err) => {
-          setFeedback(err instanceof Error ? err.message : 'Fehler beim Kauf');
+          toast.error(err instanceof Error ? err.message : 'Fehler beim Kauf');
         },
       },
     );
@@ -270,25 +271,6 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
             </div>
           ) : null}
 
-          {/* Feedback */}
-          {feedback ? (
-            <div
-              className={cn(
-                'p-3 rounded-xl text-sm font-bold text-center animate-in fade-in slide-in-from-bottom-2',
-                feedback.includes('Gekauft') || feedback.includes('Gutschein')
-                  ? 'bg-confirm/10 text-confirm'
-                  : 'bg-destructive/10 text-destructive',
-              )}
-            >
-              <div className="flex items-center justify-center gap-2">
-                {feedback.includes('Gekauft') || feedback.includes('Gutschein') ? (
-                  <Check size={16} />
-                ) : null}
-                {feedback}
-              </div>
-            </div>
-          ) : null}
-
           {/* Action Buttons */}
           <div className="flex pt-2">
             <div
@@ -316,14 +298,17 @@ export function BuySheet({ buyable, initialVariantId, onClose }: Props): React.J
             </div>
 
             <Button
-              disabled={!canBuy || isPending}
+              disabled={!canBuy || isPending || buyDone}
               onClick={handleBuy}
               className={cn(
                 'flex-1 min-w-0 h-16 rounded-xl font-black transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-0.5 px-3',
-                'disabled:opacity-60',
+                'disabled:opacity-100',
+                buyDone && 'bg-confirm border-confirm-strong text-confirm-foreground scale-[1.02]',
               )}
             >
-              {isPending ? (
+              {buyDone ? (
+                <Check size={26} strokeWidth={3} />
+              ) : isPending ? (
                 <span className="text-base">Wird gebucht…</span>
               ) : effectiveTotal === 0 ? (
                 <div className="flex flex-col items-center leading-none">

@@ -19,7 +19,7 @@ function notificationHref(n: AppNotification): string | null {
     case 'friend_request':
       return n.relatedId ? `/profile/${n.relatedId}` : '/social';
     case 'deposit':
-      return '/history';
+      return '/verlauf/transaktionen';
     case 'balance_warning':
       return '/profile';
     default:

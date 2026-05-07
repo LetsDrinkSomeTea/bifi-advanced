@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { Pencil, BarChart2, Beer, Upload } from 'lucide-react';
 import { Link } from 'wouter';
 import { Layout } from '../components/layout/Layout';
@@ -71,7 +72,7 @@ function EditProfileModal({
       update(body, {
         onSuccess: onClose,
         onError: (err) => {
-          setError(err instanceof Error ? err.message : 'Fehler');
+          toast.error(err instanceof Error ? err.message : 'Fehler beim Speichern');
         },
       });
     };
@@ -80,7 +81,7 @@ function EditProfileModal({
       uploadAvatar(pendingFile, {
         onSuccess: doUpdate,
         onError: (err) => {
-          setError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
+          toast.error(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
         },
       });
     } else {
@@ -92,7 +93,7 @@ function EditProfileModal({
         update(body, {
           onSuccess: onClose,
           onError: (err) => {
-            setError(err instanceof Error ? err.message : 'Fehler');
+            toast.error(err instanceof Error ? err.message : 'Fehler beim Speichern');
           },
         });
       } else {
@@ -147,7 +148,6 @@ function EditProfileModal({
                 value={displayName}
                 onChange={(e) => {
                   setDisplayName(e.target.value);
-                  setError('');
                 }}
               />
             </div>
@@ -158,7 +158,6 @@ function EditProfileModal({
                 value={username}
                 onChange={(e) => {
                   setUsername(e.target.value);
-                  setError('');
                 }}
                 placeholder="z.B. max_mustermann"
               />

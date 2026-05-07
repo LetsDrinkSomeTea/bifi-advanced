@@ -4,13 +4,12 @@ import { Tabs, TabContent, type TabItem } from '../../components/ui/Tabs';
 
 const SOCIAL_TABS: TabItem[] = [
   { id: 'social', label: 'Sozial', href: '/social' },
-  { id: 'activity', label: 'Aktivität', href: '/social/activity' },
   { id: 'leaderboard', label: 'Rangliste', href: '/social/leaderboard' },
 ];
 
 interface Props {
   children: React.ReactNode;
-  activeTab: 'social' | 'activity' | 'leaderboard';
+  activeTab: 'social' | 'leaderboard';
 }
 
 export function SocialLayout({ children, activeTab }: Props): React.JSX.Element {

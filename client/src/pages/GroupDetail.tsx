@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useParams, useLocation } from 'wouter';
 import { Link } from 'wouter';
 import { useRef, useState } from 'react';
@@ -83,7 +84,6 @@ export function GroupDetail(): React.JSX.Element {
   const [, navigate] = useLocation();
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
-  const [imageError, setImageError] = useState('');
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const handleCopy = (): void => {
@@ -128,13 +128,12 @@ export function GroupDetail(): React.JSX.Element {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      setImageError('Datei zu groß (max 2 MB)');
+      toast.error('Datei zu groß (max 2 MB)');
       return;
     }
-    setImageError('');
     uploadImage(file, {
       onError: (err) => {
-        setImageError(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
+        toast.error(err instanceof Error ? err.message : 'Upload fehlgeschlagen');
       },
     });
     e.target.value = '';
@@ -198,9 +197,6 @@ export function GroupDetail(): React.JSX.Element {
                 className="hidden"
                 onChange={handleImageChange}
               />
-              {imageError !== '' ? (
-                <p className="text-sm text-destructive mt-2">{imageError}</p>
-              ) : null}
             </>
           ) : null}
         </div>
