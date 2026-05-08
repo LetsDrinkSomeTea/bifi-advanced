@@ -105,7 +105,7 @@ auth.get('/login', async (c) => {
 
   const url = buildAuthorizationUrl(config, {
     redirect_uri: redirectUri,
-    scope: 'openid profile email groups',
+    scope: `openid profile email ${process.env.OIDC_GROUPS_CLAIM ?? 'groups'}`,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
     state,

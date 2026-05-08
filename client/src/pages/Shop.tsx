@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Box, Search } from 'lucide-react';
 import { Layout } from '../components/layout/Layout';
 import { BuySheet } from '../components/BuySheet';
 import { useBuyables } from '../hooks/useBuyables';
@@ -218,7 +218,10 @@ export function Shop(): React.JSX.Element {
           ))}
 
         {!isLoading && filtered.length === 0 ? (
-          <p className="text-center text-muted-foreground text-sm py-8">Keine Produkte gefunden</p>
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
+            <Box className="mx-auto mb-2 opacity-20" size={32} />
+            <p className="text-sm">Keine Produkte gefunden.</p>
+          </div>
         ) : null}
       </div>
 

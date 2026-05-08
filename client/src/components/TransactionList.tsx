@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Trash2 } from 'lucide-react';
+import { CreditCard, Trash2 } from 'lucide-react';
 import { useCancelTransaction } from '../hooks/useTransactions';
 import { useAuth } from '../hooks/useAuth';
 import type { TransactionWithItems, TransactionType } from '@shared/types';
@@ -86,7 +86,10 @@ export function TransactionList({
 
   if (transactions.length === 0) {
     return (
-      <p className="text-center text-muted-foreground text-sm py-8">Noch keine Transaktionen</p>
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
+            <CreditCard className="mx-auto mb-2 opacity-20" size={32} />
+            <p className="text-sm">Noch keine Transaktionen.</p>
+          </div>
     );
   }
 

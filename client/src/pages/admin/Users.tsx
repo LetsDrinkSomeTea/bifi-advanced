@@ -606,7 +606,7 @@ function UserCard({
             <ToggleSwitch
               label="Aktiv"
               active={user.isActive}
-              disabled={isUpdating || !canManage}
+              disabled={isUpdating || !canManage || isSelf}
               onToggle={() => {
                 update({ id: user.id, isActive: !user.isActive });
               }}
@@ -710,8 +710,8 @@ export function AdminUsersContent(): React.JSX.Element {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const canChangeRole = (u: AdminUser): boolean =>
-    !u.hasSso || (authConfig?.roleSync ?? 'always') !== 'always';
+  const canChangeRole = (u: AdminUser, isSelf: boolean): boolean =>
+    (!u.hasSso || (authConfig?.roleSync ?? 'always') !== 'always') && !isSelf;
 
   return (
     <div className="space-y-4">
@@ -761,7 +761,7 @@ export function AdminUsersContent(): React.JSX.Element {
             const isExpanded = expandedId === u.id;
             const isAdmin = currentUser?.role === 'admin';
             const canManage =
-              !isSelf && ROLE_LEVEL[currentUser?.role ?? 'member'] >= ROLE_LEVEL[u.role];
+              ROLE_LEVEL[currentUser?.role ?? 'member'] >= ROLE_LEVEL[u.role];
 
             return (
               <UserCard
@@ -776,7 +776,7 @@ export function AdminUsersContent(): React.JSX.Element {
                 onEditRole={setRoleUser}
                 onResetPassword={setResetUser}
                 onDelete={setDeleteUser}
-                canChangeRole={canChangeRole(u)}
+                canChangeRole={canChangeRole(u, isSelf)}
               />
             );
           })}

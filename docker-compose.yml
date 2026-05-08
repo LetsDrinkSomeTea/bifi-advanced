@@ -1,62 +1,76 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: ghcr.io/letsdrinksometea/bifi-postgres:latest
     environment:
-      POSTGRES_DB: bifi
-      POSTGRES_USER: bifi
-      POSTGRES_PASSWORD: bifi_password
-    ports:
-      - '5432:5432'
+      POSTGRES_DB: ${POSTGRES_DB:-bifi}
+      POSTGRES_USER: ${POSTGRES_USER:-bifi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - bifi_pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U bifi']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-bifi}']
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    ports:
-      - '6379:6379'
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+      --save 60 1
+      --loglevel warning
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
     volumes:
-      - redisdata:/data
+      - bifi_redisdata:/data
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping']
       interval: 5s
       timeout: 5s
       retries: 5
 
   app:
-    build: .
+    image: ghcr.io/letsdrinksometea/bifi:latest
     ports:
       - '3000:3000'
     volumes:
-      - uploads_data:/app/uploads
+      - bifi_uploads_data:/app/uploads
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    env_file: .env
     environment:
-      DATABASE_URL: postgresql://bifi:bifi_password@db:5432/bifi
-      REDIS_URL: redis://redis:6379
-      NODE_ENV: production
-      APP_URL: http://localhost:3000
-      SESSION_SECRET: change-me-in-production
-      JACKPOT_ENABLED: 'false'
-      ROLE_SYNC: 'always'
-      BALANCE_WARN_THRESHOLD: '-2000'
-      UPLOAD_DIR: /app/uploads
-      # OIDC — fill in for SSO login
-      # OIDC_ISSUER: https://auth.example.com/application/o/bifi/
-      # OIDC_CLIENT_ID: your-client-id
-      # OIDC_CLIENT_SECRET: your-client-secret
-      OIDC_GROUPS_CLAIM: groups
-      OIDC_ADMIN_GROUP: bifi-admin
-      OIDC_MODERATOR_GROUP: bifi-moderator
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bifi}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-bifi}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      APP_URL: ${APP_URL:?Set APP_URL in .env}
+    networks:
+      - internal
+      - public
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
 
+networks:
+  internal:
+    internal: true
+  public: {}
+
 volumes:
-  pgdata:
-  redisdata:
-  uploads_data:
+  bifi_pgdata:
+  bifi_redisdata:
+  bifi_uploads_data:

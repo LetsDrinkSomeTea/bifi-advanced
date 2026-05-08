@@ -68,21 +68,62 @@ BiFi ist eine digitale Getränke-Strichliste für Vereine, Gruppen und Wohngemei
 
 ## ⚙️ Umgebungsvariablen (.env)
 
-| Variable                 | Beschreibung                                           | Standard / Beispiel                                   |
-| :----------------------- | :----------------------------------------------------- | :---------------------------------------------------- |
-| `DATABASE_URL`           | Verbindung zur PostgreSQL DB                           | `postgresql://bifi:bifi_password@localhost:5432/bifi` |
-| `REDIS_URL`              | Verbindung zum Redis Cache                             | `redis://localhost:6379`                              |
-| `SESSION_SECRET`         | Geheimnis für Session-Cookies (min. 32 Zeichen)        | `change-me-to-a-random-string`                        |
-| `APP_URL`                | Öffentliche URL der App                                | `http://localhost:3000`                               |
-| `OIDC_ISSUER`            | OIDC Provider URL (z.B. Authentik)                     | `https://auth.example.com/...`                        |
-| `OIDC_CLIENT_ID`         | OIDC Client ID                                         | -                                                     |
-| `OIDC_AUTO_REDIRECT`     | Automatischer Redirect zum OIDC Login                  | `false`                                               |
-| `LOCAL_AUTH_ENABLED`     | Lokalen Login (Nutzer/Passwort) erlauben               | `true`                                                |
-| `JACKPOT_ENABLED`        | Aktiviert das Jackpot-Feature                          | `false`                                               |
-| `BALANCE_WARN_THRESHOLD` | Schwellenwert für Warnbanner (in Cents)                | `-2000`                                               |
-| `MAX_DEPOSIT_AMOUNT`     | Maximaler Einzahlungsbetrag pro Transaktion (in Cents) | `10000` (= 100 €)                                     |
-| `ALLOW_NEGATIVE_BALANCE` | Ob Benutzer einen negativen Kontostand haben dürfen    | `true`                                                |
-| `UPLOAD_DIR`             | Pfad zum Verzeichnis für hochgeladene Bilder           | `/app/uploads`                                        |
+### Pflicht
+
+| Variable          | Beschreibung                                    |
+| :---------------- | :---------------------------------------------- |
+| `POSTGRES_PASSWORD` | Passwort für PostgreSQL                       |
+| `SESSION_SECRET`  | Geheimnis für Session-Cookies (min. 32 Zeichen) |
+| `APP_URL`         | Öffentliche URL der App (z.B. `https://bifi.example.com`) |
+
+### Datenbank
+
+| Variable        | Beschreibung                    | Standard                                              |
+| :-------------- | :------------------------------ | :---------------------------------------------------- |
+| `POSTGRES_DB`   | PostgreSQL Datenbankname        | `bifi`                                                |
+| `POSTGRES_USER` | PostgreSQL Benutzername         | `bifi`                                                |
+| `DATABASE_URL`  | DB-Verbindung (nur außerhalb Docker) | `postgresql://bifi:<pw>@localhost:5432/bifi`     |
+| `REDIS_URL`     | Redis-Verbindung (nur außerhalb Docker) | `redis://localhost:6379`                       |
+
+### App
+
+| Variable        | Beschreibung                                         | Standard          |
+| :-------------- | :--------------------------------------------------- | :---------------- |
+| `NODE_ENV`      | Laufzeitumgebung                                     | `production`      |
+| `PORT`          | Server-Port                                          | `3000`            |
+| `TZ`            | Zeitzone                                             | `Europe/Berlin`   |
+| `TRUST_PROXY`   | Vertraue Reverse-Proxy-Headern (nginx, Traefik, …)   | `false`           |
+| `UPLOAD_DIR`    | Pfad für hochgeladene Bilder                         | `./uploads`       |
+
+### Authentifizierung
+
+| Variable                      | Beschreibung                                                          | Standard      |
+| :---------------------------- | :-------------------------------------------------------------------- | :------------ |
+| `LOCAL_AUTH_ENABLED`          | Lokalen Login (Nutzer/Passwort) erlauben                              | `true`        |
+| `OIDC_ISSUER`                 | OIDC Provider URL (z.B. Authentik)                                    | —             |
+| `OIDC_CLIENT_ID`              | OIDC Client ID                                                        | —             |
+| `OIDC_CLIENT_SECRET`          | OIDC Client Secret                                                    | —             |
+| `OIDC_AUTO_REDIRECT`          | Bei deaktiviertem Local-Login automatisch zum Provider weiterleiten   | `false`       |
+| `OIDC_GROUPS_CLAIM`           | Name des Claims, der Gruppenmitgliedschaften enthält                  | `groups`      |
+| `OIDC_ADMIN_GROUP`            | Gruppenname, der die Admin-Rolle verleiht                             | `bifi-admin`  |
+| `OIDC_MODERATOR_GROUP`        | Gruppenname, der die Moderator-Rolle verleiht                         | `bifi-moderator` |
+| `OIDC_ALLOWED_REDIRECT_ORIGINS` | Weitere erlaubte Redirect-Origins für OIDC (`APP_URL` ist immer erlaubt) | —        |
+| `ROLE_SYNC`                   | Wann Rollen synchronisiert werden: `always` · `on_creation` · `never` | `always`     |
+
+### Features
+
+| Variable                 | Beschreibung                                           | Standard |
+| :----------------------- | :----------------------------------------------------- | :------- |
+| `JACKPOT_ENABLED`        | Jackpot-Feature aktivieren                             | `false`  |
+| `BALANCE_WARN_THRESHOLD` | Schwellenwert für Warnbanner (in Cents)                | `-2000`  |
+| `MAX_DEPOSIT_AMOUNT`     | Maximaler Einzahlungsbetrag pro Transaktion (in Cents) | `10000`  |
+| `ALLOW_NEGATIVE_BALANCE` | Negativen Kontostand erlauben                          | `true`   |
+
+### Development
+
+| Variable         | Beschreibung                                                              | Standard |
+| :--------------- | :------------------------------------------------------------------------ | :------- |
+| `VITE_DEV_TOOLS` | Debug-API-Routen (`/api/dev`) und Dev-Banner aktivieren — nie in Produktion | `false` |
 
 ---
 

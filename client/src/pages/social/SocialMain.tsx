@@ -187,15 +187,7 @@ function GroupsSection({
         </div>
       ) : (groups?.length ?? 0) === 0 ? (
         <p className="text-sm text-muted-foreground py-3">
-          Noch keine Gruppen.{' '}
-          <Button onClick={onCreateOpen} variant="link">
-            Erstellen
-          </Button>{' '}
-          oder{' '}
-          <Button onClick={onJoinOpen} variant="link">
-            beitreten
-          </Button>
-          .
+          Noch keine Gruppen.
         </p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
@@ -317,11 +309,11 @@ function FriendsSection(): React.JSX.Element {
 type SearchItem =
   | { kind: 'group'; id: string; name: string; memberCount: number; imageUrl: string | null }
   | {
-      kind: 'friend' | 'new_person' | 'pending_sent' | 'pending_received';
-      id: string;
-      displayName: string;
-      avatarUrl: string | null;
-    };
+    kind: 'friend' | 'new_person' | 'pending_sent' | 'pending_received';
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+  };
 
 function SearchResults({
   query,

@@ -13,7 +13,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       devOptions: {
-        enabled: true,
+        enabled: false,
+      },
+      workbox: {
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/api\//],
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'favicon.svg'],
       manifest: {
@@ -61,10 +65,11 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
+    port: parseInt(process.env.VITE_PORT ?? '5173'),
     allowedHosts: ['bifi-dev.faigle.dev'],
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: `http://localhost:${process.env.PORT ?? '3000'}`,
         changeOrigin: true,
       },
     },

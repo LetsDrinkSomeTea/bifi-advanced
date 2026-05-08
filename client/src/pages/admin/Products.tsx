@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, ChevronDown, ChevronUp, Package, Search } from 'lucide-react';
+import { Plus, Pencil, ChevronDown, ChevronUp, Package, Search, Box } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 import {
   useAllBuyables,
@@ -526,9 +526,10 @@ export function AdminProductsContent(): React.JSX.Element {
             </div>
           ))}
           {sortedProducts.length === 0 && (
-            <div className="py-12 text-center text-muted-foreground">
-              <p>Keine Produkte gefunden.</p>
-            </div>
+        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
+          <Box className="mx-auto mb-2 opacity-20" size={32} />
+          <p className="text-sm">Keine Produkte gefunden.</p>
+        </div>
           )}
         </div>
       )}

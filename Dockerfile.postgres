@@ -1,0 +1,7 @@
+FROM postgres:16-alpine
+
+ENV POSTGRES_DB=bifi
+ENV POSTGRES_USER=bifi
+ENV POSTGRES_PASSWORD=bifi_password
+
+COPY schema.sql /docker-entrypoint-initdb.d/01_schema.sql

@@ -3,10 +3,10 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: bifi_test
-      POSTGRES_USER: bifi
-      POSTGRES_PASSWORD: bifi_password
+      POSTGRES_USER: ${POSTGRES_USER:-bifi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U bifi -d bifi_test']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-bifi} -d bifi_test']
       interval: 2s
       timeout: 5s
       retries: 10
@@ -21,12 +21,12 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+    env_file: .env
     environment:
-      DATABASE_URL: postgresql://bifi:bifi_password@db-test:5432/bifi_test
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bifi}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db-test:5432/bifi_test
       REDIS_URL: redis://redis-test:6379
       NODE_ENV: test
       SESSION_SECRET: test-secret-32-chars-long-minimal-length
-      # Disable background tasks that might interfere
       OIDC_AUTO_REDIRECT: 'false'
       LOCAL_AUTH_ENABLED: 'true'
     depends_on:

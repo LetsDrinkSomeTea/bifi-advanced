@@ -111,9 +111,9 @@ export function VerlaufNotifications(): React.JSX.Element {
 
   if (unread.length === 0 && read.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-        <Bell size={36} className="text-muted-foreground opacity-30" />
-        <p className="text-sm text-muted-foreground">Keine Benachrichtigungen</p>
+      <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
+        <Bell className="mx-auto mb-2 opacity-20" size={32} />
+        <p className="text-sm">Noch keine Benachrichtigungen.</p>
       </div>
     );
   }

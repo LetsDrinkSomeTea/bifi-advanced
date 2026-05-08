@@ -3,6 +3,7 @@ import { FeedItem, type GroupedFeedEntry } from './FeedItem';
 import { APP_TZ } from '../lib/utils';
 import { groupEntries } from '../lib/feed';
 import { Button } from './ui/Button';
+import { Mailbox } from 'lucide-react';
 export type { GroupedFeedEntry };
 
 type TimelineItem =
@@ -77,9 +78,9 @@ export function FeedTimeline({
 
   if (entries.length === 0) {
     return (
-      <div className="text-center text-muted-foreground text-sm py-12">
-        <p className="text-2xl mb-2">📭</p>
-        <p>Noch keine Aktivitäten</p>
+      <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
+        <Mailbox className="mx-auto mb-2 opacity-20" size={32} />
+        <p className="text-sm">Noch keine Aktivitäten.</p>
       </div>
     );
   }
