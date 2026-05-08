@@ -18,7 +18,13 @@ interface ActionButtonProps {
   onClick: () => Promise<void>;
 }
 
-function ActionButton({ label, description, icon, variant = 'outline', onClick }: ActionButtonProps): React.JSX.Element {
+function ActionButton({
+  label,
+  description,
+  icon,
+  variant = 'outline',
+  onClick,
+}: ActionButtonProps): React.JSX.Element {
   const [loading, setLoading] = useState(false);
 
   const handle = async (): Promise<void> => {
@@ -42,7 +48,9 @@ function ActionButton({ label, description, icon, variant = 'outline', onClick }
       <Button
         variant={variant}
         size="sm"
-        onClick={() => { void handle(); }}
+        onClick={() => {
+          void handle();
+        }}
         disabled={loading}
         className="flex-shrink-0"
       >
@@ -132,7 +140,9 @@ export function DevTools(): React.JSX.Element {
         {/* Achievements */}
         <section>
           <SectionHeader>
-            <span className="flex items-center gap-2"><Trophy size={15} /> Achievements</span>
+            <span className="flex items-center gap-2">
+              <Trophy size={15} /> Achievements
+            </span>
           </SectionHeader>
           <div className="rounded-2xl border border-border bg-card px-4">
             {achievementActions.map((a) => (
@@ -144,7 +154,9 @@ export function DevTools(): React.JSX.Element {
         {/* Benachrichtigungen */}
         <section>
           <SectionHeader>
-            <span className="flex items-center gap-2"><Bell size={15} /> Benachrichtigungen</span>
+            <span className="flex items-center gap-2">
+              <Bell size={15} /> Benachrichtigungen
+            </span>
           </SectionHeader>
           <div className="rounded-2xl border border-border bg-card px-4">
             {notificationActions.map((a) => (
@@ -156,7 +168,9 @@ export function DevTools(): React.JSX.Element {
         {/* Guthaben */}
         <section>
           <SectionHeader>
-            <span className="flex items-center gap-2"><Wallet size={15} /> Guthaben</span>
+            <span className="flex items-center gap-2">
+              <Wallet size={15} /> Guthaben
+            </span>
           </SectionHeader>
           <div className="rounded-2xl border border-border bg-card px-4">
             <div className="py-3 space-y-3">
@@ -168,7 +182,9 @@ export function DevTools(): React.JSX.Element {
                 <Input
                   type="number"
                   value={balanceInput}
-                  onChange={(e) => { setBalanceInput(e.target.value); }}
+                  onChange={(e) => {
+                    setBalanceInput(e.target.value);
+                  }}
                   className="flex-1 h-9"
                   placeholder="Cent"
                 />
@@ -177,7 +193,10 @@ export function DevTools(): React.JSX.Element {
                   onClick={() => {
                     void (async () => {
                       const cents = parseInt(balanceInput, 10);
-                      if (isNaN(cents)) { toast.error('Ungültiger Betrag'); return; }
+                      if (isNaN(cents)) {
+                        toast.error('Ungültiger Betrag');
+                        return;
+                      }
                       await api.post('/api/dev/balance', { cents });
                       void qc.invalidateQueries({ queryKey: ['auth', 'me'] });
                       toast.success(`Guthaben auf ${(cents / 100).toFixed(2)} € gesetzt`);
@@ -193,7 +212,9 @@ export function DevTools(): React.JSX.Element {
                     key={v}
                     variant="outline"
                     size="sm"
-                    onClick={() => { setBalanceInput(String(v)); }}
+                    onClick={() => {
+                      setBalanceInput(String(v));
+                    }}
                     className="text-xs"
                   >
                     {v >= 0 ? `+${(v / 100).toFixed(0)} €` : `${(v / 100).toFixed(0)} €`}
@@ -207,7 +228,9 @@ export function DevTools(): React.JSX.Element {
         {/* Cache */}
         <section>
           <SectionHeader>
-            <span className="flex items-center gap-2"><Zap size={15} /> Sonstiges</span>
+            <span className="flex items-center gap-2">
+              <Zap size={15} /> Sonstiges
+            </span>
           </SectionHeader>
           <div className="rounded-2xl border border-border bg-card px-4">
             <ActionButton

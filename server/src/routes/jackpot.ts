@@ -142,7 +142,9 @@ router.post(
       resourceType: 'transaction',
       resourceId: txn.id,
       resourceName: user.displayName,
-      changes: { after: { multiplierPct, pricePaid, buyableId: buyable.id, variantId: variant.id } },
+      changes: {
+        after: { multiplierPct, pricePaid, buyableId: buyable.id, variantId: variant.id },
+      },
       severity: 'low',
       ipAddress: getClientIp(c),
     });

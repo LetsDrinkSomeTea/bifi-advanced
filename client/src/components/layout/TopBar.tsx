@@ -69,7 +69,12 @@ function NotificationDropdown({ onClose }: { onClose: () => void }): React.JSX.E
                   href ? 'cursor-pointer' : 'cursor-default hover:bg-transparent',
                 )}
               >
-                <div className={cn('mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center', meta.bg)}>
+                <div
+                  className={cn(
+                    'mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center',
+                    meta.bg,
+                  )}
+                >
                   <Icon size={14} className={meta.color} />
                 </div>
                 <div className="flex-1 min-w-0 text-left">
@@ -86,7 +91,9 @@ function NotificationDropdown({ onClose }: { onClose: () => void }): React.JSX.E
               </Button>
               {/* Right ~20%: mark-as-read spanning full row height */}
               <button
-                onClick={() => { markRead(n.id); }}
+                onClick={() => {
+                  markRead(n.id);
+                }}
                 title="Als gelesen markieren"
                 className="flex-[1] flex items-center justify-center self-stretch border-l border-border/50 text-muted-foreground hover:text-confirm-strong hover:bg-primary/5 transition-colors"
               >

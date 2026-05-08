@@ -19,11 +19,14 @@ import { Badge } from '../../components/ui/Badge';
 
 type AuditSeverity = (typeof AUDIT_SEVERITIES)[number];
 
-const SEVERITY_BADGE: Record<AuditSeverity, { variant: 'muted-soft' | 'confirm-soft' | 'accent-soft' | 'destructive-soft'; label: string }> = {
-  info:   { variant: 'muted-soft',       label: 'Info' },
-  low:    { variant: 'confirm-soft',     label: 'Low' },
-  medium: { variant: 'accent-soft',      label: 'Medium' },
-  high:   { variant: 'destructive-soft', label: 'High' },
+const SEVERITY_BADGE: Record<
+  AuditSeverity,
+  { variant: 'muted-soft' | 'confirm-soft' | 'accent-soft' | 'destructive-soft'; label: string }
+> = {
+  info: { variant: 'muted-soft', label: 'Info' },
+  low: { variant: 'confirm-soft', label: 'Low' },
+  medium: { variant: 'accent-soft', label: 'Medium' },
+  high: { variant: 'destructive-soft', label: 'High' },
 };
 
 // ─── Audit Log Card Component ─────────────────────────────────────────────────

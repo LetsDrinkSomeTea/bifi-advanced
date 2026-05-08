@@ -33,7 +33,12 @@ function NotifItem({ n, onMarkRead, onClick, dimmed }: NotifItemProps): React.JS
         )}
         onClick={href ? onClick : undefined}
       >
-        <div className={cn('mt-0.5 flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center', meta.bg)}>
+        <div
+          className={cn(
+            'mt-0.5 flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center',
+            meta.bg,
+          )}
+        >
           <Icon size={16} className={meta.color} />
         </div>
         <div className="flex-1 min-w-0">
@@ -123,7 +128,9 @@ export function VerlaufNotifications(): React.JSX.Element {
             unread.length > 0 ? (
               <Button
                 variant="link"
-                onClick={() => { markAll(); }}
+                onClick={() => {
+                  markAll();
+                }}
                 className="text-xs text-muted-foreground hover:text-foreground p-0 h-auto"
               >
                 Alle als gelesen markieren
@@ -141,8 +148,12 @@ export function VerlaufNotifications(): React.JSX.Element {
               <NotifItem
                 key={n.id}
                 n={n}
-                onMarkRead={() => { markRead(n.id); }}
-                onClick={() => { handleNavigate(n); }}
+                onMarkRead={() => {
+                  markRead(n.id);
+                }}
+                onClick={() => {
+                  handleNavigate(n);
+                }}
               />
             ))}
           </div>
@@ -158,7 +169,9 @@ export function VerlaufNotifications(): React.JSX.Element {
               <NotifItem
                 key={n.id}
                 n={n}
-                onClick={() => { handleNavigate(n); }}
+                onClick={() => {
+                  handleNavigate(n);
+                }}
                 dimmed
               />
             ))}

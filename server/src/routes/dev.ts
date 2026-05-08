@@ -18,10 +18,7 @@ router.post('/achievements/unlock-all', requireAuth, async (c) => {
     achievementKey: def.key,
     unlockedAt: now,
   }));
-  await db
-    .insert(userAchievements)
-    .values(rows)
-    .onConflictDoNothing();
+  await db.insert(userAchievements).values(rows).onConflictDoNothing();
   return c.json({ unlocked: rows.length });
 });
 

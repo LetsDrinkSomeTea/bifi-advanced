@@ -163,11 +163,11 @@ export function JackpotModal({
       onClose={
         phase === 'spinning'
           ? (): void => {
-            /* spinning, no close allowed */
-          }
+              /* spinning, no close allowed */
+            }
           : () => {
-            onClose();
-          }
+              onClose();
+            }
       }
       title="Jackpot Spin"
     >
@@ -221,7 +221,11 @@ export function JackpotModal({
                 </p>
               </div>
               <div className="pt-4">
-                <Button variant='default' onClick={onClose} className="w-full h-14 rounded-2xl font-bold text-lg">
+                <Button
+                  variant="default"
+                  onClick={onClose}
+                  className="w-full h-14 rounded-2xl font-bold text-lg"
+                >
                   Fertig
                 </Button>
               </div>
@@ -231,7 +235,7 @@ export function JackpotModal({
 
         {phase === 'ready' && (
           <Button
-            variant='accent_dashed'
+            variant="accent_dashed"
             onClick={() => {
               void handleSpin();
             }}

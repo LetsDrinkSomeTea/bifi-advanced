@@ -68,7 +68,7 @@ export type FeedEvent =
       metadata: { achievementKey: string };
     }
   | {
-      type: 'friendship_started',
+      type: 'friendship_started';
       userId: string;
       targetUserId: string;
     }

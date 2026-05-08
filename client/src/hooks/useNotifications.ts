@@ -100,7 +100,10 @@ export function useSSE(): SSEState {
       es.addEventListener('notification', (e) => {
         const notif = JSON.parse((e as MessageEvent<string>).data) as AppNotification;
         qc.setQueryData<AppNotification[]>(['notifications'], (old) => [notif, ...(old ?? [])]);
-        qc.setQueryData<AppNotification[]>(['notifications', 'all'], (old) => [notif, ...(old ?? [])]);
+        qc.setQueryData<AppNotification[]>(['notifications', 'all'], (old) => [
+          notif,
+          ...(old ?? []),
+        ]);
         setUnreadCount((c) => c + 1);
       });
 

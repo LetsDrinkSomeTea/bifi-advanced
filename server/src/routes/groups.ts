@@ -415,7 +415,10 @@ router.patch('/:id', requireAuth, zValidator('json', UpdateGroupSchema), async (
     resourceType: 'group',
     resourceId: id,
     resourceName: updated.name,
-    changes: { before: before ?? null, after: { name: updated.name, description: updated.description } },
+    changes: {
+      before: before ?? null,
+      after: { name: updated.name, description: updated.description },
+    },
     severity: 'low',
     ipAddress: getClientIp(c),
   });
@@ -441,10 +444,7 @@ router.patch('/:id/invite-code', requireAuth, async (c) => {
     );
   if (myMembership?.role !== 'owner') return c.json({ error: 'Forbidden', code: 'FORBIDDEN' }, 403);
 
-  const [group] = await db
-    .select({ name: groups.name })
-    .from(groups)
-    .where(eq(groups.id, id));
+  const [group] = await db.select({ name: groups.name }).from(groups).where(eq(groups.id, id));
 
   const newCode = generateInviteCode();
   await db.update(groups).set({ inviteCode: newCode }).where(eq(groups.id, id));

@@ -16,7 +16,12 @@ export function VerlaufLayout({ children, activeTab }: Props): React.JSX.Element
   const VERLAUF_TABS: TabItem[] = [
     { id: 'feed', label: 'Aktivität', href: '/verlauf' },
     { id: 'transaktionen', label: 'Käufe', href: '/verlauf/transaktionen' },
-    { id: 'benachrichtigungen', label: 'Nachrichten', href: '/verlauf/benachrichtigungen', badge: unreadCount > 0 ? unreadCount : undefined },
+    {
+      id: 'benachrichtigungen',
+      label: 'Nachrichten',
+      href: '/verlauf/benachrichtigungen',
+      badge: unreadCount > 0 ? unreadCount : undefined,
+    },
   ];
 
   const handleTabChange = (id: string): void => {

@@ -58,7 +58,12 @@ const tabVariants = {
   exit: (dir: number) => ({ x: `${dir * -100}%` }),
 };
 
-export function TabContent({ children, activeId, items, onTabChange }: TabContentProps): React.JSX.Element {
+export function TabContent({
+  children,
+  activeId,
+  items,
+  onTabChange,
+}: TabContentProps): React.JSX.Element {
   const [prevId, setPrevId] = React.useState(activeId);
   const [animDir, setAnimDir] = React.useState(0);
 

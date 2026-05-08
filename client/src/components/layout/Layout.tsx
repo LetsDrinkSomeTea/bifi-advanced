@@ -13,9 +13,7 @@ export function Layout({ children }: Props): React.JSX.Element {
       <TopBar />
       <DevBanner />
       <PwaInstallBanner />
-      <main className="flex-1 overflow-y-auto pb-16">
-        {children}
-      </main>
+      <main className="flex-1 overflow-y-auto pb-16">{children}</main>
       <BottomNav />
     </div>
   );

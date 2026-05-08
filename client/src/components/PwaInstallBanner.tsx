@@ -20,7 +20,7 @@ export function PwaInstallBanner(): React.JSX.Element | null {
           <span className="flex-1">BiFi als App installieren</span>
           <Button
             size="sm"
-            variant='outline'
+            variant="outline"
             onClick={() => {
               void install();
             }}

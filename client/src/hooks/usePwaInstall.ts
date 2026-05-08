@@ -7,7 +7,11 @@ interface BeforeInstallPromptEvent extends Event {
 
 const DISMISSED_KEY = 'pwa-install-dismissed';
 
-export function usePwaInstall(): { canInstall: boolean; install: () => Promise<void>; dismiss: () => void } {
+export function usePwaInstall(): {
+  canInstall: boolean;
+  install: () => Promise<void>;
+  dismiss: () => void;
+} {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
 

@@ -13,9 +13,7 @@ export function useTabDirection(): number {
       const prevIdx = routeIndex(prev);
       const currIdx = routeIndex(location);
       setDirection(
-        prevIdx !== -1 && currIdx !== -1 && prevIdx !== currIdx
-          ? currIdx > prevIdx ? 1 : -1
-          : 0,
+        prevIdx !== -1 && currIdx !== -1 && prevIdx !== currIdx ? (currIdx > prevIdx ? 1 : -1) : 0,
       );
       prevLocationRef.current = location;
     }

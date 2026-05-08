@@ -46,10 +46,14 @@ export function StatsLayout({ children, activeTab, userId }: Props): React.JSX.E
 
         <div className="space-y-4">
           {isOwn ? <Tabs items={STATS_TABS} activeId={activeTab} /> : null}
-          <TabContent activeId={activeTab} items={STATS_TABS} onTabChange={(id) => {
-            const tab = STATS_TABS.find((t) => t.id === id);
-            if (tab) navigate(tab.href);
-          }}>
+          <TabContent
+            activeId={activeTab}
+            items={STATS_TABS}
+            onTabChange={(id) => {
+              const tab = STATS_TABS.find((t) => t.id === id);
+              if (tab) navigate(tab.href);
+            }}
+          >
             {children}
           </TabContent>
         </div>
