@@ -76,6 +76,8 @@ export const MeResponseSchema = z.object({
   balance: z.number().int(),
   jackpotAllowed: z.boolean(),
   isActive: z.boolean(),
+  hasSsoLinked: z.boolean(),
+  hasPassword: z.boolean(),
   createdAt: z.string(),
 });
 

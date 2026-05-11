@@ -124,6 +124,66 @@ localAuth.post('/login', loginRateLimit, zValidator('json', LoginSchema), async 
   });
 });
 
+// Self-service: change own password (or set one if OIDC-only account)
+localAuth.post(
+  '/me/password',
+  requireAuth,
+  zValidator(
+    'json',
+    z.object({
+      currentPassword: z.string().min(1).optional(),
+      newPassword: z.string().min(8),
+    }),
+  ),
+  async (c) => {
+    const user = c.get('user');
+    const { currentPassword, newPassword } = c.req.valid('json');
+    const ip = getClientIp(c);
+
+    if (user.passwordHash !== null) {
+      if (!currentPassword) {
+        return c.json({ error: 'Current password required', code: 'CURRENT_PASSWORD_REQUIRED' }, 400);
+      }
+      const valid = await argon2.verify(user.passwordHash, currentPassword);
+      if (!valid) {
+        await writeAuditLog({
+          actorId: user.id,
+          action: 'auth.login_failed',
+          resourceType: 'user',
+          resourceId: user.id,
+          resourceName: user.displayName,
+          severity: 'medium',
+          ipAddress: ip,
+        });
+        return c.json({ error: 'Invalid credentials', code: 'INVALID_CREDENTIALS' }, 401);
+      }
+    }
+
+    const passwordHash = await argon2.hash(newPassword);
+    const [updated] = await db
+      .update(users)
+      .set({ passwordHash, updatedAt: new Date() })
+      .where(eq(users.id, user.id))
+      .returning();
+
+    if (!updated) {
+      return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
+    }
+
+    await writeAuditLog({
+      actorId: user.id,
+      action: 'auth.password_changed',
+      resourceType: 'user',
+      resourceId: user.id,
+      resourceName: user.displayName,
+      severity: 'medium',
+      ipAddress: ip,
+    });
+
+    return c.json({ success: true });
+  },
+);
+
 // Admin-only: set/update password for any user
 localAuth.put(
   '/users/:id/password',
@@ -161,5 +221,34 @@ localAuth.put(
     return c.json({ success: true });
   },
 );
+
+// Admin-only: remove password from a user account
+localAuth.delete('/users/:id/password', requireAuth, requireRole('admin'), async (c) => {
+  const { id } = c.req.param();
+  const actor = c.get('user');
+  const ip = getClientIp(c);
+
+  const [updated] = await db
+    .update(users)
+    .set({ passwordHash: null, updatedAt: new Date() })
+    .where(eq(users.id, id))
+    .returning();
+
+  if (!updated) {
+    return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
+  }
+
+  await writeAuditLog({
+    actorId: actor.id,
+    action: 'user.password_removed',
+    resourceType: 'user',
+    resourceId: id,
+    resourceName: updated.displayName,
+    severity: 'medium',
+    ipAddress: ip,
+  });
+
+  return c.json({ success: true });
+});
 
 export default localAuth;

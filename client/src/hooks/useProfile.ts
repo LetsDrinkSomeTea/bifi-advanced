@@ -8,6 +8,28 @@ import {
 import { api, ApiError } from '../lib/api';
 import type { PublicProfile } from '@shared/types';
 
+export function useOidcUnlink(): UseMutationResult<void, Error, void> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.delete('/api/auth/oidc/link'),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+      void qc.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+}
+
+export function useChangePassword(): UseMutationResult<
+  void,
+  Error,
+  { currentPassword?: string; newPassword: string }
+> {
+  return useMutation({
+    mutationFn: (body: { currentPassword?: string; newPassword: string }) =>
+      api.post('/api/auth/local/me/password', body),
+  });
+}
+
 export type { PublicProfile };
 
 export function usePublicProfile(userId: string | undefined): UseQueryResult<PublicProfile> {

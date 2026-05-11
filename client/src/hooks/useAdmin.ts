@@ -135,6 +135,16 @@ export function useResetPassword(): UseMutationResult<
   });
 }
 
+export function useRemovePassword(): UseMutationResult<void, Error, string> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/api/auth/local/users/${id}/password`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+  });
+}
+
 export function useDeleteUser(): UseMutationResult<void, Error, string> {
   const qc = useQueryClient();
   return useMutation({

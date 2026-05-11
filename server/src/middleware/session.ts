@@ -14,6 +14,7 @@ const SessionSchema = z
     oidcState: z.string().optional(),
     pkceVerifier: z.string().optional(),
     oidcRedirectUri: z.string().optional(),
+    oidcLinkIntent: z.boolean().optional(),
   })
   .strict();
 
@@ -22,6 +23,7 @@ export interface SessionData {
   oidcState?: string;
   pkceVerifier?: string;
   oidcRedirectUri?: string;
+  oidcLinkIntent?: boolean;
 }
 
 function parseSession(raw: string): SessionData | null {

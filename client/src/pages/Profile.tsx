@@ -1,13 +1,13 @@
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Pencil, BarChart2, Beer, Upload } from 'lucide-react';
+import { Pencil, BarChart2, Beer, Upload, Link2, Unlink } from 'lucide-react';
 import { Link } from 'wouter';
 import { Layout } from '../components/layout/Layout';
 import { Modal } from '../components/Modal';
 import { AchievementGrid } from '@/components/AchievementGrid';
 import { ActivityItem, type ActivityUser, ProfileLink } from '../components/ActivityItem';
-import { useAuth } from '../hooks/useAuth';
-import { usePublicProfile, useUpdateProfile, useUploadAvatar } from '../hooks/useProfile';
+import { useAuth, useAuthConfig } from '../hooks/useAuth';
+import { usePublicProfile, useUpdateProfile, useUploadAvatar, useOidcUnlink, useChangePassword } from '../hooks/useProfile';
 import { type ProstVoucher, useProstVouchers } from '../hooks/useProst';
 import { formatCents, balanceColor, cn } from '../lib/utils';
 import { Avatar } from '../components/ui/Avatar';
@@ -22,20 +22,31 @@ function EditProfileModal({
   open,
   onClose,
   hasSso,
+  hasPassword,
 }: {
   open: boolean;
   onClose: () => void;
   hasSso: boolean;
+  hasPassword: boolean;
 }): React.JSX.Element {
   const { user } = useAuth();
+  const { data: authConfig } = useAuthConfig();
   const { mutate: update, isPending: isUpdating } = useUpdateProfile();
   const { mutate: uploadAvatar, isPending: isUploading } = useUploadAvatar();
+  const { mutate: oidcUnlink, isPending: isUnlinking } = useOidcUnlink();
+  const { mutate: changePassword, isPending: isChangingPw } = useChangePassword();
+
   const [displayName, setDisplayName] = useState(user?.displayName ?? '');
   const [username, setUsername] = useState(user?.username ?? '');
   const [preview, setPreview] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [error, setError] = useState('');
+  const [profileError, setProfileError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwError, setPwError] = useState('');
 
   const isPending = isUpdating || isUploading;
   const canEditName = !hasSso;
@@ -44,17 +55,17 @@ function EditProfileModal({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      setError('Datei zu groß (max 2 MB)');
+      setProfileError('Datei zu groß (max 2 MB)');
       return;
     }
     setPendingFile(file);
     setPreview(URL.createObjectURL(file));
-    setError('');
+    setProfileError('');
   };
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
-    setError('');
+    setProfileError('');
 
     const doUpdate = (): void => {
       if (!canEditName) {
@@ -102,74 +113,220 @@ function EditProfileModal({
     }
   };
 
+  const handleUnlink = (): void => {
+    oidcUnlink(undefined, {
+      onSuccess: () => {
+        toast.success('SSO-Verknüpfung aufgehoben');
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : 'Fehler beim Aufheben');
+      },
+    });
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent): void => {
+    e.preventDefault();
+    setPwError('');
+
+    if (newPassword !== confirmPassword) {
+      setPwError('Passwörter stimmen nicht überein');
+      return;
+    }
+
+    const body: { currentPassword?: string; newPassword: string } = {
+      newPassword,
+      ...(hasPassword ? { currentPassword } : {}),
+    };
+
+    changePassword(body, {
+      onSuccess: () => {
+        toast.success(hasPassword ? 'Passwort geändert' : 'Passwort gesetzt');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : 'Fehler beim Ändern');
+      },
+    });
+  };
+
   const currentAvatar = preview ?? user?.avatarUrl ?? null;
 
   return (
     <Modal open={open} onClose={onClose} title="Profil bearbeiten">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">Profilbild</label>
-          <div className="flex items-center gap-3">
-            <div className="size-16 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-              {currentAvatar !== null ? (
-                <img src={currentAvatar} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-xl font-bold">{user?.displayName[0]?.toUpperCase()}</span>
-              )}
+      <div className="space-y-6">
+        {/* ── Profile section ── */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Profilbild</label>
+            <div className="flex items-center gap-3">
+              <div className="size-16 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                {currentAvatar !== null ? (
+                  <img src={currentAvatar} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl font-bold">{user?.displayName[0]?.toUpperCase()}</span>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  fileRef.current?.click();
+                }}
+              >
+                <Upload size={14} />
+                Bild wählen
+              </Button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleFileChange}
+              />
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => {
-                fileRef.current?.click();
-              }}
-            >
-              <Upload size={14} />
-              Bild wählen
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              className="hidden"
-              onChange={handleFileChange}
-            />
           </div>
-        </div>
 
-        {canEditName ? (
-          <>
-            <div>
-              <label className="block text-sm font-medium mb-1">Anzeigename</label>
-              <Input
-                type="text"
-                value={displayName}
-                onChange={(e) => {
-                  setDisplayName(e.target.value);
-                }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Benutzername (optional)</label>
-              <Input
-                type="text"
-                value={username}
-                onChange={(e) => {
-                  setUsername(e.target.value);
-                }}
-                placeholder="z.B. max_mustermann"
-              />
-            </div>
-          </>
+          {canEditName ? (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-1">Anzeigename</label>
+                <Input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => {
+                    setDisplayName(e.target.value);
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Benutzername (optional)</label>
+                <Input
+                  type="text"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                  }}
+                  placeholder="z.B. max_mustermann"
+                />
+              </div>
+            </>
+          ) : null}
+
+          {profileError !== '' ? <p className="text-sm text-destructive">{profileError}</p> : null}
+          <Button type="submit" disabled={isPending} className="w-full rounded-xl">
+            {isPending ? 'Speichern…' : 'Speichern'}
+          </Button>
+        </form>
+
+        {/* ── SSO section ── */}
+        {authConfig?.oidcEnabled ? (
+          <div className="border-t pt-4 space-y-3">
+            <p className="text-sm font-semibold">SSO-Verknüpfung</p>
+            {hasSso ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-sm text-confirm">
+                  <Link2 size={14} />
+                  <span>Verknüpft</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  disabled={!hasPassword || isUnlinking}
+                  title={!hasPassword ? 'Zuerst ein Passwort setzen' : undefined}
+                  onClick={handleUnlink}
+                >
+                  <Unlink size={14} />
+                  {isUnlinking ? 'Wird aufgehoben…' : 'Verknüpfung aufheben'}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Unlink size={14} />
+                  <span>Nicht verknüpft</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => {
+                    window.location.href = '/api/auth/login?intent=link';
+                  }}
+                >
+                  <Link2 size={14} />
+                  Verknüpfen
+                </Button>
+              </div>
+            )}
+          </div>
         ) : null}
 
-        {error !== '' ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button type="submit" disabled={isPending} className="w-full rounded-xl">
-          {isPending ? 'Speichern…' : 'Speichern'}
-        </Button>
-      </form>
+        {/* ── Password section ── */}
+        {authConfig?.localEnabled ? (
+          <div className="border-t pt-4 space-y-3">
+            <p className="text-sm font-semibold">
+              {hasPassword ? 'Passwort ändern' : 'Passwort setzen'}
+            </p>
+            <form onSubmit={handlePasswordSubmit} className="space-y-3">
+              {hasPassword ? (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Aktuelles Passwort</label>
+                  <Input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => {
+                      setCurrentPassword(e.target.value);
+                    }}
+                    autoComplete="current-password"
+                  />
+                </div>
+              ) : null}
+              <div>
+                <label className="block text-sm font-medium mb-1">Neues Passwort</label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                  }}
+                  autoComplete="new-password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Passwort bestätigen</label>
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                  }}
+                  autoComplete="new-password"
+                />
+              </div>
+              {pwError !== '' ? <p className="text-sm text-destructive">{pwError}</p> : null}
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={isChangingPw || newPassword.length < 8}
+                className="w-full rounded-xl"
+              >
+                {isChangingPw
+                  ? 'Wird gespeichert…'
+                  : hasPassword
+                    ? 'Passwort ändern'
+                    : 'Passwort setzen'}
+              </Button>
+            </form>
+          </div>
+        ) : null}
+      </div>
     </Modal>
   );
 }
@@ -363,7 +520,8 @@ export function Profile(): React.JSX.Element {
         onClose={() => {
           setEditOpen(false);
         }}
-        hasSso={profile?.hasSso ?? false}
+        hasSso={user?.hasSsoLinked ?? false}
+        hasPassword={user?.hasPassword ?? false}
       />
     </Layout>
   );

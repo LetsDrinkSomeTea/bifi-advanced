@@ -82,6 +82,15 @@ auth.get('/login', async (c) => {
     return c.json({ error: 'SSO not configured', code: 'OIDC_NOT_CONFIGURED' }, 503);
   }
 
+  const intent = c.req.query('intent');
+  const isLinkIntent = intent === 'link';
+
+  const currentSession = c.get('session');
+  if (isLinkIntent && !currentSession.userId) {
+    return c.json({ error: 'Must be authenticated to link OIDC', code: 'UNAUTHORIZED' }, 401);
+  }
+  const userIdToLink = isLinkIntent ? currentSession.userId : undefined;
+
   // Regenerate session ID to prevent fixation if a prior OIDC flow is in progress
   const session = await regenerateSession(c);
   const pkceVerifier = randomPKCECodeVerifier();
@@ -90,6 +99,11 @@ auth.get('/login', async (c) => {
 
   session.oidcState = state;
   session.pkceVerifier = pkceVerifier;
+
+  if (isLinkIntent && userIdToLink) {
+    session.userId = userIdToLink;
+    session.oidcLinkIntent = true;
+  }
 
   const allowedOrigins = getAllowedRedirectOrigins();
   const defaultOrigin = normalizeOrigin(process.env.APP_URL);
@@ -181,6 +195,43 @@ auth.get('/callback', async (c) => {
 
   const roleSyncMode = getRoleSyncMode();
 
+  // ── Link intent: attach OIDC to an already-authenticated account ─────────────
+  if (session.oidcLinkIntent && session.userId) {
+    const currentUserId = session.userId;
+
+    const [existingBySub] = await db.select().from(users).where(eq(users.ssoClaim, sub));
+    if (existingBySub && existingBySub.id !== currentUserId) {
+      return c.redirect('/profile?error=oidc_already_linked');
+    }
+
+    const [linked] = await db
+      .update(users)
+      .set({ ssoClaim: sub, email, displayName, avatarUrl, updatedAt: new Date() })
+      .where(eq(users.id, currentUserId))
+      .returning();
+
+    if (!linked) {
+      return c.redirect('/profile?error=link_failed');
+    }
+
+    await writeAuditLog({
+      actorId: currentUserId,
+      action: 'auth.oidc_linked',
+      resourceType: 'user',
+      resourceId: currentUserId,
+      resourceName: linked.displayName,
+      severity: 'medium',
+      ipAddress: ip,
+    });
+
+    const freshSession = await regenerateSession(c);
+    freshSession.userId = currentUserId;
+    await linkSessionToUser(c.get('sessionId'), currentUserId);
+
+    return c.redirect('/profile');
+  }
+
+  // ── Normal login/create flow ─────────────────────────────────────────────────
   const [existing] = await db.select().from(users).where(eq(users.ssoClaim, sub));
 
   let userId: string;
@@ -270,6 +321,36 @@ auth.post('/logout', async (c) => {
   return c.json({ success: true });
 });
 
+auth.delete('/oidc/link', requireAuth, async (c) => {
+  const user = c.get('user');
+
+  if (!user.passwordHash) {
+    return c.json({ error: 'No password set', code: 'NO_PASSWORD' }, 400);
+  }
+
+  const [updated] = await db
+    .update(users)
+    .set({ ssoClaim: null, updatedAt: new Date() })
+    .where(eq(users.id, user.id))
+    .returning();
+
+  if (!updated) {
+    return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
+  }
+
+  await writeAuditLog({
+    actorId: user.id,
+    action: 'auth.oidc_unlinked',
+    resourceType: 'user',
+    resourceId: user.id,
+    resourceName: user.displayName,
+    severity: 'medium',
+    ipAddress: getClientIp(c),
+  });
+
+  return c.json({ success: true });
+});
+
 auth.get('/me', requireAuth, (c) => {
   const user = c.get('user');
   return c.json({
@@ -282,6 +363,8 @@ auth.get('/me', requireAuth, (c) => {
     balance: user.balance,
     jackpotAllowed: user.jackpotAllowed,
     isActive: user.isActive,
+    hasSsoLinked: user.ssoClaim !== null,
+    hasPassword: user.passwordHash !== null,
     createdAt: user.createdAt,
   });
 });
