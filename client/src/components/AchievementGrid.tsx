@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { ChevronRight, Medal, Lock } from 'lucide-react';
-import { TIER_META } from '@shared/achievements';
 import type { AchievementDef, AchievementTier } from '@shared/achievements';
-import { cn, formatCents } from '../lib/utils';
+import { cn } from '../lib/utils';
 import { useAchievementMeta } from '../hooks/useAchievements';
 import { DynamicIcon } from './ui/DynamicIcon';
 import { Button } from './ui/Button';
+import { ProgressBar } from './ui/ProgressBar';
+import type { Card, GroupCard, StandaloneCard } from './achievement-types';
+import { TIER_ORDER, TIER_COLORS } from './achievement-types';
+import { AchievementSheet } from './AchievementSheet';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -21,44 +24,6 @@ interface Props {
   allLink?: string; // if set: show "Alle →" link in the header
   progress?: Record<string, number>; // groupKey → current count (only passed in full view)
 }
-
-// ─── Card types ───────────────────────────────────────────────────────────────
-
-interface TierEntry {
-  tier: AchievementTier;
-  key: string;
-  description: string;
-  unlocked: boolean;
-}
-
-interface GroupCard {
-  kind: 'group';
-  groupKey: string;
-  name: string;
-  icon: string;
-  color?: string;
-  hidden: boolean;
-  tiers: TierEntry[];
-  anyUnlocked: boolean;
-  highestUnlocked: AchievementTier | null;
-  latestUnlockedAt: Date | null;
-}
-
-interface StandaloneCard {
-  kind: 'standalone';
-  key: string;
-  name: string;
-  icon: string;
-  color?: string;
-  description: string;
-  hidden: boolean;
-  unlocked: boolean;
-  unlockedAt: Date | null;
-}
-
-type Card = GroupCard | StandaloneCard;
-
-const TIER_ORDER: Record<AchievementTier, number> = { bronze: 0, silver: 1, gold: 2 };
 
 const RECENT_UNLOCK_MS = 60_000;
 
@@ -172,12 +137,6 @@ function useJustUnlocked(latestUnlockedAt: Date | null, id: string): boolean {
   return isJustUnlocked;
 }
 
-const TIER_COLORS: Record<AchievementTier, string> = {
-  bronze: 'text-medal-bronze',
-  silver: 'text-medal-silver',
-  gold: 'text-medal-gold',
-};
-
 function TierBadge({
   tier,
   unlocked,
@@ -186,70 +145,25 @@ function TierBadge({
   unlocked: boolean;
 }): React.JSX.Element {
   return (
-    <span
-      className={cn('text-sm leading-none', !unlocked && 'opacity-20 grayscale')}
-      title={`${TIER_META[tier].label}${unlocked ? ' ✓' : ''}`}
-    >
+    <span className={cn('text-sm leading-none', !unlocked && 'opacity-20 grayscale')}>
       <Medal size={14} className={TIER_COLORS[tier]} />
     </span>
   );
 }
 
-function ProgressBar({
-  value,
-  max,
-  format = 'count',
-}: {
-  value: number;
-  max: number;
-  format?: 'count' | 'cents';
-}): React.JSX.Element {
-  const [animWidth, setAnimWidth] = useState(0);
-
-  useEffect(() => {
-    const targetWidth = Math.min(value / max, 1) * 100;
-    const id = requestAnimationFrame(() => {
-      setAnimWidth(targetWidth);
-    });
-    return () => {
-      cancelAnimationFrame(id);
-    };
-  }, [value, max]);
-
-  const fmt = (v: number): string =>
-    format === 'cents' ? formatCents(v) : v.toLocaleString('de-DE');
-
-  return (
-    <div className="w-full">
-      <div className="flex justify-between text-[9px] text-muted-foreground leading-none mb-0.5">
-        <span>{fmt(value)}</span>
-        <span>{fmt(max)}</span>
-      </div>
-      <div className="h-1 bg-muted rounded-full overflow-hidden">
-        <div
-          className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
-          style={{ width: `${animWidth}%` }}
-        />
-      </div>
-    </div>
-  );
-}
 
 function GroupCardComponent({
   card,
   progress,
   meta,
+  onClick,
 }: {
   card: GroupCard;
   progress?: Record<string, number>;
   meta: AchievementDef[];
+  onClick: () => void;
 }): React.JSX.Element {
   const isHiddenAndLocked = card.hidden && !card.anyUnlocked;
-  const tooltip = isHiddenAndLocked
-    ? '???'
-    : card.tiers
-        .map((t) => `${TIER_META[t.tier].label}: ${t.description}${t.unlocked ? ' ✓' : ''}`)
-        .join('\n');
 
   const justUnlocked = useJustUnlocked(card.latestUnlockedAt, card.groupKey);
 
@@ -274,9 +188,12 @@ function GroupCardComponent({
 
   return (
     <div
-      title={tooltip}
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
       className={cn(
-        'flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border text-center h-full min-h-[90px] transition-all',
+        'flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border text-center h-full min-h-[90px] transition-all cursor-pointer',
         card.anyUnlocked
           ? 'border-border bg-card shadow-sm'
           : 'border-border bg-muted/30 opacity-60',
@@ -312,15 +229,24 @@ function GroupCardComponent({
   );
 }
 
-function StandaloneCardComponent({ card }: { card: StandaloneCard }): React.JSX.Element {
+function StandaloneCardComponent({
+  card,
+  onClick,
+}: {
+  card: StandaloneCard;
+  onClick: () => void;
+}): React.JSX.Element {
   const isHiddenAndLocked = card.hidden && !card.unlocked;
   const justUnlocked = useJustUnlocked(card.unlockedAt, card.key);
 
   return (
     <div
-      title={isHiddenAndLocked ? '???' : `${card.name}: ${card.description}`}
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
       className={cn(
-        'flex flex-col items-center justify-center gap-1 p-2 rounded-xl border text-center h-full min-h-[90px] transition-all',
+        'flex flex-col items-center justify-center gap-1 p-2 rounded-xl border text-center h-full min-h-[90px] transition-all cursor-pointer',
         card.unlocked ? 'border-border bg-card shadow-sm' : 'border-border bg-muted/30 opacity-60',
         justUnlocked && 'achievement-glow',
       )}
@@ -357,6 +283,27 @@ export const AchievementGrid = ({
   progress,
 }: Props): React.JSX.Element => {
   const { data: metaData, isLoading } = useAchievementMeta();
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openCard = (card: Card): void => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setSelectedCard(card);
+    setIsSheetOpen(true);
+  };
+
+  const closeSheet = (): void => {
+    setIsSheetOpen(false);
+    closeTimerRef.current = setTimeout(() => {
+      setSelectedCard(null);
+      closeTimerRef.current = null;
+    }, 350);
+  };
+
   const unlockedMap = new Map(achievements.map((a) => [a.key, new Date(a.unlockedAt)]));
 
   if (isLoading || !metaData) {
@@ -450,13 +397,30 @@ export const AchievementGrid = ({
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-4">
           {displayCards.map((card) =>
             card.kind === 'group' ? (
-              <GroupCardComponent key={card.groupKey} card={card} progress={progress} meta={meta} />
+              <GroupCardComponent
+                key={card.groupKey}
+                card={card}
+                progress={progress}
+                meta={meta}
+                onClick={() => openCard(card)}
+              />
             ) : (
-              <StandaloneCardComponent key={card.key} card={card} />
+              <StandaloneCardComponent
+                key={card.key}
+                card={card}
+                onClick={() => openCard(card)}
+              />
             ),
           )}
         </div>
       )}
+      <AchievementSheet
+        open={isSheetOpen}
+        onClose={closeSheet}
+        card={selectedCard}
+        progress={progress}
+        meta={meta}
+      />
     </div>
   );
 };

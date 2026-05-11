@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link, useLocation } from 'wouter';
 import {
   UserPlus,
@@ -22,6 +22,7 @@ import { useSendProst } from '../hooks/useProst';
 import { useBuyables } from '../hooks/useBuyables';
 import { useAuth } from '../hooks/useAuth';
 import { cn } from '../lib/utils';
+import { useBottomSheet } from '../hooks/useBottomSheet';
 import { ROLE_LABEL, ROLE_STYLE } from '../lib/constants';
 import { Avatar } from '../components/ui/Avatar';
 import { Input } from '../components/ui/Input';
@@ -120,40 +121,36 @@ function FriendButton({
 }
 
 function NudgeSheet({
+  open,
   userId,
   displayName,
   onClose,
 }: {
+  open: boolean;
   userId: string;
   displayName: string;
   onClose: () => void;
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   const [freetext, setFreetext] = useState('');
-  const [show, setShow] = useState(false);
   const { data: presets } = useNudgePresets();
   const { mutate: send, isPending, error } = useSendNudge();
-
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => setShow(true));
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  const handleClose = (): void => {
-    setShow(false);
-    setTimeout(onClose, 300);
-  };
+  const { mounted, show, isDragging, dragY, handleClose, dragHandleProps, backdropOpacity } =
+    useBottomSheet(open, onClose);
 
   const handleSend = (preset?: string, message?: string): void => {
     send({ recipientId: userId, preset, message }, { onSuccess: handleClose });
   };
 
+  if (!mounted) return null;
+
   return (
     <>
       <div
-        className={cn(
-          'fixed inset-0 z-40 bg-black/50 transition-opacity duration-300',
-          show ? 'opacity-100' : 'opacity-0',
-        )}
+        className="fixed inset-0 z-40 transition-opacity duration-300"
+        style={{
+          backgroundColor: `rgba(0,0,0,${backdropOpacity})`,
+          pointerEvents: isDragging ? 'none' : 'auto',
+        }}
         onClick={handleClose}
       />
       <div
@@ -161,8 +158,20 @@ function NudgeSheet({
           'fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl shadow-2xl overflow-hidden transition-transform duration-300 ease-out flex flex-col max-h-[90vh] sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-md sm:rounded-3xl',
           show ? 'translate-y-0 sm:scale-100' : 'translate-y-full sm:scale-95 sm:opacity-0',
         )}
+        style={isDragging ? { transform: `translateY(${dragY}px)`, transition: 'none' } : {}}
       >
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
+        {/* Drag handle */}
+        <div
+          className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+          {...dragHandleProps}
+        >
+          <div className="w-10 h-1 bg-border rounded-full" />
+        </div>
+
+        <div
+          className="flex items-center justify-between px-6 pt-3 pb-4 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none select-none"
+          {...dragHandleProps}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary-soft flex items-center justify-center text-primary-strong">
               <Hand size={20} />
@@ -175,6 +184,7 @@ function NudgeSheet({
           <Button
             variant="ghost"
             size="icon"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={handleClose}
             className="rounded-full h-10 w-10"
           >
@@ -249,40 +259,36 @@ function NudgeSheet({
 }
 
 function ProstSheet({
+  open,
   toUserId,
   displayName,
   onClose,
 }: {
+  open: boolean;
   toUserId: string;
   displayName: string;
   onClose: () => void;
-}): React.JSX.Element {
-  const [show, setShow] = useState(false);
+}): React.JSX.Element | null {
   const { data: buyables, isLoading } = useBuyables();
   const { mutate: send, isPending, error } = useSendProst();
-
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => setShow(true));
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  const handleClose = (): void => {
-    setShow(false);
-    setTimeout(onClose, 300);
-  };
+  const { mounted, show, isDragging, dragY, handleClose, dragHandleProps, backdropOpacity } =
+    useBottomSheet(open, onClose);
 
   const variants =
     buyables?.flatMap((b) =>
       b.variants.filter((v) => v.isActive).map((v) => ({ ...v, buyableName: b.name })),
     ) ?? [];
 
+  if (!mounted) return null;
+
   return (
     <>
       <div
-        className={cn(
-          'fixed inset-0 z-40 bg-black/50 transition-opacity duration-300',
-          show ? 'opacity-100' : 'opacity-0',
-        )}
+        className="fixed inset-0 z-40 transition-opacity duration-300"
+        style={{
+          backgroundColor: `rgba(0,0,0,${backdropOpacity})`,
+          pointerEvents: isDragging ? 'none' : 'auto',
+        }}
         onClick={handleClose}
       />
       <div
@@ -290,8 +296,20 @@ function ProstSheet({
           'fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-3xl shadow-2xl overflow-hidden transition-transform duration-300 ease-out flex flex-col max-h-[90vh] sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-md sm:rounded-3xl',
           show ? 'translate-y-0 sm:scale-100' : 'translate-y-full sm:scale-95 sm:opacity-0',
         )}
+        style={isDragging ? { transform: `translateY(${dragY}px)`, transition: 'none' } : {}}
       >
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
+        {/* Drag handle */}
+        <div
+          className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+          {...dragHandleProps}
+        >
+          <div className="w-10 h-1 bg-border rounded-full" />
+        </div>
+
+        <div
+          className="flex items-center justify-between px-6 pt-3 pb-4 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none select-none"
+          {...dragHandleProps}
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-accent-soft flex items-center justify-center text-accent-strong">
               <Beer size={20} />
@@ -304,6 +322,7 @@ function ProstSheet({
           <Button
             variant="ghost"
             size="icon"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={handleClose}
             className="rounded-full h-10 w-10"
           >
@@ -354,13 +373,13 @@ function ProstSheet({
           )}
         </div>
 
-        {error !== null && (
+        {error !== null ? (
           <div className="px-6 pb-4">
             <div className="p-3 rounded-xl bg-destructive-soft text-destructive-strong text-xs font-bold text-center">
               Fehler beim Senden. Bitte versuche es erneut.
             </div>
           </div>
-        )}
+        ) : null}
 
         <div className="px-6 pb-10 flex-shrink-0" />
       </div>
@@ -448,23 +467,23 @@ export function ProfileDetail(): React.JSX.Element {
                 ) : null}
                 <Button
                   variant="outline"
+                  size='icon'
                   onClick={() => {
                     setProstOpen(true);
                   }}
                   className="h-9 gap-1.5"
                 >
                   <Beer size={15} />
-                  Prost
                 </Button>
                 <Button
                   variant="outline"
+                  size='icon'
                   onClick={() => {
                     setNudgeOpen(true);
                   }}
                   className="h-9 gap-1.5"
                 >
                   <Bell size={15} />
-                  Anstupsen
                 </Button>
               </div>
             )}
@@ -504,24 +523,18 @@ export function ProfileDetail(): React.JSX.Element {
         />
       </div>
 
-      {prostOpen ? (
-        <ProstSheet
-          toUserId={profile.id}
-          displayName={profile.displayName}
-          onClose={() => {
-            setProstOpen(false);
-          }}
-        />
-      ) : null}
-      {nudgeOpen ? (
-        <NudgeSheet
-          userId={profile.id}
-          displayName={profile.displayName}
-          onClose={() => {
-            setNudgeOpen(false);
-          }}
-        />
-      ) : null}
+      <ProstSheet
+        open={prostOpen}
+        toUserId={profile.id}
+        displayName={profile.displayName}
+        onClose={() => setProstOpen(false)}
+      />
+      <NudgeSheet
+        open={nudgeOpen}
+        userId={profile.id}
+        displayName={profile.displayName}
+        onClose={() => setNudgeOpen(false)}
+      />
     </Layout>
   );
 }
