@@ -51,6 +51,7 @@ export function usePurchase(): UseMutationResult<PurchaseResult, Error, Purchase
       void qc.invalidateQueries({ queryKey: ['auth', 'me'] });
       void qc.invalidateQueries({ queryKey: ['transactions'] });
       void qc.invalidateQueries({ queryKey: ['prost', 'vouchers'] });
+      void qc.invalidateQueries({ queryKey: ['stats'] });
     },
   });
 }
@@ -62,6 +63,7 @@ export function useCancelTransaction(): UseMutationResult<void, Error, string> {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['auth', 'me'] });
       void qc.invalidateQueries({ queryKey: ['transactions'] });
+      void qc.invalidateQueries({ queryKey: ['stats'] });
     },
   });
 }

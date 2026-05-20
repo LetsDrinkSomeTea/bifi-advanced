@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { and, desc, eq, gte, isNull, or, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
 import { type AnyPgTable, type PgColumn } from 'drizzle-orm/pg-core';
 import { db } from '../db/index.ts';
 import {
@@ -147,7 +147,7 @@ router.get('/user/:id', requireAuth, async (c) => {
       .where(
         and(
           eq(transactions.userId, id),
-          eq(transactions.type, 'purchase'),
+          inArray(transactions.type, ['purchase', 'jackpot']),
           isNull(transactions.cancelledAt),
           txnFilter ?? sql`true`,
         ),
@@ -192,7 +192,7 @@ router.get('/user/:id', requireAuth, async (c) => {
       .where(
         and(
           eq(transactions.userId, id),
-          eq(transactions.type, 'purchase'),
+          inArray(transactions.type, ['purchase', 'jackpot']),
           isNull(transactions.cancelledAt),
           txnFilter ?? sql`true`,
         ),
@@ -209,7 +209,7 @@ router.get('/user/:id', requireAuth, async (c) => {
       .where(
         and(
           eq(transactions.userId, id),
-          eq(transactions.type, 'purchase'),
+          inArray(transactions.type, ['purchase', 'jackpot']),
           isNull(transactions.cancelledAt),
           txnFilter ?? sql`true`,
         ),
@@ -227,7 +227,7 @@ router.get('/user/:id', requireAuth, async (c) => {
       .where(
         and(
           eq(transactions.userId, id),
-          eq(transactions.type, 'purchase'),
+          inArray(transactions.type, ['purchase', 'jackpot']),
           isNull(transactions.cancelledAt),
           txnFilter ?? sql`true`,
         ),
@@ -371,7 +371,7 @@ router.get('/system', requireAuth, async (c) => {
     .from(transactions)
     .where(
       and(
-        eq(transactions.type, 'purchase'),
+        inArray(transactions.type, ['purchase', 'jackpot']),
         isNull(transactions.cancelledAt),
         txnFilter ?? sql`true`,
       ),

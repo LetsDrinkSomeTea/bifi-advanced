@@ -50,7 +50,7 @@ export function PersonalStatsContent({
 
   const hourData = Array.from({ length: 24 }, (_, i) => ({
     hour: `${i}:00`,
-    count: userStats?.consumption?.hourCounts[i] ?? 0,
+    Anzahl: userStats?.consumption?.hourCounts[i] ?? 0,
   }));
 
   return (
@@ -196,7 +196,7 @@ export function PersonalStatsContent({
                     <ReBarChart
                       data={WEEKDAYS.map((name, i) => ({
                         name,
-                        count: userStats.consumption?.weekdayCounts[i + 1] ?? 0,
+                        Anzahl: userStats.consumption?.weekdayCounts[i + 1] ?? 0,
                       }))}
                     >
                       <CartesianGrid
@@ -220,7 +220,7 @@ export function PersonalStatsContent({
                         }}
                         itemStyle={{ color: 'var(--foreground)' }}
                       />
-                      <Bar dataKey="count" fill="var(--primary-500)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Anzahl" fill="var(--primary-500)" radius={[4, 4, 0, 0]} />
                     </ReBarChart>
                   </ResponsiveContainer>
                 </div>
@@ -255,7 +255,7 @@ export function PersonalStatsContent({
                         }}
                         itemStyle={{ color: 'var(--foreground)' }}
                       />
-                      <Bar dataKey="count" fill="var(--secondary-500)" radius={[2, 2, 0, 0]} />
+                      <Bar dataKey="Anzahl" fill="var(--secondary-500)" radius={[2, 2, 0, 0]} />
                     </ReBarChart>
                   </ResponsiveContainer>
                 </div>
