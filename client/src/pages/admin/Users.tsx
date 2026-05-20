@@ -49,12 +49,14 @@ function DepositModal({
   const [error, setError] = useState('');
   const { mutate: deposit, isPending } = useDeposit();
 
+  const cents = Math.round(parseFloat(euros) * 100);
+  const isWithdrawal = !isNaN(cents) && cents < 0;
+
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (user === null) return;
 
-    const cents = Math.round(parseFloat(euros) * 100);
-    if (isNaN(cents) || cents < 1) {
+    if (isNaN(cents) || cents === 0) {
       setError('Ungültiger Betrag');
       return;
     }
@@ -69,15 +71,18 @@ function DepositModal({
     );
   };
 
+  const modalTitle = isWithdrawal
+    ? `Auszahlung – ${user?.displayName}`
+    : `Einzahlung – ${user?.displayName}`;
+
   return (
-    <Modal open={!!user} onClose={onClose} title={`Einzahlung – ${user?.displayName}`}>
+    <Modal open={!!user} onClose={onClose} title={modalTitle}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Betrag (€)</label>
           <Input
             type="number"
             step="0.01"
-            min="0.01"
             placeholder="0.00"
             value={euros}
             onChange={(e) => {
@@ -91,7 +96,7 @@ function DepositModal({
           <label className="block text-sm font-medium mb-1">Notiz (optional)</label>
           <Input
             type="text"
-            placeholder="z.B. Bareinzahlung"
+            placeholder={isWithdrawal ? 'z.B. Barauszahlung' : 'z.B. Bareinzahlung'}
             value={note}
             onChange={(e) => {
               setNote(e.target.value);
@@ -100,7 +105,7 @@ function DepositModal({
         </div>
         {error !== '' ? <p className="text-sm text-destructive-strong">{error}</p> : null}
         <Button type="submit" disabled={isPending} className="w-full">
-          {isPending ? 'Verarbeiten…' : 'Bestätigen'}
+          {isPending ? 'Verarbeiten…' : isWithdrawal ? 'Auszahlen' : 'Einzahlen'}
         </Button>
       </form>
     </Modal>

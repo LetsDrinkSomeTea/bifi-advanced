@@ -208,7 +208,12 @@ function parseMaxDepositAmount(): number {
 const MAX_DEPOSIT_AMOUNT = parseMaxDepositAmount();
 
 const DepositSchema = z.object({
-  amount: z.number().int().min(1).max(MAX_DEPOSIT_AMOUNT),
+  amount: z
+    .number()
+    .int()
+    .min(-MAX_DEPOSIT_AMOUNT)
+    .max(MAX_DEPOSIT_AMOUNT)
+    .refine((n) => n !== 0, { message: 'Betrag darf nicht 0 sein' }),
   note: z.string().max(200).optional(),
 });
 
