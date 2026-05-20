@@ -104,6 +104,7 @@ BiFi ist eine digitale Getränke-Strichliste für Vereine, Gruppen und Wohngemei
 | `OIDC_CLIENT_ID`              | OIDC Client ID                                                        | —             |
 | `OIDC_CLIENT_SECRET`          | OIDC Client Secret                                                    | —             |
 | `OIDC_AUTO_REDIRECT`          | Bei deaktiviertem Local-Login automatisch zum Provider weiterleiten   | `false`       |
+| `OIDC_USERNAME_CLAIM`         | OIDC-Claim, der als Anzeigename verwendet wird                        | `name`        |
 | `OIDC_GROUPS_CLAIM`           | Name des Claims, der Gruppenmitgliedschaften enthält                  | `groups`      |
 | `OIDC_ADMIN_GROUP`            | Gruppenname, der die Admin-Rolle verleiht                             | `bifi-admin`  |
 | `OIDC_MODERATOR_GROUP`        | Gruppenname, der die Moderator-Rolle verleiht                         | `bifi-moderator` |

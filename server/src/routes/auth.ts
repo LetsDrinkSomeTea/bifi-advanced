@@ -172,7 +172,8 @@ auth.get('/callback', async (c) => {
 
   const sub = claims.sub;
   const email = claims.email;
-  const displayName = claims.preferred_username ?? claims.name ?? email;
+  const usernameClaim = process.env.OIDC_USERNAME_CLAIM ?? 'name';
+  const displayName = (claims[usernameClaim] as string | undefined) ?? claims.name ?? email;
   const avatarUrl =
     typeof claims.picture === 'string' && SafeImageUrlSchema.safeParse(claims.picture).success
       ? claims.picture
