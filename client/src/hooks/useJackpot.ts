@@ -41,6 +41,7 @@ export function useSpinJackpot(): UseMutationResult<
       void queryClient.invalidateQueries({ queryKey: ['transactions'] });
       void queryClient.invalidateQueries({ queryKey: ['feed'] });
       void queryClient.invalidateQueries({ queryKey: ['stats'] });
+      void queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
     },
   });
 }

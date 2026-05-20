@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { and, desc, eq, gte, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, or, sql } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import {
   prostVouchers,
@@ -68,7 +68,7 @@ router.get('/', requireAuth, zValidator('query', QuerySchema), async (c) => {
       .innerJoin(users, eq(transactions.userId, users.id))
       .where(
         and(
-          eq(transactions.type, 'purchase'),
+          inArray(transactions.type, ['purchase', 'jackpot']),
           isNull(transactions.cancelledAt),
           eq(users.isActive, true),
           since ? gte(transactions.createdAt, since) : undefined,
