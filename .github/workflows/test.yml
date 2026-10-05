@@ -1,0 +1,27 @@
+name: Test Suite
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Create test environment
+        run: |
+          cat > .env <<'EOF'
+          POSTGRES_PASSWORD=bifi-test-password
+          SESSION_SECRET=bifi-test-session-secret-32-chars
+          APP_URL=http://localhost:3000
+          EOF
+
+      - name: Run isolated test suite
+        run: make test-isolated
