@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Pencil, BarChart2, Beer, Upload, Link2, Unlink, Compass } from 'lucide-react';
+import { Pencil, BarChart2, Beer, Upload, Link2, Unlink } from 'lucide-react';
 import { Link } from 'wouter';
 import { Layout } from '../components/layout/Layout';
 import { Modal } from '../components/Modal';
@@ -14,7 +14,6 @@ import {
   useOidcUnlink,
   useChangePassword,
 } from '../hooks/useProfile';
-import { openOnboarding } from '../hooks/useOnboarding';
 import { type ProstVoucher, useProstVouchers } from '../hooks/useProst';
 import { formatCents, balanceColor, cn } from '../lib/utils';
 import { Avatar } from '../components/ui/Avatar';
@@ -520,15 +519,6 @@ export function Profile(): React.JSX.Element {
             </div>
           </div>
         ) : null}
-
-        <Button
-          variant="outline"
-          className="w-full rounded-xl text-muted-foreground"
-          onClick={openOnboarding}
-        >
-          <Compass size={16} />
-          Einführung erneut ansehen
-        </Button>
       </div>
 
       <EditProfileModal

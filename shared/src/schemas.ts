@@ -88,6 +88,7 @@ export const MeResponseSchema = z.object({
   hasSsoLinked: z.boolean(),
   hasPassword: z.boolean(),
   onboardingCompletedAt: z.string().nullable(),
+  onboardingVariant: z.enum(['new', 'returning']),
   createdAt: z.string(),
 });
 

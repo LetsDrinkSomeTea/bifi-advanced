@@ -149,7 +149,7 @@ BiFi ist eine Web-App und lässt sich wie eine normale App auf den Startbildschi
 
 ### Einführung
 
-Beim ersten Login führt dich eine kurze Einführung durch die App und lädt dich am Ende ein, Profilbild und Anzeigenamen zu setzen. Du kannst sie jederzeit überspringen und im **Profil** unter „Einführung erneut ansehen“ wieder öffnen. Welche Schritte du siehst, hängt von deiner Rolle und den aktivierten Funktionen ab (z.B. Jackpot oder Geld senden).
+Beim ersten Login führt dich eine kurze Einführung durch die App und lädt dich am Ende ein, Profilbild und Anzeigenamen zu setzen. Du kannst sie jederzeit überspringen und über das Menü hinter deinem **Avatar** unter „Einführung“ wieder öffnen. Welche Schritte du siehst, hängt von deiner Rolle und den aktivierten Funktionen ab (z.B. Jackpot oder Geld senden). Wer BiFi schon vor der Einführung genutzt hat, bekommt eine kürzere Tour, die die Grundlagen überspringt und Funktionen zeigt, die man vielleicht noch nicht kennt.
 
 ### Navigation
 

@@ -64,35 +64,53 @@ interface Slide {
   body: React.ReactNode;
   points?: Point[];
   note?: { icon: LucideIcon; tone: Tone; text: React.ReactNode };
+  badge?: string;
 }
 
 function buildSlides(user: User, config: AuthConfig | undefined): Slide[] {
   const isModerator = user.role === 'admin' || user.role === 'moderator';
-  const slides: Slide[] = [
-    {
+  // Existing members skip the basics and get a tour of what they might have missed.
+  const isReturning = user.onboardingVariant === 'returning';
+  const slides: Slide[] = [];
+
+  if (isReturning) {
+    slides.push({
       id: 'welcome',
-      icon: Beer,
+      icon: Sparkles,
       tone: 'accent',
-      title: 'Willkommen bei BiFi',
-      body: 'Eure digitale Strichliste. In einer Minute zeigen wir dir, wie alles funktioniert.',
-    },
-    {
-      id: 'balance',
-      icon: Wallet,
-      tone: 'confirm',
-      title: 'Dein Guthaben',
-      body: 'Oben rechts siehst du immer deinen Kontostand. Jeder Kauf wird direkt davon abgezogen.',
-      points: [
-        {
-          icon: Wallet,
-          text: 'Zum Aufladen bezahlst du bar oder per Überweisung, ein Moderator oder Admin bucht es dir ein.',
-        },
-        {
-          icon: Bell,
-          text: 'Rutschst du zu weit ins Minus, erinnert dich ein Banner ans Aufladen.',
-        },
-      ],
-    },
+      title: 'Schön, dass du da bist!',
+      body: 'Du kennst dich ja schon aus. Aber weißt du auch, was alles möglich ist? Hier ein paar Funktionen, die du vielleicht noch nicht entdeckt hast.',
+    });
+  } else {
+    slides.push(
+      {
+        id: 'welcome',
+        icon: Beer,
+        tone: 'accent',
+        title: 'Willkommen bei BiFi',
+        body: 'Eure digitale Strichliste. In einer Minute zeigen wir dir, wie alles funktioniert.',
+      },
+      {
+        id: 'balance',
+        icon: Wallet,
+        tone: 'confirm',
+        title: 'Dein Guthaben',
+        body: 'Oben rechts siehst du immer deinen Kontostand. Jeder Kauf wird direkt davon abgezogen.',
+        points: [
+          {
+            icon: Wallet,
+            text: 'Zum Aufladen bezahlst du bar oder per Überweisung, ein Moderator oder Admin bucht es dir ein.',
+          },
+          {
+            icon: Bell,
+            text: 'Rutschst du zu weit ins Minus, erinnert dich ein Banner ans Aufladen.',
+          },
+        ],
+      },
+    );
+  }
+
+  slides.push(
     {
       id: 'home',
       icon: Home,
@@ -167,7 +185,7 @@ function buildSlides(user: User, config: AuthConfig | undefined): Slide[] {
         },
       ],
     },
-  ];
+  );
 
   if (config?.transfersEnabled) {
     slides.push({
@@ -175,6 +193,7 @@ function buildSlides(user: User, config: AuthConfig | undefined): Slide[] {
       icon: Send,
       tone: 'confirm',
       title: 'Geld senden',
+      badge: isReturning ? 'Neu' : undefined,
       body: 'Hat dir jemand die Pizza ausgelegt? Über das Senden-Symbol im Profil überweist du Guthaben sofort.',
       points: [
         { icon: Lock, text: 'Betrag und Verwendungszweck seht nur ihr beide.' },
@@ -301,6 +320,13 @@ function InfoSlide({ slide }: { slide: Slide }): React.JSX.Element {
   return (
     <div>
       <SlideIcon icon={slide.icon} tone={slide.tone} />
+      {slide.badge ? (
+        <p className="mb-2 text-center">
+          <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
+            {slide.badge}
+          </span>
+        </p>
+      ) : null}
       <h2 id="onboarding-title" className="text-2xl font-bold text-center text-balance">
         {slide.title}
       </h2>
@@ -436,7 +462,9 @@ function OnboardingDialog({
   const dialogRef = useRef<HTMLDivElement>(null);
 
   const slides = useMemo(() => buildSlides(user, config), [user, config]);
-  const total = slides.length + 1; // + profile setup
+  // Returning members who already have an avatar don't need the profile setup.
+  const showProfileSetup = user.onboardingVariant === 'new' || !user.avatarUrl;
+  const total = slides.length + (showProfileSetup ? 1 : 0);
   const [[index, direction], setPage] = useState<[number, number]>([0, 0]);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -451,9 +479,17 @@ function OnboardingDialog({
     setPage([next, next > index ? 1 : -1]);
   };
 
-  const close = (): void => {
+  const close = (skipped = false): void => {
     if (user.onboardingCompletedAt === null) complete();
     if (isReplay) onClose();
+    else if (skipped) {
+      toast.info(
+        'Du findest die Einführung jederzeit im Menü hinter deinem Profilbild oben rechts.',
+        {
+          duration: 8000,
+        },
+      );
+    }
   };
 
   const finish = async (): Promise<void> => {
@@ -510,7 +546,7 @@ function OnboardingDialog({
           {index + 1} / {total}
         </span>
         {!isLast ? (
-          <Button variant="ghost" size="sm" onClick={close}>
+          <Button variant="ghost" size="sm" onClick={() => close(true)}>
             Überspringen
           </Button>
         ) : (
@@ -527,7 +563,7 @@ function OnboardingDialog({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -direction * offset, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            drag={isLast ? false : 'x'}
+            drag={slide ? 'x' : false}
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.25}
             onDragEnd={(_, info) => {

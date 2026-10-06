@@ -1,14 +1,41 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import app from '../index.ts';
+import { runMigrations } from '../db/migrate.ts';
 import { createTestUser, createSession, getAuthCookie } from './helpers.ts';
 
-async function getMe(cookie: string): Promise<{ onboardingCompletedAt: string | null }> {
+interface Me {
+  onboardingCompletedAt: string | null;
+  onboardingVariant: 'new' | 'returning';
+}
+
+async function getMe(cookie: string): Promise<Me> {
   const res = await app.request('/api/auth/me', { headers: { Cookie: cookie } });
   expect(res.status).toBe(200);
-  return res.json() as Promise<{ onboardingCompletedAt: string | null }>;
+  return res.json() as Promise<Me>;
 }
 
 describe('Onboarding', () => {
+  // Records when the onboarding migration was applied, which decides the variant.
+  beforeAll(async () => {
+    await runMigrations();
+  });
+
+  it('shows the full onboarding to users created after the feature shipped', async () => {
+    const user = await createTestUser();
+    const cookie = getAuthCookie(await createSession(user.id));
+
+    const me = await getMe(cookie);
+    expect(me.onboardingVariant).toBe('new');
+  });
+
+  it('shows the returning variant to users that existed before the feature', async () => {
+    const user = await createTestUser({ createdAt: new Date('2020-01-01T00:00:00Z') });
+    const cookie = getAuthCookie(await createSession(user.id));
+
+    const me = await getMe(cookie);
+    expect(me.onboardingVariant).toBe('returning');
+  });
+
   it('reports a new user as not onboarded', async () => {
     const user = await createTestUser();
     const cookie = getAuthCookie(await createSession(user.id));
