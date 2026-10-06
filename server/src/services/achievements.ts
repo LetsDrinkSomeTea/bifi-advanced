@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import {
   buyables,
@@ -113,6 +113,37 @@ export const prostReceivedCount = (userId: string): Promise<number> =>
       .select({ n: sql<number>`count(*)::int` })
       .from(prostVouchers)
       .where(eq(prostVouchers.toUserId, userId)),
+  );
+
+// Each transfer is two rows: the sender's debit (no parent) and the recipient's credit (parent set)
+export const transferSentCount = (userId: string): Promise<number> =>
+  countQ(
+    db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, 'transfer'),
+          isNull(transactions.parentTransactionId),
+          isNull(transactions.cancelledAt),
+        ),
+      ),
+  );
+
+export const transferReceivedCount = (userId: string): Promise<number> =>
+  countQ(
+    db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, 'transfer'),
+          isNotNull(transactions.parentTransactionId),
+          isNull(transactions.cancelledAt),
+        ),
+      ),
   );
 
 export const unlockedAchievementCount = (userId: string): Promise<number> =>

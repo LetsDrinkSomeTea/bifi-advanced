@@ -11,6 +11,7 @@ import {
   BarChart2,
   Hand,
   Sparkles,
+  HandCoins,
 } from 'lucide-react';
 import { Layout } from '../components/layout/Layout';
 import { PageHeader } from '../components/PageHeader';
@@ -20,7 +21,8 @@ import { useSendFriendRequest, useAcceptFriendRequest, useRemoveFriend } from '.
 import { useNudgePresets, useSendNudge } from '../hooks/useNudge';
 import { useSendProst } from '../hooks/useProst';
 import { useBuyables } from '../hooks/useBuyables';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth, useAuthConfig } from '../hooks/useAuth';
+import { TransferSheet } from '../components/TransferSheet';
 import { cn } from '../lib/utils';
 import { useBottomSheet } from '../hooks/useBottomSheet';
 import { ROLE_LABEL, ROLE_STYLE } from '../lib/constants';
@@ -394,6 +396,8 @@ export function ProfileDetail(): React.JSX.Element {
   const { data: profile, isLoading } = usePublicProfile(userId);
   const [nudgeOpen, setNudgeOpen] = useState(false);
   const [prostOpen, setProstOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const { data: authConfig } = useAuthConfig();
 
   if (isLoading) {
     return (
@@ -475,6 +479,20 @@ export function ProfileDetail(): React.JSX.Element {
                 >
                   <Beer size={15} />
                 </Button>
+                {authConfig?.transfersEnabled === true ? (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      setTransferOpen(true);
+                    }}
+                    className="h-9 gap-1.5"
+                    title="Geld senden"
+                    aria-label="Geld senden"
+                  >
+                    <HandCoins size={15} />
+                  </Button>
+                ) : null}
                 <Button
                   variant="outline"
                   size="icon"
@@ -528,6 +546,12 @@ export function ProfileDetail(): React.JSX.Element {
         toUserId={profile.id}
         displayName={profile.displayName}
         onClose={() => setProstOpen(false)}
+      />
+      <TransferSheet
+        open={transferOpen}
+        toUserId={profile.id}
+        displayName={profile.displayName}
+        onClose={() => setTransferOpen(false)}
       />
       <NudgeSheet
         open={nudgeOpen}

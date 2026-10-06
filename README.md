@@ -77,8 +77,10 @@ docker compose pull
 docker compose up -d
 ```
 
+Schemaänderungen spielt die App beim Start automatisch ein. Bereits angewendete Änderungen merkt sie sich in der Tabelle `bifi_schema_migrations`, ein manueller Schritt ist nicht nötig. Schlägt eine Migration fehl, wird sie zurückgerollt und die App startet nicht. Die Ursache steht dann im Log (`docker compose logs app`).
+
 > [!IMPORTANT]
-> Das Datenbankschema wird nur bei der **Erstinstallation** (leeres Datenbank-Volume) automatisch angelegt. Enthält ein Update Schemaänderungen, müssen diese manuell eingespielt werden. Vor jedem Update ein Backup ziehen:
+> Vor jedem Update ein Backup ziehen:
 >
 > ```bash
 > docker compose exec db pg_dump -U bifi bifi > bifi-backup-$(date +%F).sql
@@ -94,15 +96,15 @@ Der Admin-Bereich ist über das Menü hinter deinem **Avatar** in der oberen Lei
 
 ### Rollen
 
-| Aktion                                                   | Mitglied | Moderator | Admin |
-| :------------------------------------------------------- | :------: | :-------: | :---: |
-| Kaufen, Gruppen, Prost, Freunde, Statistiken             |    ✅    |    ✅     |  ✅   |
-| Benutzer anlegen, Guthaben einzahlen, aktivieren/sperren |          |    ✅     |  ✅   |
-| Produkte & Rabattaktionen anlegen und bearbeiten         |          |    ✅     |  ✅   |
-| Schuldenliste & Zahlungserinnerungen                     |          |    ✅     |  ✅   |
-| Fremde Käufe und Jackpot-Drehs stornieren (≤ 5 Minuten)  |          |    ✅     |  ✅   |
-| Admin-Rolle vergeben, Passwörter zurücksetzen            |          |           |  ✅   |
-| Benutzer und Produkte löschen, Audit-Log einsehen        |          |           |  ✅   |
+| Aktion                                                    | Mitglied | Moderator | Admin |
+| :-------------------------------------------------------- | :------: | :-------: | :---: |
+| Kaufen, Gruppen, Prost, Geld senden, Freunde, Statistiken |    ✅    |    ✅     |  ✅   |
+| Benutzer anlegen, Guthaben einzahlen, aktivieren/sperren  |          |    ✅     |  ✅   |
+| Produkte & Rabattaktionen anlegen und bearbeiten          |          |    ✅     |  ✅   |
+| Schuldenliste & Zahlungserinnerungen                      |          |    ✅     |  ✅   |
+| Fremde Käufe und Jackpot-Drehs stornieren (≤ 5 Minuten)   |          |    ✅     |  ✅   |
+| Admin-Rolle vergeben, Passwörter zurücksetzen             |          |           |  ✅   |
+| Benutzer und Produkte löschen, Audit-Log einsehen         |          |           |  ✅   |
 
 Niemand kann Benutzer bearbeiten, die eine höhere Rolle haben als er selbst. Bei OIDC-Benutzern mit `ROLE_SYNC=always` wird die Rolle bei jedem Login aus den Gruppen übernommen und lässt sich in der App nicht ändern.
 
@@ -121,6 +123,10 @@ Produkte haben eine Kategorie (Alkoholisch, Softdrinks, Speisen, Snacks, Sonstig
 ### Rabatte
 
 Eine Rabattaktion gilt für ein Produkt, eine Variante oder ganze Kategorien und gibt entweder einen Prozent- oder einen festen Betrag nach. Optional sind ein Zeitraum (Start/Ende) und ein Mengenlimit („die ersten 20 Stück“). Aktive Aktionen erscheinen als Banner im Shop und im Aktivitäts-Feed.
+
+### Überweisungen
+
+Mitglieder können sich gegenseitig Guthaben schicken (siehe [Geld senden](#geld-senden)). Jede Überweisung steht im Audit-Log (`transfer.sent`). Moderatoren und Admins können sie innerhalb von 5 Minuten über den Verlauf stornieren, dann wird sie auf beiden Konten zurückgebucht. Mit `TRANSFERS_ENABLED=false` lässt sich das Feature abschalten.
 
 ### Schulden
 
@@ -164,6 +170,14 @@ Guthaben wird von einem Moderator oder Admin eingebucht, z.B. nachdem du bar ode
 ### Gruppen
 
 Mit einer Gruppe (z.B. „Stammtisch“ oder „WG“) könnt ihr gemeinsam kaufen: Beim Kauf die Gruppe auswählen, dann wird der Betrag **gleichmäßig auf alle Mitglieder aufgeteilt**. Neue Mitglieder kommen über einen Einladungslink dazu.
+
+### Geld senden
+
+Über das Senden-Symbol im Profil einer Person kannst du ihr Guthaben überweisen, z.B. wenn sie dir die Pizza ausgelegt hat. Betrag und optionalen Verwendungszweck eingeben, bestätigen, fertig: Das Geld ist sofort auf ihrem Konto und sie bekommt eine Benachrichtigung.
+
+- Betrag und Verwendungszweck sehen nur ihr beide (im Verlauf). Im Feed eurer Freunde erscheint nur „A hat B Geld geschickt“.
+- Du kannst die Überweisung **5 Minuten lang** im Verlauf stornieren, die empfangende Person nicht.
+- Ob du dafür ins Minus gehen darfst, ist wie beim Kaufen geregelt.
 
 ### Prost & Anstupsen
 
@@ -291,6 +305,7 @@ Für Meilensteine (z.B. Prost verschickt, Gruppe gegründet, Jackpot-Glück, …
 | Variable                 | Beschreibung                                           | Standard |
 | :----------------------- | :----------------------------------------------------- | :------- |
 | `JACKPOT_ENABLED`        | Jackpot-Feature aktivieren                             | `false`  |
+| `TRANSFERS_ENABLED`      | Überweisungen zwischen Mitgliedern erlauben            | `true`   |
 | `BALANCE_WARN_THRESHOLD` | Schwellenwert für Warnbanner (in Cents)                | `-2000`  |
 | `MAX_DEPOSIT_AMOUNT`     | Maximaler Einzahlungsbetrag pro Transaktion (in Cents) | `10000`  |
 | `ALLOW_NEGATIVE_BALANCE` | Negativen Kontostand erlauben                          | `true`   |
@@ -309,6 +324,7 @@ Für Meilensteine (z.B. Prost verschickt, Gruppe gegründet, Jackpot-Glück, …
 - `/server`: Node.js/Hono Backend.
 - `/shared`: Gemeinsam genutzte Typen und Schemata.
 - `/drizzle`: SQL Migrationen und Metadaten.
+- `server/src/db/migrate.ts`: Migrationen, die die App beim Start auf bestehende Installationen anwendet. Jede Schemaänderung muss hier zusätzlich als idempotentes SQL eingetragen werden.
 
 ---
 

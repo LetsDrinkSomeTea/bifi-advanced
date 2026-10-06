@@ -35,6 +35,12 @@ export type FeedEvent =
       metadata: { variantId: string; amount: number; buyableName: string; variantName: string };
     }
   | {
+      // Deliberately carries no amount or note: transfers are private, only the fact is shown
+      type: 'transfer_sent';
+      userId: string;
+      targetUserId: string;
+    }
+  | {
       type: 'nudge';
       userId: string;
       targetUserId: string;

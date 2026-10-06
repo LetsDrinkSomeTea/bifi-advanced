@@ -36,6 +36,8 @@ export type AchievementEventType =
   | 'purchase'
   | 'prost_sent'
   | 'prost_received'
+  | 'transfer_sent'
+  | 'transfer_received'
   | 'group_founded'
   | 'jackpot'
   | 'contribution'
@@ -60,6 +62,14 @@ export type AchievementEvent =
     }
   | { type: 'prost_sent'; userId: string }
   | { type: 'prost_received'; userId: string }
+  | { type: 'transfer_sent'; userId: string; amount: number }
+  | {
+      type: 'transfer_received';
+      userId: string;
+      amount: number;
+      balanceBefore: number;
+      balanceAfter: number;
+    }
   | { type: 'group_founded'; userId: string }
   | { type: 'jackpot'; userId: string; multiplier: number }
   | { type: 'contribution'; userId: string }

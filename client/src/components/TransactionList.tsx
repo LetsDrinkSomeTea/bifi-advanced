@@ -13,6 +13,7 @@ const TYPE_LABEL: Record<TransactionType, string> = {
   correction: 'Korrektur',
   jackpot: 'Jackpot',
   prost: 'Prost',
+  transfer: 'Überweisung',
 };
 
 function txnLabel(txn: TransactionWithItems): string {
@@ -25,6 +26,12 @@ function txnLabel(txn: TransactionWithItems): string {
       .join(', ');
     const prefix = txn.note !== null ? `${txn.note}: ` : '';
     return `${prefix}${items} ausgegeben`;
+  }
+
+  if (txn.type === 'transfer') {
+    const name = txn.counterparty?.displayName ?? 'Unbekannt';
+    const direction = txn.totalAmount < 0 ? `An ${name}` : `Von ${name}`;
+    return txn.note !== null ? `${direction}: ${txn.note}` : direction;
   }
 
   if (txn.type === 'correction' || txn.type === 'deposit') {
@@ -47,6 +54,8 @@ function cancelable(txn: TransactionWithItems, isModerator: boolean): boolean {
   if (txn.cancelledAt !== null) return false;
   if (txn.type === 'deposit' || txn.type === 'correction') return false;
   if (txn.type === 'jackpot' && !isModerator) return false;
+  // Only the sender's side of a transfer is cancelable for members
+  if (txn.type === 'transfer' && txn.parentTransactionId !== null && !isModerator) return false;
   const ageMs = Date.now() - new Date(txn.createdAt).getTime();
   return ageMs <= 5 * 60 * 1000;
 }

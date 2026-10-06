@@ -33,14 +33,9 @@ import {
 } from '../services/notifications.ts';
 import { checkAchievements } from '../services/achievements.ts';
 import { decodeCursor, encodeCursor } from '../lib/cursor.ts';
+import { formatCents } from '../lib/money.ts';
 
 const router = new Hono();
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatCents(cents: number): string {
-  return (cents / 100).toFixed(2).replace('.', ',') + ' €';
-}
 
 // ─── GET /api/transactions ────────────────────────────────────────────────────
 
@@ -108,7 +103,45 @@ router.get('/', requireAuth, zValidator('query', HistoryQuerySchema), async (c) 
     itemsByTxn.set(item.transactionId, list);
   }
 
-  const data = page.map((t) => ({ ...t, items: itemsByTxn.get(t.id) ?? [] }));
+  // Transfers are two linked rows (debit = parent, credit = child); each side shows the other's owner
+  const transferRows = page.filter((t) => t.type === 'transfer');
+  const counterpartyByTxn = new Map<string, { id: string; displayName: string }>();
+  if (transferRows.length > 0) {
+    const debitIds = transferRows.filter((t) => !t.parentTransactionId).map((t) => t.id);
+    const parentIds = transferRows.flatMap((t) =>
+      t.parentTransactionId ? [t.parentTransactionId] : [],
+    );
+    const linked = await db
+      .select({
+        id: transactions.id,
+        parentTransactionId: transactions.parentTransactionId,
+        userId: users.id,
+        displayName: users.displayName,
+      })
+      .from(transactions)
+      .innerJoin(users, eq(transactions.userId, users.id))
+      .where(
+        and(
+          eq(transactions.type, 'transfer'),
+          or(
+            parentIds.length > 0 ? inArray(transactions.id, parentIds) : undefined,
+            debitIds.length > 0 ? inArray(transactions.parentTransactionId, debitIds) : undefined,
+          ),
+        ),
+      );
+    for (const t of transferRows) {
+      const other = linked.find((l) =>
+        t.parentTransactionId ? l.id === t.parentTransactionId : l.parentTransactionId === t.id,
+      );
+      if (other) counterpartyByTxn.set(t.id, { id: other.userId, displayName: other.displayName });
+    }
+  }
+
+  const data = page.map((t) => ({
+    ...t,
+    items: itemsByTxn.get(t.id) ?? [],
+    counterparty: counterpartyByTxn.get(t.id) ?? null,
+  }));
   return c.json({ data, nextCursor });
 });
 
@@ -789,6 +822,11 @@ router.delete('/:id', requireAuth, async (c) => {
     );
   }
 
+  // Transfers: only the sender (via their debit row) or mod+ can cancel; the recipient cannot
+  if (txn.type === 'transfer' && txn.parentTransactionId !== null && !isMod) {
+    return c.json({ error: 'Only the sender can cancel a transfer', code: 'FORBIDDEN' }, 403);
+  }
+
   // 5-minute cancel window applies to everyone
   const ageMs = Date.now() - txn.createdAt.getTime();
   if (ageMs > 5 * 60 * 1000) {
@@ -803,7 +841,7 @@ router.delete('/:id', requireAuth, async (c) => {
 
   const cancelledAt = new Date();
 
-  await db.transaction(async (tx) => {
+  const linkedCancelled = await db.transaction(async (tx) => {
     const cancelTxn = async (t: typeof txn): Promise<void> => {
       const [cancelled] = await tx
         .update(transactions)
@@ -840,7 +878,8 @@ router.delete('/:id', requireAuth, async (c) => {
     // Usually, the person who initiated the group purchase (the parent) is the only one who can cancel the WHOLE thing.
     // If a split-member cancels, they only cancel their own share?
     // The current logic cancels EVERYTHING if the initiator cancels. Let's stick to that but use parentTransactionId.
-    if (txn.type === 'purchase') {
+    // Transfers cascade the same way: cancelling either side reverses both
+    if (txn.type === 'purchase' || txn.type === 'transfer') {
       const splits = await tx
         .select()
         .from(transactions)
@@ -857,8 +896,29 @@ router.delete('/:id', requireAuth, async (c) => {
       for (const split of splits) {
         await cancelTxn(split);
       }
+      return splits;
     }
+    return [];
   });
+
+  if (txn.type === 'transfer') {
+    const debit = txn.parentTransactionId ? linkedCancelled[0] : txn;
+    const credit = txn.parentTransactionId ? txn : linkedCancelled[0];
+    if (debit && credit) {
+      const [sender] = await db
+        .select({ displayName: users.displayName })
+        .from(users)
+        .where(eq(users.id, debit.userId));
+      pushInvalidate(credit.userId, ['balance', 'transactions']);
+      createNotification({
+        userId: credit.userId,
+        type: 'transfer',
+        title: `Überweisung von ${sender?.displayName ?? 'Unbekannt'} storniert`,
+        message: `${formatCents(credit.totalAmount)} wurden von deinem Konto zurückgebucht.`,
+        relatedId: debit.id,
+      }).catch(console.error);
+    }
+  }
 
   const [owner] = await db
     .select({ displayName: users.displayName })

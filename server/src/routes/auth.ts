@@ -74,6 +74,7 @@ auth.get('/config', (c) => {
     roleSync: getRoleSyncMode(),
     balanceWarnThreshold: parseInt(process.env.BALANCE_WARN_THRESHOLD ?? '-2000'),
     jackpotEnabled: process.env.JACKPOT_ENABLED === 'true',
+    transfersEnabled: process.env.TRANSFERS_ENABLED !== 'false',
   });
 });
 
