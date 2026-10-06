@@ -1,5 +1,5 @@
 # ── Stage 1: Build ────────────────────────────────────────────────────────────
-FROM node:25-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY tsconfig.json vite.config.ts postcss.config.js tailwind.config.ts ./
 RUN npm run build && npm prune --omit=dev
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
-FROM node:25-alpine AS runtime
+FROM node:24-alpine AS runtime
 
 RUN addgroup -S bifi && adduser -S bifi -G bifi
 

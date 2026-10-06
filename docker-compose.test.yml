@@ -34,4 +34,4 @@ services:
         condition: service_healthy
       redis-test:
         condition: service_started
-    command: ['sh', '-c', 'npx drizzle-kit migrate && npm run test:server']
+    command: ['sh', '-c', 'npx drizzle-kit push --force && npm run test:server']
