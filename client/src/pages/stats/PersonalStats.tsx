@@ -12,7 +12,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
   PieChart as RePieChart,
   Pie,
 } from 'recharts';
@@ -144,7 +143,7 @@ export function PersonalStatsContent({
                           data={userStats.consumption.categories.map((c) => ({
                             name: CATEGORY_LABELS[c.category] ?? c.category,
                             value: c.count,
-                            color: CATEGORY_COLORS[c.category] ?? 'var(--text-500)',
+                            fill: CATEGORY_COLORS[c.category] ?? 'var(--text-500)',
                           }))}
                           cx="50%"
                           cy="50%"
@@ -152,14 +151,7 @@ export function PersonalStatsContent({
                           outerRadius={80}
                           paddingAngle={5}
                           dataKey="value"
-                        >
-                          {userStats.consumption.categories.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={CATEGORY_COLORS[entry.category] ?? 'var(--text-500)'}
-                            />
-                          ))}
-                        </Pie>
+                        />
                         <Tooltip
                           contentStyle={{
                             backgroundColor: 'var(--background-100)',
