@@ -7,8 +7,7 @@ import { Mailbox } from 'lucide-react';
 export type { GroupedFeedEntry };
 
 type TimelineItem =
-  | { kind: 'entry'; entry: GroupedFeedEntry }
-  | { kind: 'separator'; label: string; key: string };
+  { kind: 'entry'; entry: GroupedFeedEntry } | { kind: 'separator'; label: string; key: string };
 
 function getDateLabel(dateStr: string): string {
   const d = new Date(dateStr);

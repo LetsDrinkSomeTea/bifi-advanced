@@ -467,7 +467,7 @@ export function ProfileDetail(): React.JSX.Element {
                 ) : null}
                 <Button
                   variant="outline"
-                  size='icon'
+                  size="icon"
                   onClick={() => {
                     setProstOpen(true);
                   }}
@@ -477,7 +477,7 @@ export function ProfileDetail(): React.JSX.Element {
                 </Button>
                 <Button
                   variant="outline"
-                  size='icon'
+                  size="icon"
                   onClick={() => {
                     setNudgeOpen(true);
                   }}

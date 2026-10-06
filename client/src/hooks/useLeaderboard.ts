@@ -3,11 +3,7 @@ import { api } from '../lib/api';
 import type { LeaderboardEntry } from '@shared/types';
 
 type LeaderboardType =
-  | 'total_spent'
-  | 'total_purchases'
-  | 'achievements'
-  | 'prost_sent'
-  | 'jackpot_spins';
+  'total_spent' | 'total_purchases' | 'achievements' | 'prost_sent' | 'jackpot_spins';
 type LeaderboardPeriod = 'week' | 'month' | 'alltime';
 
 export function useLeaderboard(

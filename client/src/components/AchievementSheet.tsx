@@ -53,7 +53,7 @@ function GroupContent({
         />
         <div>
           <p className="font-semibold text-base">{card.name}</p>
-          {!card.tiers.some(t => !t.unlocked) ? (
+          {!card.tiers.some((t) => !t.unlocked) ? (
             <span className="text-xs text-confirm-strong flex items-center gap-1">
               <Check size={12} /> Freigeschaltet
             </span>
@@ -136,8 +136,7 @@ export function AchievementSheet({
 }: AchievementSheetProps): React.JSX.Element | null {
   if (!card) return null;
 
-  const isHiddenDummy =
-    card.kind === 'standalone' && card.key.startsWith('hidden_locked_dummy_');
+  const isHiddenDummy = card.kind === 'standalone' && card.key.startsWith('hidden_locked_dummy_');
 
   const title = isHiddenDummy ? '???' : card.name;
 

@@ -526,10 +526,10 @@ export function AdminProductsContent(): React.JSX.Element {
             </div>
           ))}
           {sortedProducts.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
-          <Box className="mx-auto mb-2 opacity-20" size={32} />
-          <p className="text-sm">Keine Produkte gefunden.</p>
-        </div>
+            <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
+              <Box className="mx-auto mb-2 opacity-20" size={32} />
+              <p className="text-sm">Keine Produkte gefunden.</p>
+            </div>
           )}
         </div>
       )}

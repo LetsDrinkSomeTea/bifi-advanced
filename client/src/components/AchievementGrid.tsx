@@ -151,7 +151,6 @@ function TierBadge({
   );
 }
 
-
 function GroupCardComponent({
   card,
   progress,
@@ -191,7 +190,9 @@ function GroupCardComponent({
       role="button"
       tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') onClick();
+      }}
       className={cn(
         'flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border text-center h-full min-h-[90px] transition-all cursor-pointer',
         card.anyUnlocked
@@ -244,7 +245,9 @@ function StandaloneCardComponent({
       role="button"
       tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') onClick();
+      }}
       className={cn(
         'flex flex-col items-center justify-center gap-1 p-2 rounded-xl border text-center h-full min-h-[90px] transition-all cursor-pointer',
         card.unlocked ? 'border-border bg-card shadow-xs' : 'border-border bg-muted/30 opacity-60',
@@ -405,11 +408,7 @@ export const AchievementGrid = ({
                 onClick={() => openCard(card)}
               />
             ) : (
-              <StandaloneCardComponent
-                key={card.key}
-                card={card}
-                onClick={() => openCard(card)}
-              />
+              <StandaloneCardComponent key={card.key} card={card} onClick={() => openCard(card)} />
             ),
           )}
         </div>

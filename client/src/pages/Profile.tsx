@@ -7,7 +7,13 @@ import { Modal } from '../components/Modal';
 import { AchievementGrid } from '@/components/AchievementGrid';
 import { ActivityItem, type ActivityUser, ProfileLink } from '../components/ActivityItem';
 import { useAuth, useAuthConfig } from '../hooks/useAuth';
-import { usePublicProfile, useUpdateProfile, useUploadAvatar, useOidcUnlink, useChangePassword } from '../hooks/useProfile';
+import {
+  usePublicProfile,
+  useUpdateProfile,
+  useUploadAvatar,
+  useOidcUnlink,
+  useChangePassword,
+} from '../hooks/useProfile';
 import { type ProstVoucher, useProstVouchers } from '../hooks/useProst';
 import { formatCents, balanceColor, cn } from '../lib/utils';
 import { Avatar } from '../components/ui/Avatar';

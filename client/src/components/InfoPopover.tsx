@@ -23,7 +23,11 @@ const Y_OFFSET: Record<PopoverSide, number> = {
   right: 0,
 };
 
-export function InfoPopover({ content, children, side = 'top' }: InfoPopoverProps): React.JSX.Element {
+export function InfoPopover({
+  content,
+  children,
+  side = 'top',
+}: InfoPopoverProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

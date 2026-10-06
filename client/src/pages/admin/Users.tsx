@@ -769,8 +769,7 @@ export function AdminUsersContent(): React.JSX.Element {
             const isSelf = u.id === currentUser?.id;
             const isExpanded = expandedId === u.id;
             const isAdmin = currentUser?.role === 'admin';
-            const canManage =
-              ROLE_LEVEL[currentUser?.role ?? 'member'] >= ROLE_LEVEL[u.role];
+            const canManage = ROLE_LEVEL[currentUser?.role ?? 'member'] >= ROLE_LEVEL[u.role];
 
             return (
               <UserCard

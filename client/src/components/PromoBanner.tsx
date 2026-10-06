@@ -43,7 +43,10 @@ export function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.
         });
 
         if (v.activeDiscount.quantityRemaining !== null) {
-          if (minQuantityRemaining === null || v.activeDiscount.quantityRemaining < minQuantityRemaining) {
+          if (
+            minQuantityRemaining === null ||
+            v.activeDiscount.quantityRemaining < minQuantityRemaining
+          ) {
             minQuantityRemaining = v.activeDiscount.quantityRemaining;
           }
         } else if (v.activeDiscount.endTime) {
@@ -53,7 +56,8 @@ export function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.
       });
     });
 
-    if (discountedLabels.length === 0) return { title: '', summary: '', badge: '', discountedRows: [] };
+    if (discountedLabels.length === 0)
+      return { title: '', summary: '', badge: '', discountedRows: [] };
 
     const summaryStr =
       discountedLabels.length <= 2
@@ -120,16 +124,24 @@ export function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.
             const timeLeft = row.endTime ? formatTimeLeft(row.endTime) : null;
 
             return (
-              <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border bg-card">
+              <div
+                key={i}
+                className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border bg-card"
+              >
                 <div className="min-w-0">
                   <p className="font-medium text-sm leading-tight">
                     {row.productName}
                     {row.variantName !== row.productName ? (
-                      <span className="text-muted-foreground font-normal"> · {row.variantName}</span>
+                      <span className="text-muted-foreground font-normal">
+                        {' '}
+                        · {row.variantName}
+                      </span>
                     ) : null}
                   </p>
                   {row.quantityRemaining !== null ? (
-                    <p className="text-xs text-muted-foreground mt-0.5">noch {row.quantityRemaining}x verfügbar</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      noch {row.quantityRemaining}x verfügbar
+                    </p>
                   ) : timeLeft !== null ? (
                     <p className="text-xs text-muted-foreground mt-0.5">endet in {timeLeft}</p>
                   ) : null}

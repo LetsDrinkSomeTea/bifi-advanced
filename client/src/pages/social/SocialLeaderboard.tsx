@@ -8,11 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 
 type LeaderboardType =
-  | 'total_spent'
-  | 'total_purchases'
-  | 'achievements'
-  | 'prost_sent'
-  | 'jackpot_spins';
+  'total_spent' | 'total_purchases' | 'achievements' | 'prost_sent' | 'jackpot_spins';
 type LeaderboardPeriod = 'week' | 'month' | 'alltime';
 
 const PERIOD_LABELS: Record<LeaderboardPeriod, string> = {

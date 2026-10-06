@@ -8,7 +8,12 @@ interface InfoSheetProps {
   children: React.ReactNode;
 }
 
-export function InfoSheet({ open, onClose, title, children }: InfoSheetProps): React.JSX.Element | null {
+export function InfoSheet({
+  open,
+  onClose,
+  title,
+  children,
+}: InfoSheetProps): React.JSX.Element | null {
   const { mounted, show, isDragging, dragY, handleClose, dragHandleProps, backdropOpacity } =
     useBottomSheet(open, onClose);
 

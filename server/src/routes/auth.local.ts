@@ -142,7 +142,10 @@ localAuth.post(
 
     if (user.passwordHash !== null) {
       if (!currentPassword) {
-        return c.json({ error: 'Current password required', code: 'CURRENT_PASSWORD_REQUIRED' }, 400);
+        return c.json(
+          { error: 'Current password required', code: 'CURRENT_PASSWORD_REQUIRED' },
+          400,
+        );
       }
       const valid = await argon2.verify(user.passwordHash, currentPassword);
       if (!valid) {
