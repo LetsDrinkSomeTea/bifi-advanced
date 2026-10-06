@@ -29,6 +29,11 @@ export const MIGRATIONS: Migration[] = [
       "ALTER TYPE feed_type ADD VALUE IF NOT EXISTS 'transfer_sent'",
     ],
   },
+  {
+    // Existing users get NULL and therefore see the onboarding once.
+    id: '0002_onboarding',
+    sql: ['ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_completed_at timestamp'],
+  },
 ];
 
 export async function runMigrations(migrations: Migration[] = MIGRATIONS): Promise<void> {

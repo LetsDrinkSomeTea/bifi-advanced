@@ -33,6 +33,11 @@ describe('runMigrations', () => {
     expect(await enumValues('transaction_type')).toContain('transfer');
     expect(await enumValues('notification_type')).toContain('transfer');
     expect(await enumValues('feed_type')).toContain('transfer_sent');
+
+    const col = await pool.query(
+      "SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'onboarding_completed_at'",
+    );
+    expect(col.rowCount).toBe(1);
   });
 
   it('applies pending migrations in order and records them once', async () => {

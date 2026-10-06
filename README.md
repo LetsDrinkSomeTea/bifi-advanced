@@ -147,6 +147,10 @@ BiFi ist eine Web-App und lässt sich wie eine normale App auf den Startbildschi
 - **iPhone/iPad (Safari):** Teilen-Symbol → „Zum Home-Bildschirm“
 - **Android (Chrome):** Menü ⋮ → „App installieren“ bzw. „Zum Startbildschirm hinzufügen“
 
+### Einführung
+
+Beim ersten Login führt dich eine kurze Einführung durch die App und lädt dich am Ende ein, Profilbild und Anzeigenamen zu setzen. Du kannst sie jederzeit überspringen und über das Menü hinter deinem **Avatar** unter „Einführung“ wieder öffnen. Welche Schritte du siehst, hängt von deiner Rolle und den aktivierten Funktionen ab (z.B. Jackpot oder Geld senden). Wer BiFi schon vor der Einführung genutzt hat, bekommt eine kürzere Tour, die die Grundlagen überspringt und Funktionen zeigt, die man vielleicht noch nicht kennt. Diese kürzere Tour siehst du auch, wenn du die Einführung später erneut öffnest.
+
 ### Navigation
 
 | Bereich     | Inhalt                                                               |

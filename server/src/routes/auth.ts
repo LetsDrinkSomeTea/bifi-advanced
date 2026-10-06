@@ -21,6 +21,7 @@ import {
 import { requireAuth } from '../middleware/auth.ts';
 import { SafeImageUrlSchema } from '../lib/url.ts';
 import { getClientIp } from '../lib/ip.ts';
+import { onboardingVariant } from '../services/onboarding.ts';
 
 type RoleSyncMode = 'always' | 'on_creation' | 'never';
 
@@ -354,7 +355,7 @@ auth.delete('/oidc/link', requireAuth, async (c) => {
   return c.json({ success: true });
 });
 
-auth.get('/me', requireAuth, (c) => {
+auth.get('/me', requireAuth, async (c) => {
   const user = c.get('user');
   return c.json({
     id: user.id,
@@ -368,6 +369,8 @@ auth.get('/me', requireAuth, (c) => {
     isActive: user.isActive,
     hasSsoLinked: user.ssoClaim !== null,
     hasPassword: user.passwordHash !== null,
+    onboardingCompletedAt: user.onboardingCompletedAt,
+    onboardingVariant: await onboardingVariant(user),
     createdAt: user.createdAt,
   });
 });
