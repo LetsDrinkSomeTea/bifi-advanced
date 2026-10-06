@@ -34,6 +34,7 @@ const TYPE_ICON: Record<FeedType, { name: string; color: string }> = {
   jackpot_win: { name: 'dices', color: 'text-secondary-strong' },
   promotion_started: { name: 'flame', color: 'text-accent-strong' },
   promotion_ended: { name: 'timer', color: 'text-muted-foreground' },
+  transfer_sent: { name: 'hand-coins', color: 'text-confirm-strong' },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -262,6 +263,15 @@ function feedText(
         </>
       );
     }
+    case 'transfer_sent':
+      return isMe ? (
+        <>Du hast {targetName(targetUser, currentUserId, false)} Geld geschickt</>
+      ) : (
+        <>
+          <Actor user={user} currentUserId={currentUserId} /> hat{' '}
+          {targetName(targetUser, currentUserId, false)} Geld geschickt
+        </>
+      );
     case 'friendship_started': {
       const isTarget = currentUserId !== undefined && targetUser?.id === currentUserId;
       if (isMe)

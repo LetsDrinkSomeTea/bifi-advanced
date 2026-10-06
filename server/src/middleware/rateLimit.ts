@@ -39,5 +39,7 @@ export function rateLimit(
 
 // Pre-configured limiters per spec §11
 export const purchaseRateLimit = rateLimit(20, 60);
+// Keyed per user (runs after requireAuth) so members sharing one network don't throttle each other
+export const transferRateLimit = rateLimit(10, 60, (c) => `rl:transfers:${c.get('user').id}`);
 export const nudgeRateLimit = rateLimit(6, 3600);
 export const globalRateLimit = rateLimit(100, 60);

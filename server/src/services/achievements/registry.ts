@@ -28,6 +28,8 @@ import {
   purchasesOnBiFiDay,
   toLocalTime,
   totalSavedCents,
+  transferReceivedCount,
+  transferSentCount,
   unlockedAchievementCount,
 } from '../achievements.ts';
 
@@ -145,6 +147,73 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
       { tier: 'silver', description: '25× Prost erhalten', threshold: 25 },
       { tier: 'gold', description: '50× Prost erhalten', threshold: 50 },
     ],
+  }),
+
+  // ── Überweisungen ──────────────────────────────────────────────────────────
+  defineAchievement({
+    key: 'bargeldlos',
+    name: 'Bargeldlos',
+    description: 'Erste Überweisung gesendet',
+    icon: 'hand-coins',
+    color: 'text-emerald-500',
+    events: ['transfer_sent'],
+    check: () => true,
+  }),
+  ...defineTieredAchievement({
+    groupKey: 'transfer_sent',
+    name: 'Zahlmeister',
+    icon: 'wallet',
+    color: 'text-emerald-600',
+    events: ['transfer_sent'],
+    progress: (userId) => transferSentCount(userId),
+    tiers: [
+      { tier: 'bronze', description: '5 Überweisungen gesendet', threshold: 5 },
+      { tier: 'silver', description: '15 Überweisungen gesendet', threshold: 15 },
+      { tier: 'gold', description: '30 Überweisungen gesendet', threshold: 30 },
+    ],
+  }),
+  ...defineTieredAchievement({
+    groupKey: 'transfer_received',
+    name: 'Vorstrecker',
+    icon: 'piggy-bank',
+    color: 'text-pink-500',
+    events: ['transfer_received'],
+    progress: (userId) => transferReceivedCount(userId),
+    tiers: [
+      { tier: 'bronze', description: '5 Überweisungen erhalten', threshold: 5 },
+      { tier: 'silver', description: '15 Überweisungen erhalten', threshold: 15 },
+      { tier: 'gold', description: '30 Überweisungen erhalten', threshold: 30 },
+    ],
+  }),
+  defineAchievement({
+    key: 'grosser_schein',
+    name: 'Großer Schein',
+    description: 'Eine Überweisung von 50 € oder mehr gesendet',
+    icon: 'banknote',
+    color: 'text-emerald-500',
+    hidden: true,
+    events: ['transfer_sent'],
+    check: (e) => e.amount >= 5000,
+  }),
+  defineAchievement({
+    key: 'centfuchs',
+    name: 'Centfuchs',
+    description: 'Genau 1 Cent überwiesen',
+    icon: 'coins',
+    color: 'text-yellow-600',
+    hidden: true,
+    events: ['transfer_sent'],
+    check: (e) => e.amount === 1,
+  }),
+  defineAchievement({
+    key: 'gerettet',
+    name: 'Gerettet',
+    description: 'Eine Überweisung hat dich aus dem Minus geholt',
+    icon: 'life-buoy',
+    color: 'text-sky-500',
+    hidden: true,
+    events: ['transfer_received'],
+    check: (e) => e.balanceBefore < 0 && e.balanceAfter >= 0,
   }),
 
   ...defineTieredAchievement({
@@ -276,7 +345,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     icon: 'arrow-down-circle',
     color: 'text-red-500',
     hidden: true,
-    events: ['purchase', 'deposit'],
+    events: ['purchase', 'deposit', 'transfer_sent'],
     check: async (e) => {
       const [user] = await db
         .select({ balance: users.balance })
@@ -292,7 +361,7 @@ export const ACHIEVEMENT_REGISTRY: ServerAchievementDef[] = [
     icon: 'skull',
     color: 'text-red-700',
     hidden: true,
-    events: ['purchase', 'deposit'],
+    events: ['purchase', 'deposit', 'transfer_sent'],
     check: async (e) => {
       const [user] = await db
         .select({ balance: users.balance })

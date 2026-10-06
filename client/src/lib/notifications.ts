@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Info,
   Beer,
+  HandCoins,
   type LucideIcon,
 } from 'lucide-react';
 import { type NotificationType } from '@shared/types';
@@ -26,6 +27,8 @@ export function notificationMeta(type: NotificationType): NotifMeta {
       return { icon: ArrowDownCircle, color: 'text-confirm-strong', bg: 'bg-confirm-soft' };
     case 'balance_warning':
       return { icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10' };
+    case 'transfer':
+      return { icon: HandCoins, color: 'text-confirm-strong', bg: 'bg-confirm-soft' };
     case 'prost':
       return { icon: Beer, color: 'text-accent-strong', bg: 'bg-accent-soft' };
     case 'nudge':
@@ -45,6 +48,8 @@ export function notificationHref(n: AppNotification): string | null {
       return '/verlauf/transaktionen';
     case 'balance_warning':
       return '/profile';
+    case 'transfer':
+      return '/verlauf/transaktionen';
     case 'prost':
       return n.relatedId ? `/profile/${n.relatedId}` : null;
     case 'nudge':

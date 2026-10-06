@@ -12,6 +12,7 @@ import { mkdir } from 'node:fs/promises';
 import { APP_TZ } from './services/achievements.ts';
 import { globalRateLimit } from './middleware/rateLimit.ts';
 import { initRedis } from './db/redis.ts';
+import { runMigrations } from './db/migrate.ts';
 import { initOIDC } from './services/oidc.ts';
 import authRoutes from './routes/auth.ts';
 import localAuthRoutes from './routes/auth.local.ts';
@@ -24,6 +25,7 @@ import usersRoutes from './routes/users.ts';
 import friendsRoutes from './routes/friends.ts';
 import nudgesRoutes from './routes/nudges.ts';
 import prostRoutes from './routes/prost.ts';
+import transfersRoutes from './routes/transfers.ts';
 import groupsRoutes from './routes/groups.ts';
 import notificationsRoutes from './routes/notifications.ts';
 import feedRoutes from './routes/feed.ts';
@@ -82,6 +84,7 @@ app.route('/api/users', usersRoutes);
 app.route('/api/friends', friendsRoutes);
 app.route('/api/nudges', nudgesRoutes);
 app.route('/api/prost', prostRoutes);
+app.route('/api/transfers', transfersRoutes);
 app.route('/api/groups', groupsRoutes);
 app.route('/api/notifications', notificationsRoutes);
 app.route('/api/feed', feedRoutes);
@@ -154,6 +157,7 @@ if (process.env.NODE_ENV === 'production') {
 // ─── Startup ──────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
+  await runMigrations();
   await mkdir(getUploadDir(), { recursive: true });
   await initRedis();
   await initOIDC();

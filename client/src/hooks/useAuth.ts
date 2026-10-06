@@ -9,6 +9,7 @@ export interface AuthConfig {
   roleSync: 'always' | 'on_creation' | 'never';
   balanceWarnThreshold: number;
   jackpotEnabled: boolean;
+  transfersEnabled: boolean;
 }
 
 export interface AuthState {

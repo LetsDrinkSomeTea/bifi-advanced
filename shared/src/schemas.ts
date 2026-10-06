@@ -4,7 +4,14 @@ import { z } from 'zod';
 
 export const ROLES = ['admin', 'moderator', 'member'] as const;
 export const AUDIT_SEVERITIES = ['info', 'low', 'medium', 'high'] as const;
-export const TRANSACTION_TYPES = ['purchase', 'deposit', 'correction', 'jackpot', 'prost'] as const;
+export const TRANSACTION_TYPES = [
+  'purchase',
+  'deposit',
+  'correction',
+  'jackpot',
+  'prost',
+  'transfer',
+] as const;
 export const NUDGE_TYPES = ['nudge', 'prost'] as const;
 export const NOTIFICATION_TYPES = [
   'nudge',
@@ -14,6 +21,7 @@ export const NOTIFICATION_TYPES = [
   'balance_warning',
   'friend_request',
   'system',
+  'transfer',
 ] as const;
 export const BUYABLE_CATEGORIES = ['alcoholic', 'soft_drink', 'food', 'snack', 'other'] as const;
 export const FRIENDSHIP_STATUSES = ['pending', 'accepted'] as const;
@@ -32,6 +40,7 @@ export const FEED_TYPES = [
   'jackpot_win',
   'promotion_started',
   'promotion_ended',
+  'transfer_sent',
 ] as const;
 
 export type BuyableCategory = (typeof BUYABLE_CATEGORIES)[number];
@@ -118,6 +127,19 @@ export const ProstSchema = z.object({
   buyableId: z.string().uuid(),
   variantId: z.string().uuid(),
   note: z.string().max(200).optional(),
+});
+
+export const TRANSFER_NOTE_MAX_LENGTH = 140;
+
+export const TransferSchema = z.object({
+  toUserId: z.string().uuid(),
+  amount: z.number().int().min(1),
+  note: z
+    .string()
+    .trim()
+    .max(TRANSFER_NOTE_MAX_LENGTH)
+    .optional()
+    .transform((v) => (v === '' ? undefined : v)),
 });
 
 export const DepositSchema = z.object({

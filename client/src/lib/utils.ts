@@ -32,6 +32,13 @@ export function formatCents(cents: number): string {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 }
 
+/** Parses a user-entered euro amount ("8,50", "8.5", "12") into cents; null if invalid. */
+export function parseEuroToCents(input: string): number | null {
+  const normalized = input.trim().replace(',', '.');
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return null;
+  return Math.round(parseFloat(normalized) * 100);
+}
+
 export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat('de-DE', {
     year: 'numeric',

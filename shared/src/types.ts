@@ -121,7 +121,10 @@ export interface TransactionWithItems {
   cancelledAt: string | null;
   cancelledBy: string | null;
   jackpotMultiplier: string | null;
+  parentTransactionId: string | null;
   createdAt: string;
+  /** For transfers: the member on the other side (recipient for the sender and vice versa) */
+  counterparty: { id: string; displayName: string } | null;
   items: {
     id: string;
     buyableId: string;
