@@ -67,10 +67,15 @@ interface Slide {
   badge?: string;
 }
 
+function tourVariant(user: User): User['onboardingVariant'] {
+  return user.onboardingCompletedAt === null ? user.onboardingVariant : 'returning';
+}
+
 function buildSlides(user: User, config: AuthConfig | undefined): Slide[] {
   const isModerator = user.role === 'admin' || user.role === 'moderator';
-  // Existing members skip the basics and get a tour of what they might have missed.
-  const isReturning = user.onboardingVariant === 'returning';
+  // Existing members, and anyone replaying it after finishing, skip the basics and get a
+  // tour of what they might have missed.
+  const isReturning = tourVariant(user) === 'returning';
   const slides: Slide[] = [];
 
   if (isReturning) {
@@ -193,7 +198,8 @@ function buildSlides(user: User, config: AuthConfig | undefined): Slide[] {
       icon: Send,
       tone: 'confirm',
       title: 'Geld senden',
-      badge: isReturning ? 'Neu' : undefined,
+      // Only new to members from before the feature, not to someone replaying the tour.
+      badge: user.onboardingVariant === 'returning' ? 'Neu' : undefined,
       body: 'Hat dir jemand die Pizza ausgelegt? Über das Senden-Symbol im Profil überweist du Guthaben sofort.',
       points: [
         { icon: Lock, text: 'Betrag und Verwendungszweck seht nur ihr beide.' },
@@ -463,7 +469,7 @@ function OnboardingDialog({
 
   const slides = useMemo(() => buildSlides(user, config), [user, config]);
   // Returning members who already have an avatar don't need the profile setup.
-  const showProfileSetup = user.onboardingVariant === 'new' || !user.avatarUrl;
+  const showProfileSetup = tourVariant(user) === 'new' || !user.avatarUrl;
   const total = slides.length + (showProfileSetup ? 1 : 0);
   const [[index, direction], setPage] = useState<[number, number]>([0, 0]);
   const [file, setFile] = useState<File | null>(null);
