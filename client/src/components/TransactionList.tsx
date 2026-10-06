@@ -124,7 +124,7 @@ export function TransactionList({
               </p>
             </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <span
                 className={cn(
                   'font-semibold text-sm tabular-nums',

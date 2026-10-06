@@ -63,7 +63,7 @@ export function PersonalStatsContent({
             }}
             variant={period === p ? 'default' : 'secondary'}
             size="sm"
-            className="rounded-full flex-shrink-0"
+            className="rounded-full shrink-0"
           >
             {PERIOD_LABELS[p]}
           </Button>

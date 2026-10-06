@@ -48,7 +48,7 @@ function Wheel({
   return (
     <div className="relative w-full max-w-[280px] mx-auto select-none aspect-square">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-0.5 z-10 drop-shadow-md">
-        <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[22px] border-l-transparent border-r-transparent border-t-white" />
+        <div className="w-0 h-0 border-l-10 border-r-10 border-t-22 border-l-transparent border-r-transparent border-t-white" />
       </div>
 
       <svg

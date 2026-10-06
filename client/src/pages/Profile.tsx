@@ -161,7 +161,7 @@ function EditProfileModal({
           <div>
             <label className="block text-sm font-medium mb-2">Profilbild</label>
             <div className="flex items-center gap-3">
-              <div className="size-16 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+              <div className="size-16 rounded-full overflow-hidden bg-muted flex items-center justify-center shrink-0">
                 {currentAvatar !== null ? (
                   <img src={currentAvatar} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -440,7 +440,7 @@ export function Profile(): React.JSX.Element {
             onClick={() => {
               setEditOpen(true);
             }}
-            className="text-muted-foreground flex-shrink-0"
+            className="text-muted-foreground shrink-0"
             title="Profil bearbeiten"
           >
             <Pencil size={16} />

@@ -378,7 +378,7 @@ export function FeedItem({ entry, hasConnector = false }: Props): React.JSX.Elem
   const groupName = entry.metadata?.groupName as string | undefined;
 
   const avatarNode = isGroupEvent ? (
-    <div className="w-7 h-7 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+    <div className="w-7 h-7 rounded-full overflow-hidden bg-muted flex items-center justify-center shrink-0">
       {entry.targetGroupImageUrl ? (
         <img src={entry.targetGroupImageUrl} alt="" className="w-full h-full object-cover" />
       ) : (

@@ -13,8 +13,6 @@ export default tseslint.config(
       'node_modules/**',
       'drizzle/**',
       '**/*.config.{js,mjs,ts}',
-      'postcss.config.js',
-      'tailwind.config.ts',
     ],
   },
   eslint.configs.recommended,

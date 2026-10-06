@@ -96,10 +96,10 @@ function LeaderboardSection({
                     isSelf ? 'bg-primary-soft' : 'bg-card',
                   )}
                 >
-                  <div className="w-6 flex items-center justify-center flex-shrink-0">
+                  <div className="w-6 flex items-center justify-center shrink-0">
                     <RankMedal rank={entry.rank} />
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold overflow-hidden flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold overflow-hidden shrink-0">
                     {entry.avatarUrl !== null ? (
                       <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -147,7 +147,7 @@ export function SocialLeaderboardContent(): React.JSX.Element {
             }}
             variant={period === p ? 'default' : 'secondary'}
             size="sm"
-            className="rounded-full flex-shrink-0"
+            className="rounded-full shrink-0"
           >
             {PERIOD_LABELS[p]}
           </Button>

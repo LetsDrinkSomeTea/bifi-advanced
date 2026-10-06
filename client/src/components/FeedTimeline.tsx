@@ -65,7 +65,7 @@ export function FeedTimeline({
       <div className="space-y-5">
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+            <div className="w-8 h-8 rounded-full bg-muted animate-pulse shrink-0" />
             <div className="flex-1 space-y-1.5 pt-1">
               <div className="h-3.5 w-3/4 rounded bg-muted animate-pulse" />
               <div className="h-3 w-1/4 rounded bg-muted animate-pulse" />
@@ -94,7 +94,7 @@ export function FeedTimeline({
         if (item.kind === 'separator') {
           return (
             <div key={item.key} className="flex items-center gap-3 py-1.5 my-1">
-              <div className="w-8 flex-shrink-0" />
+              <div className="w-8 shrink-0" />
               <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
                 {item.label}
               </span>

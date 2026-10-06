@@ -38,7 +38,7 @@ export function BottomNav(): React.JSX.Element {
   }, [location]);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-10 flex items-center justify-around h-16 border-t border-border bg-background/95 backdrop-blur-sm safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-10 flex items-center justify-around h-16 border-t border-border bg-background/95 backdrop-blur-xs safe-area-bottom">
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
         const active = href === '/' ? location === '/' : location.startsWith(href);
         const badge =

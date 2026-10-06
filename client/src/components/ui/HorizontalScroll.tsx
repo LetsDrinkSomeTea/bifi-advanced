@@ -36,13 +36,13 @@ const HorizontalScroll = React.forwardRef<HTMLDivElement, HorizontalScrollProps>
     return (
       <div className={cn('relative', className)} {...props}>
         {leftFade ? (
-          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10" />
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-linear-to-r from-background to-transparent z-10" />
         ) : null}
         <div ref={scrollRef} className="overflow-x-auto scrollbar-thin-x">
           {children}
         </div>
         {rightFade ? (
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-linear-to-l from-background to-transparent z-10" />
         ) : null}
       </div>
     );

@@ -104,7 +104,7 @@ export function Shop(): React.JSX.Element {
                   setActiveCategory(null);
                 }}
                 variant={!activeCategory ? 'default' : 'secondary'}
-                className="rounded-full flex-shrink-0"
+                className="rounded-full shrink-0"
                 size="sm"
               >
                 Alle
@@ -116,7 +116,7 @@ export function Shop(): React.JSX.Element {
                     setActiveCategory(cat === activeCategory ? null : cat);
                   }}
                   variant={activeCategory === cat ? 'default' : 'secondary'}
-                  className="rounded-full flex-shrink-0"
+                  className="rounded-full shrink-0"
                   size="sm"
                 >
                   {CATEGORY_LABELS[cat]}

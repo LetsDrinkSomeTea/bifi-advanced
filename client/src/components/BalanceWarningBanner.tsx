@@ -18,7 +18,7 @@ export function BalanceWarningBanner({
       <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
         <Wallet size={100} />
       </div>
-      <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+      <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
         <AlertOctagon size={24} className="animate-pulse" />
       </div>
       <div className="flex-1 min-w-0">

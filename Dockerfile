@@ -9,7 +9,7 @@ RUN npm ci
 COPY client ./client
 COPY server ./server
 COPY shared ./shared
-COPY tsconfig.json vite.config.ts postcss.config.js tailwind.config.ts ./
+COPY tsconfig.json vite.config.ts ./
 
 RUN npm run build && npm prune --omit=dev
 
