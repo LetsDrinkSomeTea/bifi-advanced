@@ -73,6 +73,7 @@ auth.get('/config', (c) => {
     autoRedirect: process.env.OIDC_AUTO_REDIRECT === 'true',
     roleSync: getRoleSyncMode(),
     balanceWarnThreshold: parseInt(process.env.BALANCE_WARN_THRESHOLD ?? '-2000'),
+    jackpotEnabled: process.env.JACKPOT_ENABLED === 'true',
   });
 });
 

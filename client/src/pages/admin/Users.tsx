@@ -481,6 +481,7 @@ interface UserCardProps {
   onResetPassword: (user: AdminUser) => void;
   onDelete: (user: AdminUser) => void;
   canChangeRole: boolean;
+  jackpotEnabled: boolean;
 }
 
 function UserCard({
@@ -495,6 +496,7 @@ function UserCard({
   onResetPassword,
   onDelete,
   canChangeRole,
+  jackpotEnabled,
 }: UserCardProps): React.JSX.Element {
   const { mutate: update, isPending: isUpdating } = useUpdateUser();
   const [copied, setCopied] = useState(false);
@@ -622,14 +624,21 @@ function UserCard({
                 update({ id: user.id, isActive: !user.isActive });
               }}
             />
-            <ToggleSwitch
-              label="Jackpot"
-              active={user.jackpotAllowed}
-              disabled={isUpdating || !canManage}
-              onToggle={() => {
-                update({ id: user.id, jackpotAllowed: !user.jackpotAllowed });
-              }}
-            />
+            {/* Wrapper carries the tooltip: disabled buttons don't receive hover events */}
+            <div
+              title={
+                jackpotEnabled ? undefined : 'Jackpot ist systemweit deaktiviert (JACKPOT_ENABLED)'
+              }
+            >
+              <ToggleSwitch
+                label="Jackpot"
+                active={user.jackpotAllowed}
+                disabled={isUpdating || !canManage || !jackpotEnabled}
+                onToggle={() => {
+                  update({ id: user.id, jackpotAllowed: !user.jackpotAllowed });
+                }}
+              />
+            </div>
             {isAdmin ? (
               <>
                 <Button
@@ -786,6 +795,7 @@ export function AdminUsersContent(): React.JSX.Element {
                 onResetPassword={setResetUser}
                 onDelete={setDeleteUser}
                 canChangeRole={canChangeRole(u, isSelf)}
+                jackpotEnabled={authConfig?.jackpotEnabled !== false}
               />
             );
           })}
