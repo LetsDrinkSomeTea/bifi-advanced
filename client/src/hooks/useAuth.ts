@@ -8,6 +8,7 @@ export interface AuthConfig {
   autoRedirect: boolean;
   roleSync: 'always' | 'on_creation' | 'never';
   balanceWarnThreshold: number;
+  jackpotEnabled: boolean;
 }
 
 export interface AuthState {

@@ -4,6 +4,24 @@ import { createTestUser } from './helpers.ts';
 import * as argon2 from 'argon2';
 
 describe('Auth Endpoints', () => {
+  describe('GET /api/auth/config', () => {
+    it('should report whether the jackpot is enabled system-wide', async () => {
+      const original = process.env.JACKPOT_ENABLED;
+      try {
+        process.env.JACKPOT_ENABLED = 'true';
+        let body = await (await app.request('/api/auth/config')).json();
+        expect(body.jackpotEnabled).toBe(true);
+
+        delete process.env.JACKPOT_ENABLED;
+        body = await (await app.request('/api/auth/config')).json();
+        expect(body.jackpotEnabled).toBe(false);
+      } finally {
+        if (original === undefined) delete process.env.JACKPOT_ENABLED;
+        else process.env.JACKPOT_ENABLED = original;
+      }
+    });
+  });
+
   describe('POST /api/auth/local/bootstrap', () => {
     it('should create the first admin user and then fail on subsequent attempts', async () => {
       // First attempt: success
