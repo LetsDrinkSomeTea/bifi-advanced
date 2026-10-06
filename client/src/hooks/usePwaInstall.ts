@@ -7,6 +7,13 @@ interface BeforeInstallPromptEvent extends Event {
 
 const DISMISSED_KEY = 'pwa-install-dismissed';
 
+export function isStandalone(): boolean {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true)
+  );
+}
+
 export function usePwaInstall(): {
   canInstall: boolean;
   install: () => Promise<void>;
@@ -17,10 +24,7 @@ export function usePwaInstall(): {
 
   useEffect(() => {
     if (localStorage.getItem(DISMISSED_KEY)) return;
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true);
-    if (isStandalone) return;
+    if (isStandalone()) return;
 
     const handler = (e: Event): void => {
       e.preventDefault();

@@ -307,4 +307,21 @@ router.patch('/me', requireAuth, zValidator('json', UpdateProfileSchema), async 
   }
 });
 
+// Marks the onboarding as seen (finished or skipped). Keeps the first timestamp on repeat calls.
+router.post('/me/onboarding', requireAuth, async (c) => {
+  const self = c.get('user');
+
+  const [updated] = await db
+    .update(users)
+    .set({ onboardingCompletedAt: sql`COALESCE(${users.onboardingCompletedAt}, now())` })
+    .where(eq(users.id, self.id))
+    .returning({ onboardingCompletedAt: users.onboardingCompletedAt });
+
+  if (!updated) {
+    return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
+  }
+
+  return c.json(updated);
+});
+
 export default router;

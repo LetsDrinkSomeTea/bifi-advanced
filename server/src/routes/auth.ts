@@ -368,6 +368,7 @@ auth.get('/me', requireAuth, (c) => {
     isActive: user.isActive,
     hasSsoLinked: user.ssoClaim !== null,
     hasPassword: user.passwordHash !== null,
+    onboardingCompletedAt: user.onboardingCompletedAt,
     createdAt: user.createdAt,
   });
 });

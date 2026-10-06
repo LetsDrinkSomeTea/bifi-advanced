@@ -65,6 +65,7 @@ export const users = pgTable('users', {
   balance: integer('balance').notNull().default(0),
   jackpotAllowed: boolean('jackpot_allowed').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),
+  onboardingCompletedAt: timestamp('onboarding_completed_at'),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
