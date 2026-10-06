@@ -55,14 +55,12 @@ export function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.
 
     if (discountedLabels.length === 0) return { title: '', summary: '', badge: '', discountedRows: [] };
 
-    let summaryStr = '';
-    if (discountedLabels.length <= 2) {
-      summaryStr = discountedLabels.join(' & ') + ' reduziert';
-    } else {
-      summaryStr = `${discountedLabels.length} Produkte reduziert`;
-    }
+    const summaryStr =
+      discountedLabels.length <= 2
+        ? discountedLabels.join(' & ') + ' reduziert'
+        : `${discountedLabels.length} Produkte reduziert`;
 
-    let badgeText = '';
+    let badgeText: string;
     if (typeof minQuantityRemaining === 'number') {
       badgeText = `noch ${String(minQuantityRemaining)}x`;
     } else if (typeof earliestEnd === 'number') {

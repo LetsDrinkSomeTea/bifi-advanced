@@ -24,8 +24,8 @@ const PERIOD_LABELS: Record<LeaderboardPeriod, string> = {
 function formatValue(type: LeaderboardType, value: number): React.ReactNode {
   if (type === 'total_spent') return formatCents(value);
 
-  let Icon = null;
-  let color = '';
+  let Icon: typeof Trophy;
+  let color: string;
   if (type === 'achievements') {
     Icon = Trophy;
     color = 'text-accent-strong';
