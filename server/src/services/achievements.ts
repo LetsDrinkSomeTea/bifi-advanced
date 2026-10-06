@@ -12,6 +12,7 @@ import { type AchievementEvent, type AchievementKey } from '../../../shared/src/
 import { type BuyableCategory } from '../../../shared/src/types.ts';
 import { createNotification } from './notifications.ts';
 import { ACHIEVEMENT_REGISTRY } from './achievements/registry.ts';
+import { trackBackground } from '../lib/background.ts';
 
 // ─── Timezone helpers (respects TZ env var) ──────────────────────────────────
 
@@ -324,7 +325,11 @@ export const totalSavedCents = (userId: string): Promise<number> =>
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export async function checkAchievements(event: AchievementEvent): Promise<void> {
+export function checkAchievements(event: AchievementEvent): Promise<void> {
+  return trackBackground(runAchievementChecks(event));
+}
+
+async function runAchievementChecks(event: AchievementEvent): Promise<void> {
   const { userId } = event;
 
   try {

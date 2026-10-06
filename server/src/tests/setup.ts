@@ -1,12 +1,19 @@
-import { beforeAll, beforeEach } from 'vitest';
+import { afterEach, beforeAll, beforeEach } from 'vitest';
 import { redis, initRedis } from '../db/redis.ts';
 import { db } from '../db/index.ts';
 import { sql } from 'drizzle-orm';
+import { drainBackground } from '../lib/background.ts';
 
 beforeAll(async () => {
   if (!redis.isOpen) {
     await initRedis();
   }
+});
+
+// Fire-and-forget work (feed, achievements, notifications) must finish before the
+// next test truncates the tables it writes to.
+afterEach(async () => {
+  await drainBackground();
 });
 
 beforeEach(async () => {

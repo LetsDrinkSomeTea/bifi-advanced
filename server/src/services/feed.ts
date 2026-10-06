@@ -1,6 +1,7 @@
 import { db } from '../db/index.ts';
 import { activityFeed } from '../db/schema.ts';
 import { broadcastInvalidate } from './notifications.ts';
+import { trackBackground } from '../lib/background.ts';
 
 // ─── Event type definitions ────────────────────────────────────────────────────
 // To add a new event:
@@ -108,20 +109,23 @@ export function emitFeedEvent(event: FeedEvent): void {
     targetGroupId: 'targetGroupId' in event ? event.targetGroupId : null,
     metadata: 'metadata' in event ? event.metadata : null,
   };
-  db.insert(activityFeed)
-    .values(values)
-    .then(() => {
-      const keys = ['feed'];
-      if (
-        ['achievement', 'purchase', 'prost_sent', 'prost_received', 'jackpot_win'].includes(
-          event.type,
-        )
-      ) {
-        keys.push('profile');
-      }
-      broadcastInvalidate(keys);
-    })
-    .catch((err: unknown) => {
-      console.error('[feed] emit failed:', event.type, err);
-    });
+  void trackBackground(
+    db
+      .insert(activityFeed)
+      .values(values)
+      .then(() => {
+        const keys = ['feed'];
+        if (
+          ['achievement', 'purchase', 'prost_sent', 'prost_received', 'jackpot_win'].includes(
+            event.type,
+          )
+        ) {
+          keys.push('profile');
+        }
+        broadcastInvalidate(keys);
+      })
+      .catch((err: unknown) => {
+        console.error('[feed] emit failed:', event.type, err);
+      }),
+  );
 }
