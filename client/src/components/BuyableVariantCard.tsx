@@ -100,7 +100,7 @@ export function BuyableVariantCard({
               <span className="text-xs text-muted-foreground font-medium truncate">
                 {variantName}
               </span>
-              <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 {!isAvailable ? (
                   <span className="text-[10px] font-black uppercase text-muted-foreground/60">
                     N/V
@@ -134,7 +134,7 @@ export function BuyableVariantCard({
                 onToggleFavorite();
               }}
               className={cn(
-                'p-1 rounded-full transition-colors flex-shrink-0',
+                'p-1 rounded-full transition-colors shrink-0',
                 isFavorite
                   ? 'text-accent-strong hover:bg-accent-soft/50'
                   : 'text-muted-foreground hover:bg-muted',
@@ -157,7 +157,7 @@ export function BuyableVariantCard({
             onRemoveFavorite();
           }}
           className={cn(
-            'absolute -top-1 -right-1 p-1 rounded-full bg-background border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all shadow-sm z-10',
+            'absolute -top-1 -right-1 p-1 rounded-full bg-background border border-border text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-all shadow-xs z-10',
             isAvailable
               ? 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto'
               : 'opacity-60 hover:opacity-100',

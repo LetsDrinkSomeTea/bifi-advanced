@@ -186,15 +186,13 @@ function GroupsSection({
           ))}
         </div>
       ) : (groups?.length ?? 0) === 0 ? (
-        <p className="text-sm text-muted-foreground py-3">
-          Noch keine Gruppen.
-        </p>
+        <p className="text-sm text-muted-foreground py-3">Noch keine Gruppen.</p>
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
           {groups?.map((g) => (
             <Link key={g.id} href={`/groups/${g.id}`}>
               <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent-soft transition-colors cursor-pointer">
-                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                   {g.imageUrl ? (
                     <img src={g.imageUrl} alt="" className="w-full h-full object-cover" />
                   ) : (
@@ -205,12 +203,12 @@ function GroupsSection({
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium truncate">{g.name}</span>
                     {g.myRole === 'owner' ? (
-                      <Crown size={11} className="text-accent-strong flex-shrink-0" />
+                      <Crown size={11} className="text-accent-strong shrink-0" />
                     ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground">{g.memberCount} Mitglieder</p>
                 </div>
-                <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+                <ChevronRight size={16} className="text-muted-foreground shrink-0" />
               </div>
             </Link>
           ))}
@@ -247,7 +245,7 @@ function FriendsSection(): React.JSX.Element {
                 >
                   {r.displayName}
                 </Link>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <Button
                     size="icon"
                     variant="primary-soft"
@@ -294,7 +292,7 @@ function FriendsSection(): React.JSX.Element {
               <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent-soft transition-colors cursor-pointer">
                 <Avatar displayName={f.displayName} avatarUrl={f.avatarUrl} />
                 <span className="flex-1 min-w-0 text-sm font-medium truncate">{f.displayName}</span>
-                <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+                <ChevronRight size={16} className="text-muted-foreground shrink-0" />
               </div>
             </Link>
           ))}
@@ -309,11 +307,11 @@ function FriendsSection(): React.JSX.Element {
 type SearchItem =
   | { kind: 'group'; id: string; name: string; memberCount: number; imageUrl: string | null }
   | {
-    kind: 'friend' | 'new_person' | 'pending_sent' | 'pending_received';
-    id: string;
-    displayName: string;
-    avatarUrl: string | null;
-  };
+      kind: 'friend' | 'new_person' | 'pending_sent' | 'pending_received';
+      id: string;
+      displayName: string;
+      avatarUrl: string | null;
+    };
 
 function SearchResults({
   query,
@@ -398,7 +396,7 @@ function SearchResults({
           return (
             <Link key={`g-${item.id}`} href={`/groups/${item.id}`}>
               <div className="flex items-center gap-3 px-4 py-3 bg-card hover:bg-accent-soft transition-colors cursor-pointer">
-                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                   {item.imageUrl ? (
                     <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
                   ) : (
@@ -409,7 +407,7 @@ function SearchResults({
                   <p className="text-sm font-medium truncate">{item.name}</p>
                   <p className="text-xs text-muted-foreground">{item.memberCount} Mitglieder</p>
                 </div>
-                <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+                <ChevronRight size={16} className="text-muted-foreground shrink-0" />
               </div>
             </Link>
           );
@@ -449,7 +447,7 @@ function SearchResults({
                   });
                 }}
                 disabled={isThisSending}
-                className="h-8 w-8 rounded-lg flex-shrink-0"
+                className="h-8 w-8 rounded-lg shrink-0"
                 title="Freundschaft anfragen"
               >
                 {isThisSending ? (
@@ -465,7 +463,7 @@ function SearchResults({
                 variant="ghost"
                 size="icon"
                 disabled
-                className="h-8 w-8 rounded-lg flex-shrink-0 text-muted-foreground"
+                className="h-8 w-8 rounded-lg shrink-0 text-muted-foreground"
                 title="Anfrage gesendet"
               >
                 <Clock size={15} />
@@ -473,7 +471,7 @@ function SearchResults({
             )}
 
             {item.kind === 'pending_received' && (
-              <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 <Button
                   variant="primary-soft"
                   size="icon"
@@ -500,7 +498,7 @@ function SearchResults({
             )}
 
             <Link href={`/profile/${item.id}`}>
-              <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+              <ChevronRight size={16} className="text-muted-foreground shrink-0" />
             </Link>
           </div>
         );

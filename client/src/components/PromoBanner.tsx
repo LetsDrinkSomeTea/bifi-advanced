@@ -43,7 +43,10 @@ export function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.
         });
 
         if (v.activeDiscount.quantityRemaining !== null) {
-          if (minQuantityRemaining === null || v.activeDiscount.quantityRemaining < minQuantityRemaining) {
+          if (
+            minQuantityRemaining === null ||
+            v.activeDiscount.quantityRemaining < minQuantityRemaining
+          ) {
             minQuantityRemaining = v.activeDiscount.quantityRemaining;
           }
         } else if (v.activeDiscount.endTime) {
@@ -53,16 +56,15 @@ export function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.
       });
     });
 
-    if (discountedLabels.length === 0) return { title: '', summary: '', badge: '', discountedRows: [] };
+    if (discountedLabels.length === 0)
+      return { title: '', summary: '', badge: '', discountedRows: [] };
 
-    let summaryStr = '';
-    if (discountedLabels.length <= 2) {
-      summaryStr = discountedLabels.join(' & ') + ' reduziert';
-    } else {
-      summaryStr = `${discountedLabels.length} Produkte reduziert`;
-    }
+    const summaryStr =
+      discountedLabels.length <= 2
+        ? discountedLabels.join(' & ') + ' reduziert'
+        : `${discountedLabels.length} Produkte reduziert`;
 
-    let badgeText = '';
+    let badgeText: string;
     if (typeof minQuantityRemaining === 'number') {
       badgeText = `noch ${String(minQuantityRemaining)}x`;
     } else if (typeof earliestEnd === 'number') {
@@ -90,7 +92,7 @@ export function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.
         <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
           <Sparkles size={100} />
         </div>
-        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
           <Tag size={24} className="animate-pulse" />
         </div>
         <div className="flex-1 min-w-0">
@@ -122,16 +124,24 @@ export function PromoBanner({ items }: { items: BuyableWithVariants[] }): React.
             const timeLeft = row.endTime ? formatTimeLeft(row.endTime) : null;
 
             return (
-              <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border bg-card">
+              <div
+                key={i}
+                className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border bg-card"
+              >
                 <div className="min-w-0">
                   <p className="font-medium text-sm leading-tight">
                     {row.productName}
                     {row.variantName !== row.productName ? (
-                      <span className="text-muted-foreground font-normal"> · {row.variantName}</span>
+                      <span className="text-muted-foreground font-normal">
+                        {' '}
+                        · {row.variantName}
+                      </span>
                     ) : null}
                   </p>
                   {row.quantityRemaining !== null ? (
-                    <p className="text-xs text-muted-foreground mt-0.5">noch {row.quantityRemaining}x verfügbar</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      noch {row.quantityRemaining}x verfügbar
+                    </p>
                   ) : timeLeft !== null ? (
                     <p className="text-xs text-muted-foreground mt-0.5">endet in {timeLeft}</p>
                   ) : null}

@@ -524,7 +524,7 @@ function UserCard({
       >
         <div
           className={cn(
-            'w-10 h-10 rounded-full bg-muted flex items-center justify-center font-bold text-sm overflow-hidden flex-shrink-0 border border-border transition-opacity',
+            'w-10 h-10 rounded-full bg-muted flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 border border-border transition-opacity',
             !user.isActive && 'opacity-50',
           )}
         >
@@ -545,7 +545,7 @@ function UserCard({
               {user.displayName}
               {isSelf ? ' (Du)' : null}
             </p>
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
               {isSso ? (
                 <span title="SSO Login">
                   <Link2 size={12} className="text-muted-foreground" />
@@ -769,8 +769,7 @@ export function AdminUsersContent(): React.JSX.Element {
             const isSelf = u.id === currentUser?.id;
             const isExpanded = expandedId === u.id;
             const isAdmin = currentUser?.role === 'admin';
-            const canManage =
-              ROLE_LEVEL[currentUser?.role ?? 'member'] >= ROLE_LEVEL[u.role];
+            const canManage = ROLE_LEVEL[currentUser?.role ?? 'member'] >= ROLE_LEVEL[u.role];
 
             return (
               <UserCard

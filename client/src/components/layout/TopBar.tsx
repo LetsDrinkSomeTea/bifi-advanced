@@ -65,13 +65,13 @@ function NotificationDropdown({ onClose }: { onClose: () => void }): React.JSX.E
                   handleNavigate(n);
                 }}
                 className={cn(
-                  'flex-[4] h-auto items-start gap-3 px-3 py-3 min-w-0 rounded-none w-full font-normal',
+                  'flex-4 h-auto items-start gap-3 px-3 py-3 min-w-0 rounded-none w-full font-normal',
                   href ? 'cursor-pointer' : 'cursor-default hover:bg-transparent',
                 )}
               >
                 <div
                   className={cn(
-                    'mt-0.5 flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center',
+                    'mt-0.5 shrink-0 w-7 h-7 rounded-lg flex items-center justify-center',
                     meta.bg,
                   )}
                 >
@@ -95,7 +95,7 @@ function NotificationDropdown({ onClose }: { onClose: () => void }): React.JSX.E
                   markRead(n.id);
                 }}
                 title="Als gelesen markieren"
-                className="flex-[1] flex items-center justify-center self-stretch border-l border-border/50 text-muted-foreground hover:text-confirm-strong hover:bg-primary/5 transition-colors"
+                className="flex-1 flex items-center justify-center self-stretch border-l border-border/50 text-muted-foreground hover:text-confirm-strong hover:bg-primary/5 transition-colors"
               >
                 <Check size={18} />
               </button>
@@ -127,7 +127,7 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }): React.JSX.Ele
           }}
           className="w-full flex items-center justify-start gap-3 px-4 py-2.5 text-sm font-medium rounded-none"
         >
-          <UserCircle size={16} className="text-muted-foreground flex-shrink-0" />
+          <UserCircle size={16} className="text-muted-foreground shrink-0" />
           Profil
         </Button>
         {isModerator ? (
@@ -138,7 +138,7 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }): React.JSX.Ele
             }}
             className="w-full flex items-center justify-start gap-3 px-4 py-2.5 text-sm font-medium rounded-none"
           >
-            <ShieldCheck size={16} className="text-muted-foreground flex-shrink-0" />
+            <ShieldCheck size={16} className="text-muted-foreground shrink-0" />
             Admin
           </Button>
         ) : null}
@@ -153,7 +153,7 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }): React.JSX.Ele
           }}
           className="w-full flex items-center justify-start gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive rounded-none"
         >
-          <LogOut size={16} className="flex-shrink-0" />
+          <LogOut size={16} className="shrink-0" />
           Abmelden
         </Button>
       </div>
@@ -187,7 +187,7 @@ export function TopBar(): React.JSX.Element {
   }, [notifOpen, menuOpen]);
 
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between px-4 h-14 border-b border-border bg-background/80 backdrop-blur-sm">
+    <header className="sticky top-0 z-20 flex items-center justify-between px-4 h-14 border-b border-border bg-background/80 backdrop-blur-xs">
       <div className="flex items-center gap-1.5">
         <Beer className="w-5 h-5 text-primary" />
         <span className="font-bold text-base tracking-tight">BiFi</span>
@@ -241,7 +241,7 @@ export function TopBar(): React.JSX.Element {
                 setMenuOpen((o) => !o);
                 setNotifOpen(false);
               }}
-              className="w-8 h-8 rounded-full bg-muted overflow-hidden hover:ring-2 hover:ring-primary transition-all flex-shrink-0 p-0"
+              className="w-8 h-8 rounded-full bg-muted overflow-hidden hover:ring-2 hover:ring-primary transition-all shrink-0 p-0"
               aria-label="Menü"
             >
               {user.avatarUrl ? (

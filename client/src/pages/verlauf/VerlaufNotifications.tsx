@@ -27,7 +27,7 @@ function NotifItem({ n, onMarkRead, onClick, dimmed }: NotifItemProps): React.JS
       {/* Left 80%: content + navigation */}
       <div
         className={cn(
-          'flex-[4] flex items-start gap-3 px-4 py-3 transition-colors min-w-0',
+          'flex-4 flex items-start gap-3 px-4 py-3 transition-colors min-w-0',
           href && !dimmed && 'hover:bg-primary/10 cursor-pointer',
           dimmed && 'opacity-60',
         )}
@@ -35,7 +35,7 @@ function NotifItem({ n, onMarkRead, onClick, dimmed }: NotifItemProps): React.JS
       >
         <div
           className={cn(
-            'mt-0.5 flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center',
+            'mt-0.5 shrink-0 w-8 h-8 rounded-xl flex items-center justify-center',
             meta.bg,
           )}
         >
@@ -56,7 +56,7 @@ function NotifItem({ n, onMarkRead, onClick, dimmed }: NotifItemProps): React.JS
             onMarkRead();
           }}
           title="Als gelesen markieren"
-          className="flex-[1] flex items-center justify-center self-stretch border-l border-border/50 text-muted-foreground hover:bg-primary/5 hover:text-confirm-strong transition-colors"
+          className="flex-1 flex items-center justify-center self-stretch border-l border-border/50 text-muted-foreground hover:bg-primary/5 hover:text-confirm-strong transition-colors"
         >
           <Check size={18} />
         </button>

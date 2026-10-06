@@ -2,6 +2,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import { notifications, type Notification } from '../db/schema.ts';
 import { type NotificationType } from '../../../shared/src/types.ts';
+import { trackBackground } from '../lib/background.ts';
 
 // ─── SSE client registry ─────────────────────────────────────────────────────
 // NOTE: sseClients is process-local. In a multi-instance deployment, broadcastInvalidate
@@ -61,19 +62,25 @@ export function broadcastInvalidate(keys: string[]): void {
 
 // ─── Notification creation ────────────────────────────────────────────────────
 
-export async function createNotification({
-  userId,
-  type,
-  title,
-  message,
-  relatedId,
-}: {
+interface NewNotification {
   userId: string;
   type: NotificationType;
   title: string;
   message: string;
   relatedId?: string | null;
-}): Promise<Notification> {
+}
+
+export function createNotification(input: NewNotification): Promise<Notification> {
+  return trackBackground(insertNotification(input));
+}
+
+async function insertNotification({
+  userId,
+  type,
+  title,
+  message,
+  relatedId,
+}: NewNotification): Promise<Notification> {
   const [notif] = await db
     .insert(notifications)
     .values({ userId, type, title, message, relatedId: relatedId ?? null })

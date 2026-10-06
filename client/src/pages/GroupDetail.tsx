@@ -155,7 +155,7 @@ export function GroupDetail(): React.JSX.Element {
             Zurück
           </button>
           <div className="flex items-center gap-4">
-            <div className="relative size-16 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+            <div className="relative size-16 rounded-full overflow-hidden bg-muted flex items-center justify-center shrink-0">
               {group.imageUrl !== null ? (
                 <img src={group.imageUrl} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -254,7 +254,7 @@ export function GroupDetail(): React.JSX.Element {
             {group.members.map((m) => (
               <div key={m.id} className="flex items-center gap-3 px-4 py-3 bg-card">
                 <Link href={`/profile/${m.id}`}>
-                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold overflow-hidden flex-shrink-0 cursor-pointer">
+                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold overflow-hidden shrink-0 cursor-pointer">
                     {m.avatarUrl ? (
                       <img src={m.avatarUrl} alt="" className="w-full h-full object-cover" />
                     ) : (

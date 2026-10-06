@@ -2,7 +2,7 @@ import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
-import react from 'eslint-plugin-react';
+import reactX from 'eslint-plugin-react-x';
 import globals from 'globals';
 
 export default tseslint.config(
@@ -13,8 +13,6 @@ export default tseslint.config(
       'node_modules/**',
       'drizzle/**',
       '**/*.config.{js,mjs,ts}',
-      'postcss.config.js',
-      'tailwind.config.ts',
     ],
   },
   eslint.configs.recommended,
@@ -33,12 +31,7 @@ export default tseslint.config(
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
-      react,
-    },
-    settings: {
-      react: {
-        version: 'detect',
-      },
+      'react-x': reactX,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -78,9 +71,7 @@ export default tseslint.config(
       '@typescript-eslint/await-thenable': 'error',
 
       // React
-      'react/jsx-uses-react': 'off',
-      'react/react-in-jsx-scope': 'off',
-      'react/jsx-no-leaked-render': ['error', { validStrategies: ['ternary', 'coerce'] }],
+      'react-x/no-leaked-conditional-rendering': 'error',
     },
   },
   {

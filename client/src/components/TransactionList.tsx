@@ -86,10 +86,10 @@ export function TransactionList({
 
   if (transactions.length === 0) {
     return (
-          <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
-            <CreditCard className="mx-auto mb-2 opacity-20" size={32} />
-            <p className="text-sm">Noch keine Transaktionen.</p>
-          </div>
+      <div className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">
+        <CreditCard className="mx-auto mb-2 opacity-20" size={32} />
+        <p className="text-sm">Noch keine Transaktionen.</p>
+      </div>
     );
   }
 
@@ -124,7 +124,7 @@ export function TransactionList({
               </p>
             </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <span
                 className={cn(
                   'font-semibold text-sm tabular-nums',

@@ -162,14 +162,14 @@ function NudgeSheet({
       >
         {/* Drag handle */}
         <div
-          className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+          className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none shrink-0"
           {...dragHandleProps}
         >
           <div className="w-10 h-1 bg-border rounded-full" />
         </div>
 
         <div
-          className="flex items-center justify-between px-6 pt-3 pb-4 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none select-none"
+          className="flex items-center justify-between px-6 pt-3 pb-4 shrink-0 cursor-grab active:cursor-grabbing touch-none select-none"
           {...dragHandleProps}
         >
           <div className="flex items-center gap-3">
@@ -300,14 +300,14 @@ function ProstSheet({
       >
         {/* Drag handle */}
         <div
-          className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+          className="pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none shrink-0"
           {...dragHandleProps}
         >
           <div className="w-10 h-1 bg-border rounded-full" />
         </div>
 
         <div
-          className="flex items-center justify-between px-6 pt-3 pb-4 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none select-none"
+          className="flex items-center justify-between px-6 pt-3 pb-4 shrink-0 cursor-grab active:cursor-grabbing touch-none select-none"
           {...dragHandleProps}
         >
           <div className="flex items-center gap-3">
@@ -330,7 +330,7 @@ function ProstSheet({
           </Button>
         </div>
 
-        <div className="px-6 py-2 bg-accent-soft/30 flex-shrink-0">
+        <div className="px-6 py-2 bg-accent-soft/30 shrink-0">
           <p className="text-[11px] leading-snug text-accent-strong font-medium">
             Du zahlst jetzt — {displayName} bekommt den Gutschein für den nächsten Kauf in diesem
             Bistro.
@@ -381,7 +381,7 @@ function ProstSheet({
           </div>
         ) : null}
 
-        <div className="px-6 pb-10 flex-shrink-0" />
+        <div className="px-6 pb-10 shrink-0" />
       </div>
     </>
   );
@@ -467,7 +467,7 @@ export function ProfileDetail(): React.JSX.Element {
                 ) : null}
                 <Button
                   variant="outline"
-                  size='icon'
+                  size="icon"
                   onClick={() => {
                     setProstOpen(true);
                   }}
@@ -477,7 +477,7 @@ export function ProfileDetail(): React.JSX.Element {
                 </Button>
                 <Button
                   variant="outline"
-                  size='icon'
+                  size="icon"
                   onClick={() => {
                     setNudgeOpen(true);
                   }}

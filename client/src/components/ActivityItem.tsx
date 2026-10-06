@@ -44,7 +44,7 @@ export function ActivityItem({
 }: ActivityItemProps): React.JSX.Element {
   return (
     <div className={cn('flex items-start gap-3', className)}>
-      <div className="flex flex-col items-center flex-shrink-0">
+      <div className="flex flex-col items-center shrink-0">
         <div className="relative">
           {avatarNode ?? (
             <Link href={`/profile/${user.id}`}>
@@ -57,7 +57,7 @@ export function ActivityItem({
             </span>
           ) : null}
         </div>
-        {hasConnector ? <div className="w-px bg-border mt-2 flex-1 min-h-[1.5rem]" /> : null}
+        {hasConnector ? <div className="w-px bg-border mt-2 flex-1 min-h-6" /> : null}
       </div>
       <div className={cn('flex-1 min-w-0 pt-0.5', hasConnector && 'pb-3')}>
         <div className="text-sm leading-snug">{children}</div>

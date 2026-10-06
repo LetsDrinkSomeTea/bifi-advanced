@@ -25,6 +25,7 @@ import {
 } from '../services/promotions.ts';
 import { writeAuditLog } from '../services/audit.ts';
 import { getClientIp } from '../lib/ip.ts';
+import { trackBackground } from '../lib/background.ts';
 import {
   broadcastInvalidate,
   createNotification,
@@ -703,40 +704,42 @@ router.post(
     }).catch(console.error);
 
     if (voucherCredit > 0) {
-      (async () => {
-        for (const rv of redeemedVouchers) {
-          const [v] = await db
-            .select({
-              fromUserId: prostVouchers.fromUserId,
-              variantName: productVariants.name,
-              productName: buyables.name,
-            })
-            .from(prostVouchers)
-            .innerJoin(productVariants, eq(prostVouchers.variantId, productVariants.id))
-            .innerJoin(buyables, eq(productVariants.buyableId, buyables.id))
-            .where(eq(prostVouchers.id, rv.id));
+      trackBackground(
+        (async () => {
+          for (const rv of redeemedVouchers) {
+            const [v] = await db
+              .select({
+                fromUserId: prostVouchers.fromUserId,
+                variantName: productVariants.name,
+                productName: buyables.name,
+              })
+              .from(prostVouchers)
+              .innerJoin(productVariants, eq(prostVouchers.variantId, productVariants.id))
+              .innerJoin(buyables, eq(productVariants.buyableId, buyables.id))
+              .where(eq(prostVouchers.id, rv.id));
 
-          if (v) {
-            const refundNote =
-              rv.refundAmount > 0
-                ? ` Da das Produkt günstiger war, wurden dir ${formatCents(rv.refundAmount)} erstattet.`
-                : '';
+            if (v) {
+              const refundNote =
+                rv.refundAmount > 0
+                  ? ` Da das Produkt günstiger war, wurden dir ${formatCents(rv.refundAmount)} erstattet.`
+                  : '';
 
-            createNotification({
-              userId: v.fromUserId,
-              type: 'prost',
-              title: `${user.displayName} hat deinen Gutschein eingelöst.`,
-              message: `Und sich ${v.productName} (${v.variantName}) gekauft.${refundNote}`,
-              relatedId: txn.id,
-            }).catch(console.error);
+              createNotification({
+                userId: v.fromUserId,
+                type: 'prost',
+                title: `${user.displayName} hat deinen Gutschein eingelöst.`,
+                message: `Und sich ${v.productName} (${v.variantName}) gekauft.${refundNote}`,
+                relatedId: txn.id,
+              }).catch(console.error);
 
-            // Also invalidate donor balance if they got a refund
-            if (rv.refundAmount > 0) {
-              pushInvalidate(v.fromUserId, ['balance', 'transactions']);
+              // Also invalidate donor balance if they got a refund
+              if (rv.refundAmount > 0) {
+                pushInvalidate(v.fromUserId, ['balance', 'transactions']);
+              }
             }
           }
-        }
-      })().catch(console.error);
+        })(),
+      ).catch(console.error);
     }
 
     await writeAuditLog({

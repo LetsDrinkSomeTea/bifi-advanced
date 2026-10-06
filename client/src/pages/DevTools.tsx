@@ -39,7 +39,7 @@ function ActionButton({
   return (
     <div className="flex items-center justify-between gap-3 py-3 border-b border-border last:border-0">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="text-muted-foreground flex-shrink-0">{icon}</div>
+        <div className="text-muted-foreground shrink-0">{icon}</div>
         <div className="min-w-0">
           <p className="text-sm font-semibold">{label}</p>
           <p className="text-xs text-muted-foreground">{description}</p>
@@ -52,7 +52,7 @@ function ActionButton({
           void handle();
         }}
         disabled={loading}
-        className="flex-shrink-0"
+        className="shrink-0"
       >
         {loading ? <RefreshCw size={14} className="animate-spin" /> : 'Ausführen'}
       </Button>
