@@ -14,6 +14,7 @@ import { globalRateLimit } from './middleware/rateLimit.ts';
 import { initRedis } from './db/redis.ts';
 import { runMigrations } from './db/migrate.ts';
 import { initOIDC } from './services/oidc.ts';
+import { pruneAuditIpAddresses } from './services/audit.ts';
 import authRoutes from './routes/auth.ts';
 import localAuthRoutes from './routes/auth.local.ts';
 import buyablesRoutes from './routes/buyables.ts';
@@ -156,6 +157,17 @@ if (process.env.NODE_ENV === 'production') {
 
 // ─── Startup ──────────────────────────────────────────────────────────────────
 
+// IP addresses in the audit log are kept for 30 days (see privacy policy), checked daily
+function startAuditIpPruning(): void {
+  const prune = (): void => {
+    pruneAuditIpAddresses().catch((err: unknown) => {
+      console.error('Pruning audit log IP addresses failed:', err);
+    });
+  };
+  prune();
+  setInterval(prune, 24 * 60 * 60 * 1000).unref();
+}
+
 async function main(): Promise<void> {
   await runMigrations();
   await mkdir(getUploadDir(), { recursive: true });
@@ -167,6 +179,7 @@ async function main(): Promise<void> {
         'across all clients. Set TRUST_PROXY=true when running behind a reverse proxy.',
     );
   }
+  startAuditIpPruning();
   console.log(`Starting BiFi with TZ: ${APP_TZ}`);
   const port = parseInt(process.env.PORT ?? '3000');
   serve({ fetch: app.fetch, port }, () => {

@@ -16,6 +16,7 @@ import { AdminPage } from './pages/admin/AdminPage';
 import { GroupDetail } from './pages/GroupDetail';
 import { AllAchievements } from './pages/AllAchievements';
 import { DevTools } from './pages/DevTools';
+import { Datenschutz } from './pages/Datenschutz';
 
 import { GlobalDialog } from './components/GlobalDialog';
 import { DialogProvider } from './hooks/dialogContext';
@@ -27,6 +28,7 @@ export function App(): React.JSX.Element {
       <DialogProvider>
         <Switch>
           <Route path="/login" component={Login} />
+          <Route path="/datenschutz" component={Datenschutz} />
 
           <Route path="/shop">
             <ProtectedRoute>

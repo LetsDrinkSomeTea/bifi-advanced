@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, Beer, UserCircle, ShieldCheck, LogOut, Check, Compass } from 'lucide-react';
+import {
+  Bell,
+  Beer,
+  UserCircle,
+  ShieldCheck,
+  LogOut,
+  Check,
+  Compass,
+  ScrollText,
+} from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth, useLogout } from '../../hooks/useAuth';
 import { openOnboarding } from '../../hooks/useOnboarding';
@@ -153,6 +162,16 @@ function AvatarMenuDropdown({ onClose }: { onClose: () => void }): React.JSX.Ele
         >
           <Compass size={16} className="text-muted-foreground shrink-0" />
           Einführung
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            go('/datenschutz');
+          }}
+          className="w-full flex items-center justify-start gap-3 px-4 py-2.5 text-sm font-medium rounded-none"
+        >
+          <ScrollText size={16} className="text-muted-foreground shrink-0" />
+          Datenschutz
         </Button>
       </div>
       <div className="border-t border-border" />

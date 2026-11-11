@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { useAuth, useAuthConfig } from '../hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../components/ui/Button';
@@ -151,6 +151,12 @@ export function Login(): React.JSX.Element | null {
             </Button>
           </form>
         ) : null}
+
+        <p className="text-center text-xs text-muted-foreground">
+          <Link href="/datenschutz" className="underline hover:text-foreground">
+            Datenschutz
+          </Link>
+        </p>
       </div>
     </div>
   );
