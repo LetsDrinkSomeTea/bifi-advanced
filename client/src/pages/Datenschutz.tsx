@@ -67,8 +67,8 @@ export function Datenschutz(): React.JSX.Element {
         <H2>Wo die Daten liegen</H2>
         <p>
           BiFi läuft auf demselben von uns gemieteten Server wie unsere Cloud und die Anmeldung: bei
-          der Contabo GmbH (Aschauer Straße 32a, 81549 München) in einem Rechenzentrum in der EU.
-          Mit Contabo besteht ein Vertrag zur Auftragsverarbeitung (Art. 28 DSGVO). Datenbank,
+          der Contabo GmbH (Welfenstraße 22, 81541 München) in einem Rechenzentrum in der EU. Mit
+          Contabo besteht ein Vertrag zur Auftragsverarbeitung (Art. 28 DSGVO). Datenbank,
           hochgeladene Bilder und Sitzungen liegen nur auf diesem Server.
         </p>
         <p>
