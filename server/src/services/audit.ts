@@ -1,3 +1,4 @@
+import { and, isNotNull, lt } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import { auditLogs } from '../db/schema.ts';
 import { broadcastInvalidate } from './notifications.ts';
@@ -48,4 +49,20 @@ export async function writeAuditLog(entry: AuditEntry): Promise<void> {
   });
 
   broadcastInvalidate(['audit-log']);
+}
+
+/** How long the IP address of an audit log entry is kept. The entry itself stays. */
+export const AUDIT_IP_RETENTION_DAYS = 30;
+
+/** Removes IP addresses from audit log entries older than the retention period. */
+export async function pruneAuditIpAddresses(
+  retentionDays: number = AUDIT_IP_RETENTION_DAYS,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+  const pruned = await db
+    .update(auditLogs)
+    .set({ ipAddress: null })
+    .where(and(isNotNull(auditLogs.ipAddress), lt(auditLogs.createdAt, cutoff)))
+    .returning({ id: auditLogs.id });
+  return pruned.length;
 }

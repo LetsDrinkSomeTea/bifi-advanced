@@ -134,7 +134,11 @@ Listet alle aktiven Benutzer mit negativem Kontostand. Per Knopfdruck lässt sic
 
 ### Audit-Log
 
-Protokolliert sicherheitsrelevante Aktionen wie Rollenänderungen, Einzahlungen, Stornos und Löschungen mit Zeitpunkt, ausführender Person und IP-Adresse. Nur für Admins sichtbar.
+Protokolliert sicherheitsrelevante Aktionen wie Rollenänderungen, Einzahlungen, Stornos und Löschungen mit Zeitpunkt, ausführender Person und IP-Adresse. Nur für Admins sichtbar. Die IP-Adressen löscht die App nach 30 Tagen automatisch, die Einträge selbst bleiben.
+
+### Datenschutz
+
+Die Datenschutzerklärung liegt unter `/datenschutz` (`client/src/pages/Datenschutz.tsx`) und ist von der Anmeldeseite und aus dem Avatar-Menü verlinkt. Sie ist auf den Betrieb unter bifi.dpsg-balingen.de zugeschnitten; wer BiFi woanders betreibt, muss sie anpassen.
 
 ---
 

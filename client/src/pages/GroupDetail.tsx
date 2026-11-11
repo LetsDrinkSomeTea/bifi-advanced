@@ -1,7 +1,8 @@
 import { toast } from 'sonner';
 import { useParams, useLocation } from 'wouter';
 import { Link } from 'wouter';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import QRCode from 'qrcode';
 import {
   ArrowLeft,
   Copy,
@@ -42,6 +43,22 @@ function QRModal({
   groupName: string;
   onClose: () => void;
 }): React.JSX.Element {
+  // Generated in the browser so the invite link is not sent to a third-party QR service
+  const [qrSrc, setQrSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    QRCode.toDataURL(`${window.location.origin}/join/${code}`, { width: 200, margin: 0 })
+      .then((url) => {
+        if (!cancelled) setQrSrc(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQrSrc(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [code]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
@@ -53,12 +70,11 @@ function QRModal({
           </Button>
         </div>
         <div className="bg-white p-4 rounded-xl">
-          <img
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/join/${code}`)}&margin=0`}
-            alt="QR Code"
-            width={200}
-            height={200}
-          />
+          {qrSrc ? (
+            <img src={qrSrc} alt="QR Code" width={200} height={200} />
+          ) : (
+            <div className="w-[200px] h-[200px]" />
+          )}
         </div>
         <p className="text-center text-sm text-muted-foreground">
           QR-Code scannen oder Code eingeben:
