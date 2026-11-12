@@ -39,6 +39,7 @@ import { ROLE_LABEL } from '../lib/constants';
 import { cn } from '../lib/utils';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
+import { brandName } from '../lib/branding';
 
 // ─── Slide content ────────────────────────────────────────────────────────────
 
@@ -92,7 +93,7 @@ function buildSlides(user: User, config: AuthConfig | undefined): Slide[] {
         id: 'welcome',
         icon: Beer,
         tone: 'accent',
-        title: 'Willkommen bei BiFi',
+        title: `Willkommen bei ${brandName}`,
         body: 'Eure digitale Strichliste. In einer Minute zeigen wir dir, wie alles funktioniert.',
       },
       {
@@ -282,7 +283,7 @@ function buildSlides(user: User, config: AuthConfig | undefined): Slide[] {
       icon: Smartphone,
       tone: 'primary',
       title: 'Als App installieren',
-      body: 'Leg BiFi auf deinen Startbildschirm, dann ist es nur einen Tipp entfernt.',
+      body: `Leg ${brandName} auf deinen Startbildschirm, dann ist es nur einen Tipp entfernt.`,
       points: [
         {
           icon: Smartphone,

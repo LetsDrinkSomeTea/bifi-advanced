@@ -88,6 +88,30 @@ Schemaänderungen spielt die App beim Start automatisch ein. Bereits angewendete
 
 Hochgeladene Bilder liegen im Volume `bifi_uploads_data` und sollten ebenfalls gesichert werden.
 
+### Eigenes Aussehen
+
+Name, Farben, Logo und Icons lassen sich ohne eigenes Image anpassen. Dazu einen Ordner nach `/app/branding` einhängen (siehe auskommentierte Zeile in der `docker-compose.yml`) und den Container neu starten. Ohne den Ordner sieht BiFi aus wie immer. Alle Dateien sind optional:
+
+| Datei                                                                                                                                     | Wirkung                                                                                                                                                                                                               |
+| :---------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `branding.json`                                                                                                                           | `name`, `shortName`, `description`, `themeColor`, `backgroundColor`. Ersetzt Titel, App-Namen beim Installieren und die Farbe der Browserleiste.                                                                      |
+| `theme.css`                                                                                                                               | Wird nach dem eigenen CSS geladen und überschreibt die Farbvariablen aus `client/src/main.css`, z. B. `--primary`, `--background` oder `--card`. Für den Dunkelmodus `@media (prefers-color-scheme: dark)` verwenden. |
+| `logo.svg`                                                                                                                                | Ersetzt das Bier-Symbol in der Kopfzeile und auf der Anmeldeseite.                                                                                                                                                    |
+| `favicon.ico`, `favicon.svg`, `favicon-96x96.png`, `apple-touch-icon.png`, `web-app-manifest-192x192.png`, `web-app-manifest-512x512.png` | Ersetzen die gleichnamigen Icons.                                                                                                                                                                                     |
+
+Beispiel für `branding.json`:
+
+```json
+{
+  "name": "BiFi",
+  "description": "Getränkeliste unseres Vereins",
+  "themeColor": "#2a3d7c",
+  "backgroundColor": "#f4f3ef"
+}
+```
+
+Das Branding wirkt nur im Produktivbetrieb (`NODE_ENV=production`), also im fertigen Image. Bereits installierte Apps übernehmen neue Icons und Namen erst, wenn das Betriebssystem das Manifest neu lädt. Das kann ein paar Tage dauern.
+
 ---
 
 ## 🛡 Admin-Handbuch
@@ -284,13 +308,14 @@ Für Meilensteine (z.B. Prost verschickt, Gruppe gegründet, Jackpot-Glück, …
 
 ### App
 
-| Variable      | Beschreibung                                       | Standard        |
-| :------------ | :------------------------------------------------- | :-------------- |
-| `NODE_ENV`    | Laufzeitumgebung                                   | `production`    |
-| `PORT`        | Server-Port                                        | `3000`          |
-| `TZ`          | Zeitzone                                           | `Europe/Berlin` |
-| `TRUST_PROXY` | Vertraue Reverse-Proxy-Headern (nginx, Traefik, …) | `false`         |
-| `UPLOAD_DIR`  | Pfad für hochgeladene Bilder                       | `./uploads`     |
+| Variable       | Beschreibung                                       | Standard        |
+| :------------- | :------------------------------------------------- | :-------------- |
+| `NODE_ENV`     | Laufzeitumgebung                                   | `production`    |
+| `PORT`         | Server-Port                                        | `3000`          |
+| `TZ`           | Zeitzone                                           | `Europe/Berlin` |
+| `TRUST_PROXY`  | Vertraue Reverse-Proxy-Headern (nginx, Traefik, …) | `false`         |
+| `UPLOAD_DIR`   | Pfad für hochgeladene Bilder                       | `./uploads`     |
+| `BRANDING_DIR` | Ordner für [eigenes Aussehen](#eigenes-aussehen)   | `./branding`    |
 
 ### Authentifizierung
 

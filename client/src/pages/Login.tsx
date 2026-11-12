@@ -4,6 +4,7 @@ import { useAuth, useAuthConfig } from '../hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { brandDescription, brandLogo, brandName } from '../lib/branding';
 
 export function Login(): React.JSX.Element | null {
   const { user, isLoading } = useAuth();
@@ -80,8 +81,11 @@ export function Login(): React.JSX.Element | null {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">
-          <h1 className="text-4xl font-bold tracking-tight">🍺 BiFi</h1>
-          <p className="text-muted-foreground text-sm">Vereins-Getränkeliste</p>
+          {brandLogo ? <img src={brandLogo} alt="" className="w-24 h-24 mx-auto mb-3" /> : null}
+          <h1 className="text-4xl font-bold tracking-tight">
+            {brandLogo ? brandName : `🍺 ${brandName}`}
+          </h1>
+          <p className="text-muted-foreground text-sm">{brandDescription}</p>
         </div>
 
         {error || urlError ? (

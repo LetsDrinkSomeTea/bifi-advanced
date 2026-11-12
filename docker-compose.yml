@@ -44,6 +44,8 @@ services:
       - '3000:3000'
     volumes:
       - bifi_uploads_data:/app/uploads
+      # Optional: eigenes Aussehen (siehe README, „Eigenes Aussehen“)
+      # - ./branding:/app/branding:ro
     tmpfs:
       - /tmp:size=64m,mode=1777
     env_file: .env
