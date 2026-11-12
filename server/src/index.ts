@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context, type Next } from 'hono';
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { cors } from 'hono/cors';
@@ -15,6 +15,14 @@ import { initRedis } from './db/redis.ts';
 import { runMigrations } from './db/migrate.ts';
 import { initOIDC } from './services/oidc.ts';
 import { pruneAuditIpAddresses } from './services/audit.ts';
+import {
+  BRANDING_ICONS,
+  brandIndexHtml,
+  brandManifest,
+  loadBranding,
+  readBrandingFile,
+  type Branding,
+} from './lib/branding.ts';
 import authRoutes from './routes/auth.ts';
 import localAuthRoutes from './routes/auth.local.ts';
 import buyablesRoutes from './routes/buyables.ts';
@@ -150,9 +158,65 @@ app.onError((err, c): Response => {
 // ─── Static files (production) ────────────────────────────────────────────────
 
 if (process.env.NODE_ENV === 'production') {
+  // Optional branding folder (see lib/branding.ts). Loaded once, ignored when missing.
+  const brandingReady = loadBranding();
+  let brandedIndex: Promise<string> | undefined;
+  const getBrandedIndex = (branding: Branding): Promise<string> => {
+    brandedIndex ??= readFile('./dist/client/index.html', 'utf8').then((html) =>
+      brandIndexHtml(html, branding),
+    );
+    return brandedIndex;
+  };
+
+  const sendBrandingFile = async (branding: Branding, name: string): Promise<Response | null> => {
+    const file = await readBrandingFile(branding, name);
+    if (!file) return null;
+    return new Response(file.data, {
+      headers: { 'Content-Type': file.contentType, 'Cache-Control': 'public, max-age=3600' },
+    });
+  };
+
+  app.get('/branding/:file', async (c) => {
+    const branding = await brandingReady;
+    const res = branding ? await sendBrandingFile(branding, c.req.param('file')) : null;
+    return res ?? c.json({ error: 'Not found' }, 404);
+  });
+
+  for (const icon of BRANDING_ICONS) {
+    app.get(`/${icon}`, async (_c, next) => {
+      const branding = await brandingReady;
+      const res = branding?.icons.includes(icon) ? await sendBrandingFile(branding, icon) : null;
+      if (res) return res;
+      await next();
+    });
+  }
+
+  app.get('/manifest.webmanifest', async (_c, next) => {
+    const branding = await brandingReady;
+    if (branding) {
+      try {
+        const json = await readFile('./dist/client/manifest.webmanifest', 'utf8');
+        return new Response(brandManifest(json, branding), {
+          headers: { 'Content-Type': 'application/manifest+json' },
+        });
+      } catch {
+        // fall through to the unbranded file
+      }
+    }
+    await next();
+  });
+
+  const serveBrandedIndex = async (c: Context, next: Next): Promise<Response | undefined> => {
+    const branding = await brandingReady;
+    if (branding) return c.html(await getBrandedIndex(branding));
+    await next();
+  };
+  app.get('/', serveBrandedIndex);
+  app.get('/index.html', serveBrandedIndex);
+
   app.use('/*', serveStatic({ root: './dist/client' }));
   // SPA fallback
-  app.get('/*', serveStatic({ path: './dist/client/index.html' }));
+  app.get('/*', serveBrandedIndex, serveStatic({ path: './dist/client/index.html' }));
 }
 
 // ─── Startup ──────────────────────────────────────────────────────────────────

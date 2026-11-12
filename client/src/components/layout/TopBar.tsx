@@ -10,6 +10,7 @@ import {
   ScrollText,
 } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { brandLogo, brandName } from '../../lib/branding';
 import { useAuth, useLogout } from '../../hooks/useAuth';
 import { openOnboarding } from '../../hooks/useOnboarding';
 import {
@@ -220,8 +221,12 @@ export function TopBar(): React.JSX.Element {
   return (
     <header className="sticky top-0 z-20 flex items-center justify-between px-4 h-14 border-b border-border bg-background/80 backdrop-blur-xs">
       <div className="flex items-center gap-1.5">
-        <Beer className="w-5 h-5 text-primary" />
-        <span className="font-bold text-base tracking-tight">BiFi</span>
+        {brandLogo ? (
+          <img src={brandLogo} alt="" className="w-7 h-7" />
+        ) : (
+          <Beer className="w-5 h-5 text-primary" />
+        )}
+        <span className="font-bold text-base tracking-tight">{brandName}</span>
       </div>
 
       <div className="flex items-center gap-3">
