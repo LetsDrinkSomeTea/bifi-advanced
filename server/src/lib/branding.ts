@@ -141,6 +141,9 @@ export function brandIndexHtml(html: string, branding: Branding): string {
 
   const attrs: string[] = [];
   if (config.name) attrs.push(`data-brand-name="${escapeAttr(config.name)}"`);
+  if (config.description) {
+    attrs.push(`data-brand-description="${escapeAttr(config.description)}"`);
+  }
   if (branding.hasLogo) attrs.push('data-brand-logo="/branding/logo.svg"');
   if (attrs.length > 0) {
     out = out.replace(/<html([^>]*)>/, `<html$1 ${attrs.join(' ')}>`);

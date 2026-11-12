@@ -92,7 +92,7 @@ describe('branding', () => {
     const html = brandIndexHtml(
       INDEX,
       branding({
-        config: { name: 'Getränke & "Co"', themeColor: '#2a3d7c' },
+        config: { name: 'Getränke & "Co"', themeColor: '#2a3d7c', description: 'Unsere <Liste>' },
         hasCss: true,
         hasLogo: true,
       }),
@@ -103,7 +103,7 @@ describe('branding', () => {
       '<meta name="apple-mobile-web-app-title" content="Getränke &amp; &quot;Co&quot;" />',
     );
     expect(html).toContain(
-      '<html lang="de" data-brand-name="Getränke &amp; &quot;Co&quot;" data-brand-logo="/branding/logo.svg">',
+      '<html lang="de" data-brand-name="Getränke &amp; &quot;Co&quot;" data-brand-description="Unsere &lt;Liste&gt;" data-brand-logo="/branding/logo.svg">',
     );
     expect(html).toContain('<link rel="stylesheet" href="/branding/theme.css" />');
   });
